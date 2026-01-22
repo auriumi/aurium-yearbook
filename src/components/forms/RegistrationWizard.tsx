@@ -317,6 +317,29 @@ export default function RegistrationWizard() {
   };
 
   const onSubmit = async () => {
+    const payload: any = {};
+    
+    //post condition if using guardian or parent
+    if (useGuardian) {
+      payload.guardian = {
+        first_name: guardianFname,
+        last_name: guardianLname,
+      }; 
+    } else {
+      payload.parent = {
+        father: {
+          first_name: fatherFname,
+          last_name: fatherLname,
+          middle_name: fatherMname,
+          suffix: fatherSuffix,
+        },
+        mother: {
+          first_name: motherFname,
+          last_name: motherLname,
+          middle_name: motherMname,
+        },
+      };
+    }
 
     const body = {
       id: idNumber,
@@ -333,23 +356,7 @@ export default function RegistrationWizard() {
         major: selectedMajor,
         thesis: thesisTitle,
       },
-      guardian: {
-        first_name: guardianFname,
-        last_name: guardianLname,
-      },
-      parent: {
-        father: {
-          first_name: fatherFname,
-          last_name: fatherLname,
-          middle_name: fatherMname,
-          suffix: fatherSuffix,
-        },
-        mother: {
-          first_name: motherFname,
-          last_name: motherLname,
-          middle_name: motherMname,
-        },
-      }
+      ...payload, //could be either guardian or parent
     };
 
     try {

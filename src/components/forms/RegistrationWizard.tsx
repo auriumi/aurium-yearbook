@@ -331,16 +331,16 @@ export default function RegistrationWizard() {
   };
 
   const onSubmit = async () => {
-    const payload: any = {};
+    const relation: any = {};
     
     //post condition if using guardian or parent
     if (useGuardian) {
-      payload.guardian = {
+      relation.guardian = {
         first_name: guardianFname,
         last_name: guardianLname,
       }; 
     } else {
-      payload.parent = {
+      relation.parent = {
         father: {
           first_name: fatherFname,
           last_name: fatherLname,
@@ -363,15 +363,17 @@ export default function RegistrationWizard() {
       first_name: fname,
       middle_name: mname,
       suffix: suffix,
-      // FIX: Ensure quotes are added upon submission
-      nickname: getFormattedNickname(), 
+      nickname: nickname,
       birthdate: bdate,
       academics: {
         course: selectedCourse,
         major: selectedMajor,
         thesis: thesisTitle,
       },
-      ...payload, 
+      ...relation, 
+      province: provinceName,
+      city: cityName,
+      barangary: barangayName 
     };
 
     try {

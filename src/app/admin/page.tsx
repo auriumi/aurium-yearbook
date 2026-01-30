@@ -161,8 +161,7 @@ export default function AdminDashboard() {
   // --- ACTIONS: VERIFICATION --- 
   //now asynchronous.. so you can add loading states or whatevs when posting
   const handleVerify = async (studentId: number) => {
-    const student = pendingStudents.find(s => s.idNumber === studentId);
-    console.log(studentId);
+    const student = pendingStudents.find(s => s.studentNumber.student_number === studentId);
     if (!student) return;
     
     const body = {
@@ -186,7 +185,7 @@ export default function AdminDashboard() {
       const response = await res.json();
       console.log(response);
 
-      setPendingStudents(prev => prev.filter(s => s.idNumber !== studentId));
+      setPendingStudents(prev => prev.filter(s => s.studentNumber.student_number !== studentId));
       setVerifiedStudents(prev => [...prev, { ...student, status: "verified" }]);
     } catch (err) {
       console.error("Something went wrong..", err);
@@ -391,20 +390,20 @@ export default function AdminDashboard() {
                                         <div key={student.id} className="flex flex-col md:flex-row items-center justify-between p-4 border border-stone-100 rounded-lg bg-white hover:border-amber-200 transition-all shadow-sm">
                                             <div className="flex items-center gap-4 mb-4 md:mb-0 w-full md:w-auto">
                                                 <div className="h-10 w-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-800 font-bold text-xs">
-                                                    {student.program.substring(0,2)}
+                                                    {student.course.substring(0,2)}
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-bold text-stone-800">{student.name}</h4>
+                                                    <h4 className="font-bold text-stone-800">{`${student.first_name} ${student.last_name}`}</h4>
                                                     <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
-                                                        <span className="bg-stone-100 border border-stone-200 px-1.5 py-0.5 rounded text-stone-700 font-mono font-medium">{student.idNumber}</span>
+                                                        <span className="bg-stone-100 border border-stone-200 px-1.5 py-0.5 rounded text-stone-700 font-mono font-medium">{student.studentNumber.student_number}</span>
                                                         <span>•</span>
-                                                        <span>{student.program}</span>
+                                                        <span>{student.course}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div className="flex items-center gap-3 w-full md:w-auto">
-                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.idNumber)}>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.studentNumber.student_number)}>
                                                     <Mail className="mr-2 h-3 w-3" /> Approve & Send
                                                 </Button>
                                             </div>

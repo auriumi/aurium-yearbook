@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Users, 
   Calendar, 
@@ -31,13 +31,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// --- MOCK DATA: PENDING STUDENTS ---
-const MOCK_PENDING_STUDENTS = [
-  { id: "101", idNumber: "2020-00123", name: "Juan Dela Cruz", program: "BSCS", personalEmail: "juan@gmail.com", umEmail: "202000123@umindanao.edu.ph", status: "pending" },
-  { id: "102", idNumber: "2020-00456", name: "Maria Clara", program: "BSBA", personalEmail: "maria@yahoo.com", umEmail: "202000456@umindanao.edu.ph", status: "pending" },
-  { id: "103", idNumber: "2021-00789", name: "Pedro Penduko", program: "BSED", personalEmail: "pedro@gmail.com", umEmail: "202100789@umindanao.edu.ph", status: "pending" },
-];
 
 const MOCK_SCHEDULES = [
   { date: "2026-03-15", amSlots: 50, amBooked: 48, pmSlots: 50, pmBooked: 12 },
@@ -128,7 +121,6 @@ const STATUS_STEPS = [
 // --- MAIN COMPONENT ---
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("verification"); // 'verification', 'slots', 'masterlist'
-  const [pendingStudents, setPendingStudents] = useState(MOCK_PENDING_STUDENTS);
   const [verifiedStudents, setVerifiedStudents] = useState<any[]>([]);
   const [schedules, setSchedules] = useState(MOCK_SCHEDULES);
   
@@ -139,6 +131,30 @@ export default function AdminDashboard() {
 
   // States for Masterlist Modal
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  //fetching actual data from database, veri simple implementation - PS: DO NOT MODIFY :D
+  const [pendingStudents, setPendingStudents] = useState([]);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        //local testing for now but db is live in cloud..
+        const res = await fetch('http://localhost:4000/fetch/verify'); 
+
+        if (!res.ok) {
+          throw new Error("Something went wrong");
+        }
+
+        const data = await res.json();
+        console.log(data);
+
+        setPendingStudents(data);
+      } catch (err) {
+        console.error("Something went wrong: ", err);
+      }
+    }
+    fetchStudents(); 
+  }, []);
 
   // --- ACTIONS: VERIFICATION ---
   const handleVerify = (studentId: string) => {

@@ -132,10 +132,12 @@ export default function AdminDashboard() {
   // States for Masterlist Modal
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
-  //fetching actual data from database, veri simple implementation - PS: DO NOT MODIFY :D
+  //fetching actual data from database, veri simple implementation 
+  //PS: Do not modify, it's a pain to track and iterate :D
   const [pendingStudents, setPendingStudents] = useState([]);
 
   useEffect(() => {
+  //asynchronous.. so you can add loading states or whatevs while fetching
     const fetchStudents = async () => {
       try {
         //local testing for now but db is live in cloud..
@@ -156,15 +158,41 @@ export default function AdminDashboard() {
     fetchStudents(); 
   }, []);
 
-  // --- ACTIONS: VERIFICATION ---
-  const handleVerify = (studentId: string) => {
-    const student = pendingStudents.find(s => s.id === studentId);
+  // --- ACTIONS: VERIFICATION --- 
+  //now asynchronous.. so you can add loading states or whatevs when posting
+  const handleVerify = async (studentId: number) => {
+    const student = pendingStudents.find(s => s.idNumber === studentId);
+    console.log(studentId);
     if (!student) return;
-
-    setPendingStudents(prev => prev.filter(s => s.id !== studentId));
-    setVerifiedStudents(prev => [...prev, { ...student, status: "verified" }]);
     
-    alert(`Verified ${student.name}! Credentials sent to emails.`);
+    const body = {
+      id: studentId
+    };
+    
+    //PS: Do not modify, it's a pain to track and iterate :D
+    try {
+      const res = await fetch("http://localhost:4000/post/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }, 
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Request failed: ${res.status}`);
+      }
+
+      const response = await res.json();
+      console.log(response);
+
+      setPendingStudents(prev => prev.filter(s => s.idNumber !== studentId));
+      setVerifiedStudents(prev => [...prev, { ...student, status: "verified" }]);
+    } catch (err) {
+      console.error("Something went wrong..", err);
+    }
+    
+    alert(`Succesfully verified ${student.name}! Credentials has been sent to the respective email.`);
   };
 
   const handleBulkVerify = () => {
@@ -376,7 +404,7 @@ export default function AdminDashboard() {
                                             </div>
                                             
                                             <div className="flex items-center gap-3 w-full md:w-auto">
-                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.id)}>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.idNumber)}>
                                                     <Mail className="mr-2 h-3 w-3" /> Approve & Send
                                                 </Button>
                                             </div>

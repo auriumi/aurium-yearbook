@@ -170,8 +170,6 @@ export default function AdminDashboard() {
   const handleVerify = async (studentId: number) => {
     // FIX 3: Optional chaining in case pendingStudents is empty
     const student = pendingStudents?.find(s => s.StudentAuth?.student_number === studentId);
-    console.log(studentId);
-    console.log(student);
     if (!student) return;
     
     const body = {

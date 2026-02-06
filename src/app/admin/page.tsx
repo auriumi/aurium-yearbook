@@ -142,7 +142,7 @@ export default function AdminDashboard() {
     const fetchStudents = async () => {
       try {
         //local testing for now but db is live in cloud..
-        const res = await fetch('http://localhost:4000/fetch/verify'); 
+        const res = await fetch('http://localhost:4000/api/admin/student/fetch'); 
 
         if (!res.ok) {
           throw new Error("Something went wrong");
@@ -169,7 +169,9 @@ export default function AdminDashboard() {
   //now asynchronous.. so you can add loading states or whatevs when posting
   const handleVerify = async (studentId: number) => {
     // FIX 3: Optional chaining in case pendingStudents is empty
-    const student = pendingStudents?.find(s => s.studentNumber?.student_number === studentId);
+    const student = pendingStudents?.find(s => s.StudentAuth?.student_number === studentId);
+    console.log(studentId);
+    console.log(student);
     if (!student) return;
     
     const body = {
@@ -178,7 +180,7 @@ export default function AdminDashboard() {
     
     //PS: Do not modify, it's a pain to track and iterate :D
     try {
-      const res = await fetch("http://localhost:4000/post/verify", {
+      const res = await fetch("http://localhost:4000/api/admin/student/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -407,7 +409,7 @@ export default function AdminDashboard() {
                                                     <h4 className="font-bold text-stone-800">{`${student.first_name} ${student.last_name}`}</h4>
                                                     <div className="flex items-center gap-2 text-xs text-stone-500 mt-1">
                                                         <span className="bg-stone-100 border border-stone-200 px-1.5 py-0.5 rounded text-stone-700 font-mono font-medium">
-                                                            {student.studentNumber ? student.studentNumber.student_number : "No ID"}
+                                                            {student.StudentAuth.student_number ? student.StudentAuth.student_number : "No ID"}
                                                         </span>
                                                         <span>•</span>
                                                         <span>{student.course}</span>
@@ -416,7 +418,7 @@ export default function AdminDashboard() {
                                             </div>
                                             
                                             <div className="flex items-center gap-3 w-full md:w-auto">
-                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.studentNumber?.student_number)}>
+                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto shadow-sm" onClick={() => handleVerify(student.StudentAuth?.student_number)}>
                                                     <Mail className="mr-2 h-3 w-3" /> Approve & Send
                                                 </Button>
                                             </div>

@@ -291,7 +291,7 @@ export default function AdminDashboard() {
   };
 
   const handleBulkVerify = () => {
-    const match = pendingStudents.find(s => s.idNumber.includes(searchQuery));
+    const match = pendingStudents.find(s => s.student_number.includes(searchQuery));
     if (match) {
         handleVerify(match.id);
         setSearchQuery(""); 
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
   const filteredPending = pendingStudents.filter(stud => 
     stud.last_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     stud.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    String(stud.id.includes(searchQuery))
+    String(stud.student_number).includes(searchQuery)
   );
 
   // --- ACTIONS: SCHEDULING ---
@@ -623,7 +623,7 @@ export default function AdminDashboard() {
                                             {selectedStudent.status === 'verified' ? 'VERIFIED FINAL' : 'PENDING REVIEW'}
                                         </Badge>
                                         <span className="h-4 w-[1px] bg-stone-300 hidden sm:block"></span>
-                                        <span className="font-mono text-stone-400">{selectedStudent.id}</span>
+                                        <span className="font-mono text-stone-400">{selectedStudent.student_number}</span>
                                     </div>
                                     {selectedStudent.last_edited_by && (
                                         <div className="flex items-center gap-1.5 mt-2 sm:mt-0 bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
@@ -649,7 +649,7 @@ export default function AdminDashboard() {
                                                 {/* Edit Content */}
                                                 <div className="flex flex-col items-center mb-6 relative group">
                                                     <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg cursor-pointer" onClick={() => studentPhotoInputRef.current?.click()}>
-                                                        <img src={selectedStudent.photo} alt="Student" className="w-full h-full object-cover" />
+                                                        <img src={selectedStudent.photo ? selectedStudent.photo : "https://github.com/shadcn.png"} alt="Student" className="w-full h-full object-cover" />
                                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera className="text-white w-8 h-8" /></div>
                                                     </div>
                                                     <p className="text-xs text-stone-500 mt-2">Click to change photo</p>
@@ -665,8 +665,8 @@ export default function AdminDashboard() {
                                                     {/* Tabs Content */}
                                                     <TabsContent value="personal" className="space-y-4 bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
                                                         <div className="grid grid-cols-2 gap-4">
-                                                            <div className="space-y-2"><Label>First Name</Label><Input name="fname" defaultValue={selectedStudent.fname} /></div>
-                                                            <div className="space-y-2"><Label>Last Name</Label><Input name="lname" defaultValue={selectedStudent.lname} /></div>
+                                                            <div className="space-y-2"><Label>First Name</Label><Input name="fname" defaultValue={selectedStudent.first_name} /></div>
+                                                            <div className="space-y-2"><Label>Last Name</Label><Input name="lname" defaultValue={selectedStudent.last_name} /></div>
                                                         </div>
                                                     </TabsContent>
                                                 </Tabs>

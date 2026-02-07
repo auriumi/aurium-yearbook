@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link"; 
 import Image from "next/image";
 import { 
@@ -195,43 +195,34 @@ export default function AdminDashboard() {
   const [selectedMasterlistStudent, setSelectedMasterlistStudent] = useState<any>(null);
 
   // --- VERIFICATION STATES ---
-  const [graduates, setGraduates] = useState(MOCK_GRADUATES_VERIFICATION);
   const [selectedStudent, setSelectedStudent] = useState<any>(null); 
   const [isEditing, setIsEditing] = useState(false);
   const studentPhotoInputRef = useRef<HTMLInputElement>(null);
 
   // --- FETCH PENDING STUDENTS ---
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
+  
+    const fetchStudents = useCallback(async () => {
+        try {
+            const res = await fetch('http://localhost:4000/api/admin/student/fetch');
+            if (!res.ok) throw new Error("Something went wrong");
 
-  // 1. SESSION PERSISTENCE SIMULATION
-  // When dashboard loads, we set a flag. Real app would use cookies/tokens.
-  useEffect(() => {
-    localStorage.setItem("aurium_admin_session", "true");
-  }, []);
+            const data = await res.json();
 
-  // Logout Handler: Clears the session
-  const handleLogout = () => {
-    localStorage.removeItem("aurium_admin_session");
-  };
-
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const res = await fetch('http://localhost:4000/fetch/verify'); 
-        if (!res.ok) throw new Error("Something went wrong");
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setPendingStudents(data);
-        } else {
-          setPendingStudents([]); 
+            if (Array.isArray(data)) {
+                setPendingStudents(data);
+            } else {
+                setPendingStudents([]);
+            }
+        } catch (err) {
+            console.error("Something went wrong: ", err);
+            setPendingStudents([]);
         }
-      } catch (err) {
-        console.error("Something went wrong: ", err);
-        setPendingStudents([]); 
-      }
-    }
-    fetchStudents(); 
-  }, []);
+    }, []);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [fetchStudents]);
 
   // --- ACTIONS: VERIFICATION --- 
   const handleSaveEdit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -262,10 +253,6 @@ export default function AdminDashboard() {
         photo: selectedStudent.photo
     };
 
-    setGraduates(prev => prev.map(g => 
-      g.id === selectedStudent.id ? { ...g, ...updates } : g
-    ));
-
     setSelectedStudent((prev: any) => ({ ...prev, ...updates }));
     setIsEditing(false);
   };
@@ -281,6 +268,7 @@ export default function AdminDashboard() {
     }
   };
 
+  //TODO: fix...
   const handleVerify = async (studentId: number) => {
     const student = pendingStudents?.find(s => s.studentNumber?.student_number === studentId);
     if (!student) return;
@@ -292,8 +280,9 @@ export default function AdminDashboard() {
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+
       setPendingStudents(prev => prev.filter(s => s.studentNumber.student_number !== studentId));
-      setVerifiedStudents(prev => [...prev, { ...student, status: "verified" }]);
+      //setVerifiedStudents(prev => [...prev, { ...student, status: "verified" }]);
     } catch (err) {
       console.error("Something went wrong..", err);
     }
@@ -318,18 +307,14 @@ export default function AdminDashboard() {
         last_edited_by: "Admin (You)",
         last_edited_at: timestamp 
     };
-
-    setGraduates(prev => prev.map(g => 
-        g.id === selectedStudent.id ? { ...g, ...update } : g
-    ));
       
     setSelectedStudent((prev: any) => ({ ...prev, ...update }));
   };
 
-  const filteredGraduates = graduates.filter(g => 
-    g.lname.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    g.fname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    g.id.includes(searchQuery)
+  const filteredPending = pendingStudents.filter(stud => 
+    stud.last_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    stud.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(stud.id.includes(searchQuery))
   );
 
   // --- ACTIONS: SCHEDULING ---
@@ -479,7 +464,7 @@ export default function AdminDashboard() {
                             </DialogHeader>
                             <DialogFooter className="gap-2 sm:gap-0">
                                 {/* KEY UPDATE: Clear session on logout */}
-                                <Link href="/" onClick={handleLogout}><Button variant="destructive" className="w-full">Yes, Log Out</Button></Link>
+                                <Link href="/" onClick={() => {}}><Button variant="destructive" className="w-full">Yes, Log Out</Button></Link>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -538,7 +523,7 @@ export default function AdminDashboard() {
                 </DialogHeader>
                 <DialogFooter className="gap-2">
                     {/* KEY UPDATE: Clear session on logout */}
-                    <Link href="/" onClick={handleLogout}><Button variant="destructive" className="w-full">Yes, Log Out</Button></Link>
+                    <Link href="/" onClick={() => {}}><Button variant="destructive" className="w-full">Yes, Log Out</Button></Link>
                 </DialogFooter>
              </DialogContent>
           </Dialog>
@@ -589,7 +574,7 @@ export default function AdminDashboard() {
                     <Card className={`lg:col-span-3 border-stone-200 shadow-sm flex flex-col overflow-hidden h-full rounded-2xl ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
                         <div className="p-4 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center">
                             <span className="text-xs font-bold uppercase tracking-wider text-stone-500">All Students</span>
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">{filteredGraduates.length}</Badge>
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800">{filteredPending.length}</Badge>
                         </div>
                         <div className="p-3 border-b border-stone-100">
                              <div className="relative">
@@ -599,27 +584,26 @@ export default function AdminDashboard() {
                         </div>
                         <ScrollArea className="flex-1 p-3">
                             <div className="space-y-2">
-                                {filteredGraduates.map((grad) => (
+                                {filteredPending.map((grad) => (
                                     <button 
                                         key={grad.id} 
                                         onClick={() => { setSelectedStudent(grad); setIsEditing(false); }}
                                         className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all border group ${selectedStudent?.id === grad.id ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white hover:bg-stone-50 border-transparent hover:border-stone-200"}`}
                                     >
                                         <Avatar className="h-10 w-10 border border-stone-200 group-hover:border-amber-300 transition-colors">
-                                            <AvatarImage src={grad.photo} />
-                                            <AvatarFallback>{grad.fname.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={grad.photo ? grad.photo : "https://github.com/shadcn.png"} />
+                                            <AvatarFallback>{grad.first_name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-0.5">
-                                                <p className={`font-bold text-sm truncate ${selectedStudent?.id === grad.id ? 'text-amber-900' : 'text-stone-800'}`}>{grad.fname} {grad.lname}</p>
-                                                {grad.status === "verified" && <CheckCircle2 size={14} className="text-green-600" />}
+                                                <p className={`font-bold text-sm truncate ${selectedStudent?.id === grad.id ? 'text-amber-900' : 'text-stone-800'}`}>{grad.first_name} {grad.last_name}</p>
                                             </div>
-                                            <p className="text-xs text-stone-500 font-mono truncate">{grad.id}</p>
+                                            <p className="text-xs text-stone-500 font-mono truncate">{grad.student_number}</p>
                                         </div>
                                         <ChevronRight size={16} className={`text-stone-300 ${selectedStudent?.id === grad.id ? 'text-amber-500' : ''}`} />
                                     </button>
                                 ))}
-                                {filteredGraduates.length === 0 && (
+                                {filteredPending.length === 0 && (
                                     <div className="text-center py-10 text-stone-400 text-sm flex flex-col items-center">
                                         <Search className="h-8 w-8 mb-2 opacity-20" /> No graduates found.
                                     </div>
@@ -696,7 +680,7 @@ export default function AdminDashboard() {
                                                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                                                 <div className="relative mb-8 transform hover:scale-105 transition-transform duration-500 ease-out">
                                                     <div className="w-full max-w-[260px] aspect-[4/5] bg-white p-3 shadow-2xl rotate-1 border-2 border-stone-200 relative z-10 rounded-sm">
-                                                        <img src={selectedStudent.photo} className="w-full h-full object-cover bg-stone-200 filter contrast-105" alt="Student" />
+                                                        <img src={selectedStudent.photo ? selectedStudent.photo : "https://github.com/shadcn.png"} className="w-full h-full object-cover bg-stone-200 filter contrast-105" alt="Student" />
                                                         <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-amber-500 z-20"></div>
                                                         <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-amber-500 z-20"></div>
                                                     </div>
@@ -704,7 +688,7 @@ export default function AdminDashboard() {
                                                 <div className="text-center space-y-4 max-w-sm relative z-10 mt-4">
                                                     <div>
                                                         <h2 className="text-3xl font-serif font-bold text-stone-900 leading-tight uppercase tracking-wide">
-                                                            {selectedStudent.fname} {selectedStudent.mname?.charAt(0)}. {selectedStudent.lname} {selectedStudent.suffix}
+                                                            {selectedStudent.first_name} {selectedStudent.mid_name?.charAt(0)}. {selectedStudent.last_name} {selectedStudent.suffix}
                                                         </h2>
                                                         <p className="text-amber-600 font-serif italic text-lg mt-2 font-medium">{selectedStudent.nickname}</p>
                                                     </div>
@@ -719,7 +703,7 @@ export default function AdminDashboard() {
                                                             <div><span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">Course</span><span className="font-bold text-stone-800 text-lg leading-snug">{selectedStudent.course}</span></div>
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div><span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">Major</span><span className="text-sm font-medium text-stone-700">{selectedStudent.major || "N/A"}</span></div>
-                                                                <div><span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">ID Number</span><span className="text-sm font-mono text-stone-700 bg-white px-2 py-1 rounded border border-stone-200 inline-block">{selectedStudent.id}</span></div>
+                                                                <div><span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">ID Number</span><span className="text-sm font-mono text-stone-700 bg-white px-2 py-1 rounded border border-stone-200 inline-block">{selectedStudent.student_number}</span></div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -727,15 +711,15 @@ export default function AdminDashboard() {
                                                         <div>
                                                             <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-[0.2em] mb-4"><User size={14}/> Personal</h3>
                                                             <div className="space-y-3 text-sm text-stone-600 p-5 rounded-2xl border border-stone-100">
-                                                                <p className="flex justify-between border-b border-stone-100 pb-2"><span className="font-bold text-stone-400 text-xs">DOB</span> <span>{selectedStudent.birthdate}</span></p>
-                                                                <p className="flex justify-between"><span className="font-bold text-stone-400 text-xs">Guardian</span> <span>{selectedStudent.guardian || "-"}</span></p>
+                                                                <p className="flex justify-between border-b border-stone-100 pb-2"><span className="font-bold text-stone-400 text-xs">DOB</span> <span>{selectedStudent.studentDetail.birth_date.substring(0,10)}</span></p>
+                                                                <p className="flex justify-between"><span className="font-bold text-stone-400 text-xs">Guardian</span> <span>{selectedStudent.studentDetail.guardians_name || "-"}</span></p>
                                                             </div>
                                                         </div>
                                                         <div>
                                                             <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-[0.2em] mb-4"><MapPin size={14}/> Contact</h3>
                                                             <div className="space-y-4 text-sm text-stone-600 p-5 rounded-2xl border border-stone-100">
-                                                                <div className="flex items-start gap-3"><div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Home size={14}/></div><div><span className="text-[10px] text-stone-400 font-bold uppercase block">Address</span>{selectedStudent.city}, {selectedStudent.province}</div></div>
-                                                                <div className="flex items-start gap-3"><div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Phone size={14}/></div><div><span className="text-[10px] text-stone-400 font-bold uppercase block">Phone</span>{selectedStudent.contactNum}</div></div>
+                                                                <div className="flex items-start gap-3"><div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Home size={14}/></div><div><span className="text-[10px] text-stone-400 font-bold uppercase block">Address</span>{selectedStudent.studentDetail.city}, {selectedStudent.studentDetail.province}</div></div>
+                                                                <div className="flex items-start gap-3"><div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Phone size={14}/></div><div><span className="text-[10px] text-stone-400 font-bold uppercase block">Phone</span>{selectedStudent.studentDetail.contact_num}</div></div>
                                                             </div>
                                                         </div>
                                                     </div>

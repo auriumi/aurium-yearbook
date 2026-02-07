@@ -401,23 +401,13 @@ export default function RegistrationWizard() {
     
     if (useGuardian) {
       relation.guardian = {
-        first_name: guardianFname,
-        last_name: guardianLname,
+        guardians_name: `${guardianFname} ${guardianLname}`,
         relationship: guardianRel,
       }; 
     } else {
       relation.parent = {
-        father: {
-          first_name: fatherFname,
-          last_name: fatherLname,
-          middle_name: fatherMname,
-          suffix: fatherSuffix,
-        },
-        mother: {
-          first_name: motherFname,
-          last_name: motherLname,
-          middle_name: motherMname,
-        },
+        fathers_name: `${fatherFname} ${fatherMname} ${fatherLname}`, 
+        mothers_name: `${motherFname} ${motherMname} ${motherLname}` 
       };
     }
 
@@ -431,8 +421,9 @@ export default function RegistrationWizard() {
       suffix: suffix,
       nickname: nickname,
       birthdate: bdate,
+      contact_num: contactNum,
       academics: {
-        department: selectedDepartment, // Added Department
+        department: selectedDepartment, //Added Department
         course: selectedCourse,
         major: selectedMajor,
         thesis: thesisTitle,
@@ -444,7 +435,7 @@ export default function RegistrationWizard() {
     };
 
     try {
-      const res = await fetch("http://localhost:4000/api/submit", {
+      const res = await fetch("http://localhost:4000/api/student/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

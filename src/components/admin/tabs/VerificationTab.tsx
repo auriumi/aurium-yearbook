@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents: any[], onVerify: (id: number) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  console.log(pendingStudents);
 
   // Safely filter pending students
   const filteredPending = pendingStudents.filter(stud => {
@@ -44,11 +45,11 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
             <ScrollArea className="flex-1 p-3">
                 <div className="space-y-2">
                     {filteredPending.map(student => (
-                        <button key={student.id || student.StudentAuth?.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 border transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-200" : "bg-white hover:bg-stone-50 border-transparent"}`}>
+                        <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 border transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-200" : "bg-white hover:bg-stone-50 border-transparent"}`}>
                             <Avatar><AvatarImage src={student.photo} /><AvatarFallback>{student.first_name?.charAt(0)}</AvatarFallback></Avatar>
                             <div className="flex-1 min-w-0">
                                 <p className="font-bold text-sm truncate text-stone-800">{student.first_name} {student.last_name}</p>
-                                <p className="text-xs text-stone-500 font-mono">{student.StudentAuth?.student_number || "No ID"}</p>
+                                <p className="text-xs text-stone-500 font-mono">{student.student_number || "No ID"}</p>
                             </div>
                             <ChevronRight size={16} className="text-stone-300" />
                         </button>
@@ -67,7 +68,7 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
                             <p className="text-sm text-stone-500">{selectedStudent.course}</p>
                         </div>
                         <div className="text-right">
-                             <Badge variant="outline" className="font-mono mb-1">{selectedStudent.StudentAuth?.student_number}</Badge>
+                             <Badge variant="outline" className="font-mono mb-1">{selectedStudent.student_number}</Badge>
                              {selectedStudent.last_edited_by && <div className="flex items-center gap-1 text-[10px] text-amber-600"><Clock size={10}/> Checked by {selectedStudent.last_edited_by}</div>}
                         </div>
                     </div>
@@ -84,15 +85,15 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
                                 <div>
                                     <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-widest mb-3"><User size={14}/> Personal</h3>
                                     <div className="space-y-2 text-sm">
-                                        <p><span className="text-stone-400 font-bold text-xs block">Email</span> {selectedStudent.StudentAuth?.email}</p>
-                                        <p><span className="text-stone-400 font-bold text-xs block">Birthdate</span> {selectedStudent.birth_date ? new Date(selectedStudent.birth_date).toLocaleDateString() : 'N/A'}</p>
+                                        <p><span className="text-stone-400 font-bold text-xs block">Email</span> {selectedStudent.personal_email}</p>
+                                        <p><span className="text-stone-400 font-bold text-xs block">Birthdate</span> {selectedStudent.studentDetail?.birth_date ? (selectedStudent.studentDetail.birth_date).substring(0,10) : 'N/A'}</p>
                                     </div>
                                 </div>
                                 <div>
                                     <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-widest mb-3"><MapPin size={14}/> Location</h3>
                                     <div className="space-y-2 text-sm">
-                                         <p><span className="text-stone-400 font-bold text-xs block">Address</span> {selectedStudent.barangay}, {selectedStudent.city}</p>
-                                         <p><span className="text-stone-400 font-bold text-xs block">Province</span> {selectedStudent.province}</p>
+                                         <p><span className="text-stone-400 font-bold text-xs block">Address</span> {selectedStudent.studentDetail.barangay}, {selectedStudent.studentDetail.city}</p>
+                                         <p><span className="text-stone-400 font-bold text-xs block">Province</span> {selectedStudent.studentDetail.province}</p>
                                     </div>
                                 </div>
                             </div>
@@ -100,7 +101,7 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
                     </div>
                     <CardFooter className="p-4 border-t bg-stone-50 flex justify-end gap-3">
                         <Button variant="outline" onClick={() => setSelectedStudent(null)}>Cancel</Button>
-                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => { onVerify(selectedStudent.StudentAuth?.student_number); setSelectedStudent(null); }}>Approve Verification</Button>
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => { onVerify(selectedStudent.student_number); setSelectedStudent(null); }}>Approve Verification</Button>
                     </CardFooter>
                 </Card>
             ) : (

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image"; 
 import { Button } from "@/components/ui/button";
-import { Bell, Menu, ArrowLeft, BookOpen, Calendar } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 
 // Modular Imports
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -11,6 +11,7 @@ import { VerificationTab } from "@/components/admin/tabs/VerificationTab";
 import { ProfileTab } from "@/components/admin/tabs/ProfileTab";
 import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
+import * as adminService from "./adminService";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("verification"); 
@@ -18,35 +19,25 @@ export default function AdminDashboard() {
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
   const [staffUser, setStaffUser] = useState({ name: "Admin User", role: "Head Moderator", email: "admin@aurium.edu.ph", avatar: "https://github.com/shadcn.png" });
 
-  // --- 1. KOII'S API LOGIC ---
-  const fetchStudents = useCallback(async () => {
-    try {
-      const res = await fetch('http://localhost:4000/api/admin/student/fetch'); 
-      if (!res.ok) throw new Error("API Error");
-      const data = await res.json();
-      setPendingStudents(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      setPendingStudents([]); 
-    }
+  //fetch unverified students
+  const loadStudents = useCallback(async () => {
+    const students = await adminService.fetchStudents();
+    setPendingStudents(students);
   }, []);
 
   useEffect(() => {
-    fetchStudents();
-    localStorage.setItem("aurium_admin_session", "true"); 
-  }, [fetchStudents]);
+    loadStudents();
+    localStorage.setItem("aurium_admin_session", "true");
+  }, [loadStudents]);
 
-  const handleVerify = async (studentId: number) => {
-    try {
-      await fetch("http://localhost:4000/api/admin/student/verify", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: studentId })
-      });
-      setPendingStudents(prev => prev.filter(s => s.StudentAuth?.student_number !== studentId));
-      alert(`Student Verified!`);
-    } catch (err) {
-      console.error(err); alert("Verification failed.");
+  //update local state when verified
+  const updateOnVerify = async (studentId: number) => {
+    const res = await adminService.handleVerify(studentId);
+    if (res) {
+      setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
     }
-  };
+  }
+
 
   return (
     <div className="min-h-screen bg-stone-50 flex font-sans relative">
@@ -110,7 +101,7 @@ export default function AdminDashboard() {
 
         {/* --- CONTENT AREA --- */}
         <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {activeTab === "verification" && <VerificationTab pendingStudents={pendingStudents} onVerify={handleVerify} />}
+            {activeTab === "verification" && <VerificationTab pendingStudents={pendingStudents} onVerify={updateOnVerify} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} />}
             {activeTab === 'masterlist' && <MasterlistTab />}
             {activeTab === 'slots' && <SchedulesTab />}

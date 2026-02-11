@@ -46,7 +46,7 @@ export default function AdminDashboard() {
              <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} isMobile={true} setIsOpen={setIsMobileMenuOpen} user={staffUser} onLogout={() => localStorage.removeItem("aurium_admin_session")}/>
          </div>
       )}
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} isMobile={false} user={staffUser} onLogout={() => localStorage.removeItem("aurium_admin_session")}/>
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} isMobile={false} user={staffUser} onLogout={() => {}}/>
 
       <main className="flex-1 md:ml-72 p-4 md:p-8 overflow-y-auto h-screen bg-[#FDFBF7]">
         

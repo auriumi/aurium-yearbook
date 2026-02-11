@@ -2,7 +2,11 @@
 
 export async function fetchStudents() {
     try {
-        const res = await fetch('http://localhost:4000/api/admin/student/fetch');
+        const res = await fetch(
+            'http://localhost:4000/api/admin/student/fetch', 
+            { credentials: 'include' }
+        );
+
         if (!res.ok) throw new Error("API Error");
 
         const data = await res.json();
@@ -18,7 +22,8 @@ export async function handleVerify(studentId: number) {
         await fetch("http://localhost:4000/api/admin/student/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: studentId })
+            body: JSON.stringify({ id: studentId }),
+            credentials: 'include'
         });
 
         alert(`Student Verified!`);

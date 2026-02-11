@@ -3,7 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { useRouter } from "next/navigation";
+
+import { motion, AnimatePresence, number } from "framer-motion";
 import { Eye, EyeOff, LogIn, User, Lock, ArrowRight, KeyRound, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+//Module
+import * as loginService from "./loginService";
+
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -21,20 +28,25 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  //form values
+  const [id, setId] = useState("");
+  const [pass, setPass] = useState("");
+
   // Step 1: Initial Login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate server checking credentials
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // MOCK LOGIC: 
-      // In a real app, the backend would return a flag like { requirePasswordChange: true }
-      // For this demo, we assume EVERY login triggers it.
-      setIsPasswordUpdateRequired(true); 
-    }, 1500);
+
+    //this handles the basic login for now, will do the password update request soon..
+    const res = await loginService.handleLogin(id, pass);
+    if (res.success) {
+        router.push('/');
+    } else {
+        console.log(res.message);
+        setIsLoading(false);
+    }
+
+    //setIsPasswordUpdateRequired(true); 
   };
 
   // Step 2: Update Password
@@ -137,6 +149,8 @@ export default function LoginPage() {
                                 id="email" 
                                 placeholder="Enter your ID or email" 
                                 className="pl-10 h-11 bg-stone-50 border-stone-200 focus:border-amber-500 focus:ring-amber-500" 
+                                value={ id }
+                                onChange={(e) => setId(e.target.value)}
                                 required
                                 />
                             </div>
@@ -157,6 +171,8 @@ export default function LoginPage() {
                                 type={showPassword ? "text" : "password"} 
                                 placeholder="••••••••" 
                                 className="pl-10 h-11 bg-stone-50 border-stone-200 focus:border-amber-500 focus:ring-amber-500"
+                                value={ pass }
+                                onChange={(e) => setPass(e.target.value)}
                                 required
                                 />
                                 <button

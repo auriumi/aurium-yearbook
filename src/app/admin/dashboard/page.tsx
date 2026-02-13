@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image"; 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu } from "lucide-react";
 
@@ -16,6 +17,8 @@ import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import * as adminService from "@/app/admin/adminService";
 
 export default function AdminDashboard() {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState("verification"); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
@@ -47,6 +50,16 @@ export default function AdminDashboard() {
     }
   }
 
+  const onLogout = async () => {
+    const res = await fetch("http://localhost:4000/api/auth/logout", {
+      credentials: 'include'
+    });
+
+    if (res.ok) {
+      router.push('/');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-stone-50 flex font-sans relative">
       
@@ -58,7 +71,7 @@ export default function AdminDashboard() {
                 isMobile={true} 
                 setIsOpen={setIsMobileMenuOpen} 
                 user={staffUser} 
-                onLogout={() => localStorage.removeItem("aurium_admin_session")}
+                onLogout={() => onLogout()}
              />
          </div>
       )}
@@ -68,7 +81,7 @@ export default function AdminDashboard() {
         setActiveTab={setActiveTab} 
         isMobile={false} 
         user={staffUser} 
-        onLogout={() => {}}
+        onLogout={() => onLogout()}
       />
 
       {/* FIXED: Removed 'h-screen', 'overflow-y-auto' and scrollbar hacks.

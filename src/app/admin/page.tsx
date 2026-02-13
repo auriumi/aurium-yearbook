@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // <--- Needed for routing
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";

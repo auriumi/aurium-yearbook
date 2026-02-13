@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+import * as loginService from "@/app/auth/login/loginService";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -22,19 +24,16 @@ export default function AdminLoginPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // --- KOII'S LOGIC: CHECK CREDENTIALS ---
-    setTimeout(() => {
-      if (email === "admin@aurium.edu.ph" && password === "admin123") {
-        
-        // ✅ SUCCESS! This is the line Koii wants:
-        // Redirects from /admin -> /admin/dashboard
-        router.push("/admin/dashboard"); 
+    const res = await loginService.handleLogin(email, password, true);
 
-      } else {
-        setError("Invalid credentials. Please contact IT Support.");
-        setIsLoading(false);
-      }
-    }, 1500);
+    if (res.success) {
+      router.push('/admin/dashboard');
+    } else {
+      console.log(res.message);
+      setIsLoading(false);
+    }
+    //TODO: "Update Password" screen
+    //setIsPasswordUpdateRequired(true); setIsLoading(false);
   };
 
   return (
@@ -101,6 +100,7 @@ export default function AdminLoginPage() {
             <Button 
                 type="submit" 
                 disabled={isLoading}
+                onClick={() => handleLogin}
                 className="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold h-11 shadow-lg shadow-amber-900/20 mt-4 transition-all"
             >
                 {isLoading ? (

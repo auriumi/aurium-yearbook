@@ -35,10 +35,19 @@ export async function proxy(req: NextRequest) {
     try {
         const { payload } = await jwtVerify(session_token, getSauceKey());
 
+        //check if alrd logged in
+        if (pathname === '/admin') {
+            if (payload.is_admin) {
+                return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+            }
+        }
+        
+        //admin validator
         if (pathname.startsWith('/admin/')) {
             const is_admin = payload.is_admin;
+
             if (!is_admin) {
-                return NextResponse.redirect(new URL('/auth/login', req.url));
+                return NextResponse.redirect(new URL('/', req.url));
             }
         }
         return NextResponse.next();
@@ -56,6 +65,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin',
     '/admin/:path*',
     '/staff/:path*',
     '/student/:path*',

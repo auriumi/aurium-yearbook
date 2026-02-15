@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-// ... (Keep your BookingData interface and AVAILABLE_SLOTS array exactly the same) ...
 interface BookingData {
   date: string;
   time: string;

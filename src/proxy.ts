@@ -4,7 +4,6 @@ import { jwtVerify } from "jose";
 
 function getSauceKey() {
     const secret = process.env.JWT_SAUCE;
-    console.log(secret);
 
     if (!secret) {
         throw new Error("Where's the sauce? :P");
@@ -35,7 +34,6 @@ export async function proxy(req: NextRequest) {
 
     try {
         const { payload } = await jwtVerify(session_token, getSauceKey());
-        console.log(payload);
 
         if (pathname.startsWith('/admin/')) {
             const is_admin = payload.is_admin;

@@ -181,13 +181,13 @@ export default function AuriumLandingPage() {
 
           {/* Desktop Action Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href="/login">
+            <Link href="/auth/login">
               <Button variant="ghost" className="text-amber-900 hover:bg-amber-50 gap-2 font-medium">
                 <UserCircle size={20} />
                 <span className="hidden sm:inline">Portal Login</span>
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/auth/register">
               <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
                 Pre-Register
               </Button>

@@ -57,9 +57,9 @@ export async function proxy(req: NextRequest) {
         const login_url = pathname.startsWith('/admin') ? '/admin' : '/auth/login';
         
         //clear invalid cookie to be safe
-        //const res = NextResponse.redirect(new URL(login_url, req.url));
-        //res.cookies.delete('token');
-        //return res;
+        const res = NextResponse.redirect(new URL(login_url, req.url));
+        res.cookies.delete('token');
+        return res;
     }
 }
 

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,8 @@ const toTitleCase = (str: string) => {
 };
 
 export default function RegistrationWizard() {
+
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState(0); 
   const [isOnline, setIsOnline] = useState(true); 
@@ -447,8 +450,9 @@ export default function RegistrationWizard() {
         throw new Error(`Request failed: ${res.status}`);
       }
 
-      const json = await res.json();
-      console.log(json);
+      alert("Information has been submit succesfully!");
+      router.push('/');
+
     } catch (err) {
       console.error("Something went wrong..", err);
     }

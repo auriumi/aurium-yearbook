@@ -34,3 +34,41 @@ export async function handleVerify(studentId: number) {
         return false;
     }
 };
+
+export async function addSchedule(date: string, am_cap: number, pm_cap: number) {
+    const body = { 
+        date: date, 
+        am_cap: am_cap, 
+        pm_cap: pm_cap 
+    };
+
+    try {
+        const res = await fetch("http://localhost:4000/api/admin/book/add", {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            //duplicate handler (explicitly 409)
+            if (res.status == 409) {
+                const err_body = await res.json();
+                return {
+                    success: false,
+                    reason: err_body.reason
+                };
+            }
+            
+            return { 
+                success: false, 
+                reason: "Something went wrong in the server" 
+            };
+        }
+        return { success: true };
+
+    } catch(err) {
+        console.error("Server error: ", err);
+        return { success: false };
+    }
+}

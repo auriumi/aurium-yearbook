@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as adminService from "@/app/admin/adminService"
 
 // helper ra ni nako to generate fake names para sa roster ni koi
 const generateMockStudents = (count: number) => {
@@ -75,14 +76,14 @@ export function useSchedules() {
     setIsEditCapacityOpen(true);
   };
 
-  // function para mo open ang roster ni koi
+  //show roster
   const openRosterDialog = (date: string, session: 'am'|'pm', students: any[]) => {
     setActiveRoster({ date, session, students });
     setIsRosterOpen(true);
   };
 
-  // logic inig create ug bag-ong schedule
-  const handleAddNewDate = () => {
+  //handle add date
+  const handleAddNewDate = async () => {
     if (!newDateInput) return;
     const exists = schedules.some(s => s.date === newDateInput);
     if (exists) { alert("Date already exists!"); return; }
@@ -90,24 +91,29 @@ export function useSchedules() {
     const amLimit = (sessionType === 'both' || sessionType === 'am') ? newAmCapacity : 0;
     const pmLimit = (sessionType === 'both' || sessionType === 'pm') ? newPmCapacity : 0;
 
-    const newSchedule = { 
-        date: newDateInput, 
-        amSlots: amLimit, 
-        amStudents: [], // blank roster initially
-        pmSlots: pmLimit, 
-        pmStudents: [] 
-    };
+    try {
+      const res = await adminService.addSchedule(newDateInput, amLimit, pmLimit);
+      if (res.success) {
 
-    setSchedules(prev => [...prev, newSchedule].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-    
-    // reset form fields
-    setNewDateInput(""); 
-    setNewAmCapacity(50);
-    setNewPmCapacity(50);
-    setIsAddDateOpen(false);
+        alert("New schedule has been added succesfully!");
+        
+        //TODO: re-fetch to update local state
+
+        // reset form fields
+        setNewDateInput("");
+        setNewAmCapacity(0);
+        setNewPmCapacity(0);
+        setIsAddDateOpen(false);
+      } else {
+        alert(res.reason);
+      }
+    } catch(err) {
+      console.error("Error adding schedule", err);
+      alert("Error connecting to the server");
+    }
   };
 
-  // setter para sa manual add dialog
+  //manaually add student based on id number
   const openAddStudentDialog = (date: string, session: 'am'|'pm') => {
       setActiveAddStudentSession({ date, session });
       setManualStudentId("");
@@ -152,7 +158,7 @@ export function useSchedules() {
     isAddDateOpen, setIsAddDateOpen,
     manualStudentId, setManualStudentId,
     isAddStudentOpen, setIsAddStudentOpen,
-    activeAddStudentSession, // <--- I-ADD NI DIRI
+    activeAddStudentSession,
     isEditCapacityOpen, setIsEditCapacityOpen,
     editingCapacity, setEditingCapacity,
     isRosterOpen, setIsRosterOpen,

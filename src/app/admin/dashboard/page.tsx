@@ -20,6 +20,9 @@ import { GraduateReviewTab } from "@/components/admin/tabs/GraduateReviewTab"; /
 // Service Import
 import * as adminService from "@/app/admin/adminService";
 
+//hooks
+import { useSchedules } from "@/hooks/useSchedules";
+
 export default function AdminDashboard() {
   const router = useRouter();
 
@@ -28,7 +31,8 @@ export default function AdminDashboard() {
   
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
-  
+  const { schedules, fetchSchedules } = useSchedules();  
+
   // State specific to the Graduate Review Tab (Moved from Staff)
   // This handles the "Select a student to view details" feature
   const [selectedReviewStudent, setSelectedReviewStudent] = useState<any>(null);
@@ -156,7 +160,7 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab />}
-            {activeTab === 'slots' && <SchedulesTab />}
+            {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} />}
         </div>
       </main>

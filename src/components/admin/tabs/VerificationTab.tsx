@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents: any[], onVerify: (id: number) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  console.log(pendingStudents);
 
   // Safely filter pending students
   const filteredPending = pendingStudents.filter(stud => {

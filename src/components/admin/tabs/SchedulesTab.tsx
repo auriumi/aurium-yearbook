@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Edit3, Calendar, UserPlus, Hash, Users, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Plus, Edit3, Calendar, UserPlus, Hash, Users, CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// gamiton nako ang custom hook diri para limpyo ang component, didto na tanang logic
+import { Schedule } from "@/types";
+
+//hooks
 import { useSchedules } from "@/hooks/useSchedules";
 
 export function SchedulesTab() {
@@ -30,12 +32,12 @@ export function SchedulesTab() {
     editingCapacity, setEditingCapacity,
     isRosterOpen, setIsRosterOpen,
     activeRoster,
-    handleConfirmCapacityUpdate,
+    //handleConfirmCapacityUpdate,
     openCapacityDialog,
     openRosterDialog,
     handleAddNewDate,
-    openAddStudentDialog,
-    handleManualAdd
+    //openAddStudentDialog,
+    //handleManualAdd
   } = useSchedules();
 
   return (
@@ -105,12 +107,13 @@ export function SchedulesTab() {
             </Dialog>
         </div>
         
-        {/* Loop para idisplay tanang schedules */}
+        {/* Banner */}
         <div className="grid gap-6">
-            {schedules.map((day, idx) => {
-                // compute daan kung full naba ang slots for the day
-                const totalBooked = day.amStudents.length + day.pmStudents.length;
-                const totalSlots = day.amSlots + day.pmSlots;
+            {schedules.map((day: Schedule, idx) => {
+
+                //calculate slots for rendering
+                const totalBooked = day.bookings.length;
+                const totalSlots = day.max_morning_cap + day.max_afternoon_cap;
                 const isFull = totalBooked >= totalSlots;
 
                 return (
@@ -129,25 +132,32 @@ export function SchedulesTab() {
 
                         <CardContent className="pt-6 bg-white">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* i-map ang AM ug PM para di redundant ang code */}
-                                {['am', 'pm'].map((session) => {
-                                    const isAm = session === 'am';
-                                    const roster = isAm ? day.amStudents : day.pmStudents;
-                                    const bookedCount = roster.length;
-                                    const slots = isAm ? day.amSlots : day.pmSlots;
+                                {/* count students for morning and afternoon session */}
+                                {['morning', 'afternoon'].map((session) => {
+                                    const is_morning = session === 'morning';
+
+                                    //list of students
+                                    const roster = is_morning 
+                                    ? day.bookings.filter(p => p.period === "morning") 
+                                    : day.bookings.filter(p => p.period === "afternoon");
                                     
-                                    // kung zero ang limit, hide ang session kay basin half day ra to
+                                    const bookedCount = roster.length;
+
+                                    const slots = is_morning 
+                                    ? day.max_morning_cap 
+                                    : day.max_afternoon_cap;
+                                    
                                     if (slots === 0) return (
                                         <div key={session} className="flex items-center justify-center p-8 bg-stone-50 rounded-xl border border-dashed border-stone-200 text-stone-400 text-sm italic">
-                                            No {isAm ? 'Morning' : 'Afternoon'} Schedule
+                                            No {is_morning ? 'Morning' : 'Afternoon'} Schedule
                                         </div>
                                     );
 
                                     return (
-                                        <div key={session} className={`space-y-4 p-5 rounded-xl border border-stone-100 ${isAm ? 'bg-amber-50/30' : 'bg-blue-50/30'}`}>
+                                        <div key={session} className={`space-y-4 p-5 rounded-xl border border-stone-100 ${is_morning ? 'bg-amber-50/30' : 'bg-blue-50/30'}`}>
                                             <div className="flex justify-between items-center mb-2">
                                                 <h4 className="font-bold text-stone-700 flex items-center gap-2 text-sm">
-                                                    {isAm ? '🌤️ Morning Session' : '☀️ Afternoon Session'}
+                                                    {is_morning ? '🌤️ Morning Session' : '☀️ Afternoon Session'}
                                                 </h4>
                                                 
                                                 {/* Edit Capacity Button - mu trigger sa modal */}
@@ -169,7 +179,7 @@ export function SchedulesTab() {
                                                     <span className="text-stone-400">Limit: {slots}</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-stone-200/60 rounded-full overflow-hidden">
-                                                    <div className={`h-full transition-all duration-500 ${bookedCount >= slots ? "bg-red-500" : isAm ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${(bookedCount / slots) * 100}%` }}></div>
+                                                    <div className={`h-full transition-all duration-500 ${bookedCount >= slots ? "bg-red-500" : is_morning ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${(bookedCount / slots) * 100}%` }}></div>
                                                 </div>
                                             </div>
                                             
@@ -180,7 +190,7 @@ export function SchedulesTab() {
                                                     variant="outline" 
                                                     size="sm" 
                                                     className="flex-1 text-xs bg-white border-stone-200 hover:bg-stone-50 text-stone-600"
-                                                    onClick={() => openRosterDialog(day.date, session as 'am'|'pm', roster)}
+                                                    onClick={() => openRosterDialog(day.date, session as 'morning'|'afternoon', roster)}
                                                 >
                                                     <Users className="mr-1.5 h-3.5 w-3.5" /> View Roster
                                                 </Button>
@@ -189,7 +199,7 @@ export function SchedulesTab() {
                                                     variant="outline" 
                                                     size="sm" 
                                                     className="flex-1 text-xs bg-white border-stone-200 hover:bg-stone-50 text-stone-600"
-                                                    onClick={() => openAddStudentDialog(day.date, session as 'am'|'pm')}
+                                                    onClick={() => {}}
                                                 >
                                                     <UserPlus className="mr-1.5 h-3.5 w-3.5" /> Override
                                                 </Button>
@@ -213,7 +223,7 @@ export function SchedulesTab() {
                         Session Roster
                     </DialogTitle>
                     <DialogDescription className="mt-1">
-                        Showing students booked for {activeRoster?.date} ({activeRoster?.session === 'am' ? 'Morning' : 'Afternoon'})
+                        Showing students booked for {activeRoster?.date.substring(0,10)} ({activeRoster?.session === 'morning' ? 'Morning' : 'Afternoon'})
                     </DialogDescription>
                 </div>
                 
@@ -284,14 +294,14 @@ export function SchedulesTab() {
                             })} 
                         />
                          <p className="text-xs text-stone-500">
-                            Current Limit: <strong>{schedules.find(s => s.date === editingCapacity.date)?.[editingCapacity.session === 'am' ? 'amSlots' : 'pmSlots']}</strong>
+                            Current Limit: <strong>{"TODO"}</strong>
                          </p>
                     </div>
                 )}
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsEditCapacityOpen(false)}>Cancel</Button>
-                    <Button onClick={handleConfirmCapacityUpdate} className="bg-amber-600 hover:bg-amber-700">Confirm Update</Button>
+                    <Button onClick={() => {}} className="bg-amber-600 hover:bg-amber-700">Confirm Update</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -319,7 +329,7 @@ export function SchedulesTab() {
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsAddStudentOpen(false)}>Cancel</Button>
-                    <Button onClick={handleManualAdd} className="bg-amber-600 hover:bg-amber-700">Confirm Override</Button>
+                    <Button onClick={() => {}} className="bg-amber-600 hover:bg-amber-700">Confirm Override</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

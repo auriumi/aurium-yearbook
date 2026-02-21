@@ -72,3 +72,20 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
         return { success: false };
     }
 }
+
+export async function fetchSchedule() {
+    try {
+        const res = await fetch(
+            "http://localhost:4000/api/admin/book/fetch",
+            { credentials: 'include' }
+        );
+
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch(err) {
+        console.error("Server error: ", err);
+        return [];
+    }
+};

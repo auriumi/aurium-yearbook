@@ -10,7 +10,7 @@ interface ProfileCardProps {
   fullName: string;
   idNumber: string;
   course: string;
-  photoUrl: string;
+  photoUrl: string | null;
 }
 
 export function ProfileCard({ fullName, idNumber, course, photoUrl }: ProfileCardProps) {
@@ -24,7 +24,8 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl }: ProfileCar
       <CardContent className="flex flex-col items-center text-center space-y-4">
         <div className="relative">
           <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-            <AvatarImage src={photoUrl} className="object-cover" />
+            {/* TODO: photo url */}
+            <AvatarImage src={photoUrl ? photoUrl : undefined} className="object-cover" />
             <AvatarFallback className="text-4xl bg-stone-100 text-stone-300">JD</AvatarFallback>
           </Avatar>
           <div className="absolute bottom-0 right-0 bg-white p-1 rounded-full shadow-sm border border-stone-100">

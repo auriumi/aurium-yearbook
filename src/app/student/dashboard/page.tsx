@@ -10,30 +10,20 @@ import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
 
 import { Schedule } from "@/types/index";
 import * as studentService from "@/app/student/studentService";
-
-// --- MOCK DATA (Ideally this comes from an API later) ---
-const STUDENT_DATA = {
-  name: "Juan Dela Cruz",
-  idNumber: "2022-00123",
-  photoUrl: "https://i.pinimg.com/736x/09/7b/2d/097b2d53634008344447550541004724.jpg",
-  status: "verified",
-  details: {
-    personal: {
-      fname: "Juan",
-      mname: "Santos",
-      lname: "Dela Cruz",
-      suffix: "Jr.",
-    },
-    academic: {
-      course: "BACHELOR OF SCIENCE IN COMPUTER SCIENCE",
-    },
-  },
-  booking: null,
-};
+import { Student } from "@/types";
 
 export default function StudentDashboard() {
-  const [user, setUser] = useState<any>(STUDENT_DATA);
+  const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
+
+  const fetchStudent = useCallback(async () => {
+    try {
+      const res = await studentService.getStudentProfile();
+      setUser(res);
+    } catch(err) {
+      console.error(err);
+    }
+  }, []);
 
   const fetchSchedules = useCallback(async () => {
     try {
@@ -45,15 +35,9 @@ export default function StudentDashboard() {
   }, []); 
 
   useEffect(() => {
+    fetchStudent();
     fetchSchedules();
-  }, [fetchSchedules]);
-
-  // Safe Name Generator
-  const fullName = useMemo(() => {
-    const p = user.details?.personal;
-    if (!p) return "Loading...";
-    return [p.fname, p.mname, p.lname, p.suffix].filter(Boolean).join(" ");
-  }, [user]);
+  }, [fetchStudent, fetchSchedules]);
 
   const handleBooking = async (student_number: number, booking_id: number, period: string) => {
     const res = await studentService.addBook(student_number, booking_id, period)
@@ -64,13 +48,14 @@ export default function StudentDashboard() {
     } else {
       alert("Successfully booked! Please be on time!");
     }
-
-    //setUser({ ...user, booking: { date, period } });
   };
+
+  //TODO: use loading screen?
+  if (!user) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans">
-      <StudentHeader user={{ fname: user.details.personal.fname, idNumber: user.idNumber, photoUrl: user.photoUrl }} />
+      <StudentHeader user={{ fname: user.first_name, idNumber: user.student_id, photoUrl: undefined}} />
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         
@@ -80,7 +65,7 @@ export default function StudentDashboard() {
                 <h1 className="text-3xl font-serif font-bold text-stone-800">Student Dashboard</h1>
                 <p className="text-stone-500 mt-2">Welcome to the official University of Mindanao Yearbook Portal.</p>
             </div>
-            {user.status === 'verified' ? (
+            {user && user.StudentAuth.status === 'FULLY_VERIFIED' ? (
                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100 px-3 py-1 text-sm border-green-200 gap-1">
                     <CheckCircle className="w-3 h-3" /> Verified Graduate
                 </Badge>
@@ -95,23 +80,23 @@ export default function StudentDashboard() {
 
           {/* 1. Profile Card Component */}
           <ProfileCard
-            fullName={fullName}
-            idNumber={user.idNumber}
-            course={user.details.academic.course}
-            photoUrl={user.photoUrl}
+            fullName={`${user.first_name} ${user.last_name}`}
+            idNumber={user.student_id}
+            course={user.course}
+            photoUrl={user.photo_url}
           />
 
           {/* 2. Booking Widget Component */}
           <BookingWidget
             bookingList={schedule}
             booking={false} //TODO: Pass booking data if already booked
-            idNumber={user.idNumber}
+            idNumber={user.student_id}
             onBook={handleBooking}
           />
 
           {/* 3. Yearbook Teaser Component */}
+          {/* TODO: refactor compoment to a prop */}
           <YearbookTeaser />
-
         </div>
       </main>
     </div>

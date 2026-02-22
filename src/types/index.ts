@@ -1,17 +1,24 @@
 // src/types/index.ts
 
-export type StudentStatus = 'pending' | 'verified' | 'approved' | 'locked';
-
 export interface Student {
   id: string; 
   student_id: string; 
   first_name: string;
+  mid_name: string;
   last_name: string;
-  program: string;
-  status: StudentStatus;
+  department: string;
+  course: string;
+  major: string;
+  nickname: string;
+  suffix: string;
+  StudentAuth: StudentAuth;
   photo_url: string | null;
   quote: string | null;
   created_at: string;
+}
+
+export interface StudentAuth {
+  status: string;
 }
 
 export interface QueueItem {

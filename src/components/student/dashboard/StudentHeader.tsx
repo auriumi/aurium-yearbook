@@ -6,9 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface StudentHeaderProps {
   user: {
-    fname: string;
-    idNumber: string;
-    photoUrl: string;
+    fname?: string;
+    idNumber?: string;
+    photoUrl?: string;
   };
 }
 

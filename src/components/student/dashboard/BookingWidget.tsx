@@ -13,24 +13,28 @@ interface BookingWidgetProps {
   bookingList: Schedule[], 
   booking: any,
   idNumber: string;
-  onBook: (date: string, time: string) => void;
-}
+  onBook: (student_number: number, booking_id: number, period: string) => void;
+};
 
 export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSession, setSelectedSession] = useState<"AM" | "PM" | "">("");
 
-  const handleSelectSlot = (date: string, session: "AM" | "PM", isFull: boolean) => {
+  const handleSelectSlot = (booking_id: number, date: string, session: "AM" | "PM", isFull: boolean) => {
     if (isFull) return;
+    setSelectedBookingId(booking_id);
     setSelectedDate(date);
     setSelectedSession(session);
   };
 
   const handleConfirm = () => {
     if (selectedDate && selectedSession) {
-        onBook(selectedDate, selectedSession);
+
+        //TODO: hardcoded id, use the current student's id
+        onBook(123456, selectedBookingId, selectedSession);
         setIsConfirmDialogOpen(false);
         setIsBookingModalOpen(false);
     }
@@ -118,6 +122,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                                             <button 
                                                 key={sessionType}
                                                 onClick={() => handleSelectSlot(
+                                                  slot.id,
                                                   slot.date, 
                                                   sessionType as "AM"|"PM",
                                                   isFull

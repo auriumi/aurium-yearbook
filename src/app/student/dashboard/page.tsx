@@ -55,8 +55,17 @@ export default function StudentDashboard() {
     return [p.fname, p.mname, p.lname, p.suffix].filter(Boolean).join(" ");
   }, [user]);
 
-  const handleBooking = (date: string, time: string) => {
-     setUser({ ...user, booking: { date, time } });
+  const handleBooking = async (student_number: number, booking_id: number, period: string) => {
+    const res = await studentService.addBook(student_number, booking_id, period)
+
+    //TODO: optimize..
+    if (!res) {
+      alert("Something went wrong submitting the book!");
+    } else {
+      alert("Successfully booked! Please be on time!");
+    }
+
+    //setUser({ ...user, booking: { date, period } });
   };
 
   return (

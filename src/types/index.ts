@@ -11,7 +11,7 @@ export interface Student {
   major: string;
   nickname: string;
   suffix: string;
-  StudentAuth: StudentAuth;
+  studentAuth: StudentAuth;
   photo_url: string | null;
   quote: string | null;
   created_at: string;

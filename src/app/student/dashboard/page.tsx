@@ -65,7 +65,7 @@ export default function StudentDashboard() {
                 <h1 className="text-3xl font-serif font-bold text-stone-800">Student Dashboard</h1>
                 <p className="text-stone-500 mt-2">Welcome to the official University of Mindanao Yearbook Portal.</p>
             </div>
-            {user && user.StudentAuth.status === 'FULLY_VERIFIED' ? (
+            {user && user.studentAuth.status === 'FULLY_VERIFIED' ? (
                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100 px-3 py-1 text-sm border-green-200 gap-1">
                     <CheckCircle className="w-3 h-3" /> Verified Graduate
                 </Badge>

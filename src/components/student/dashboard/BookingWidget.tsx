@@ -159,7 +159,12 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-5 h-5" /> Final Confirmation</DialogTitle>
-                        <DialogDescription className="pt-2">You are about to book: <br/><span className="font-bold text-stone-800 block mt-1 text-lg">{selectedDate} • {selectedSession}</span></DialogDescription>
+                        <DialogDescription className="pt-2">
+                          You are about to book: <br/>
+                            <span className="font-bold text-stone-800 block mt-1 text-lg">
+                              {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} • {selectedSession}
+                            </span>
+                        </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsConfirmDialogOpen(false)}>Cancel</Button>

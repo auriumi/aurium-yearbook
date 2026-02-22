@@ -39,7 +39,7 @@ export default function StudentDashboard() {
     fetchSchedules();
   }, [fetchStudent, fetchSchedules]);
 
-  const handleBooking = async (student_number: number, booking_id: number, period: string) => {
+  const handleBooking = async (student_number: string, booking_id: number, period: string) => {
     const res = await studentService.addBook(student_number, booking_id, period)
 
     //TODO: optimize..

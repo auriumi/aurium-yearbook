@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StudentHeader } from "@/components/student/dashboard/StudentHeader";
 import { ProfileCard } from "@/components/student/dashboard/ProfileCard";
 import { BookingWidget } from "@/components/student/dashboard/BookingWidget";
 import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
+
+import { Schedule } from "@/types/index";
+import * as studentService from "@/app/student/studentService";
 
 // --- MOCK DATA (Ideally this comes from an API later) ---
 const STUDENT_DATA = {
@@ -30,6 +33,20 @@ const STUDENT_DATA = {
 
 export default function StudentDashboard() {
   const [user, setUser] = useState<any>(STUDENT_DATA);
+  const [schedule, setSchedule] = useState<Schedule[]>([]);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const res = await studentService.fetchSchedules();
+      setSchedule(res);
+    } catch(err) {
+      console.error(err);
+    }
+  }, []); 
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
 
   // Safe Name Generator
   const fullName = useMemo(() => {
@@ -66,24 +83,25 @@ export default function StudentDashboard() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* 1. Profile Card Component */}
-            <ProfileCard 
-               fullName={fullName} 
-               idNumber={user.idNumber} 
-               course={user.details.academic.course} 
-               photoUrl={user.photoUrl} 
-            />
 
-            {/* 2. Booking Widget Component */}
-            <BookingWidget 
-               booking={user.booking} 
-               idNumber={user.idNumber} 
-               onBook={handleBooking} 
-            />
+          {/* 1. Profile Card Component */}
+          <ProfileCard
+            fullName={fullName}
+            idNumber={user.idNumber}
+            course={user.details.academic.course}
+            photoUrl={user.photoUrl}
+          />
 
-            {/* 3. Yearbook Teaser Component */}
-            <YearbookTeaser /> 
+          {/* 2. Booking Widget Component */}
+          <BookingWidget
+            bookingList={schedule}
+            booking={false} //TODO: Pass booking data if already booked
+            idNumber={user.idNumber}
+            onBook={handleBooking}
+          />
+
+          {/* 3. Yearbook Teaser Component */}
+          <YearbookTeaser />
 
         </div>
       </main>

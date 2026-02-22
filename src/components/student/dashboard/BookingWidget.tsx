@@ -7,24 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-interface BookingData {
-  date: string;
-  time: string;
-}
+import { Schedule } from "@/types";
 
 interface BookingWidgetProps {
-  booking: BookingData | null;
+  bookingList: Schedule[], 
+  booking: any,
   idNumber: string;
   onBook: (date: string, time: string) => void;
 }
 
-const AVAILABLE_SLOTS = [
-  { date: "2026-03-15", label: "March 15 (Mon)", amCapacity: 50, amBooked: 45, pmCapacity: 50, pmBooked: 10 },
-  { date: "2026-03-16", label: "March 16 (Tue)", amCapacity: 50, amBooked: 50, pmCapacity: 50, pmBooked: 2 },
-];
-
-export function BookingWidget({ booking, idNumber, onBook }: BookingWidgetProps) {
+export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
@@ -68,7 +60,7 @@ export function BookingWidget({ booking, idNumber, onBook }: BookingWidgetProps)
                 {new Date(booking.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' })}
               </h3>
               <p className="text-stone-600 font-medium">
-                {booking.time === 'AM' ? '☀️ Morning Session (8AM - 12PM)' : '🌙 Afternoon Session (1PM - 5PM)'}
+                {booking.date === 'AM' ? '☀️ Morning Session (8AM - 12PM)' : '🌙 Afternoon Session (1PM - 5PM)'}
               </p>
               <p className="text-xs text-stone-400 italic mt-2">Present this QR to the attendance officer.</p>
             </div>
@@ -109,20 +101,27 @@ export function BookingWidget({ booking, idNumber, onBook }: BookingWidgetProps)
                     </DialogHeader>
                     
                     <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        {AVAILABLE_SLOTS.map((slot, idx) => (
+                        {bookingList.map((slot, idx) => (
                             <div key={idx} className="border rounded-lg p-4 space-y-3 bg-stone-50/50">
-                                <h4 className="font-bold text-stone-700">{slot.label}</h4>
+                                <h4 className="font-bold text-stone-700">
+                                  {new Date(slot.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                                </h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     {['AM', 'PM'].map((sessionType) => {
                                         const isAM = sessionType === 'AM';
-                                        const booked = isAM ? slot.amBooked : slot.pmBooked;
-                                        const capacity = isAM ? slot.amCapacity : slot.pmCapacity;
+
+                                        const booked = isAM ? slot.curr_morning : slot.curr_afternoon;
+                                        const capacity = isAM ? slot.max_morning_cap : slot.max_afternoon_cap;
                                         const isFull = booked >= capacity;
                                         
                                         return (
                                             <button 
                                                 key={sessionType}
-                                                onClick={() => handleSelectSlot(slot.date, sessionType as "AM"|"PM", isFull)}
+                                                onClick={() => handleSelectSlot(
+                                                  slot.date, 
+                                                  sessionType as "AM"|"PM",
+                                                  isFull
+                                                )}
                                                 disabled={isFull}
                                                 className={`relative border rounded-lg p-3 text-left transition-all ${selectedDate === slot.date && selectedSession === sessionType ? 'ring-2 ring-amber-600 border-amber-600 bg-amber-50' : 'hover:border-amber-300 bg-white'} ${isFull ? 'opacity-50 cursor-not-allowed bg-stone-100' : ''}`}
                                             >
@@ -144,7 +143,7 @@ export function BookingWidget({ booking, idNumber, onBook }: BookingWidgetProps)
 
                     <DialogFooter className="flex-col sm:justify-between gap-2 border-t pt-4">
                         <div className="text-xs text-stone-500 text-center sm:text-left">
-                            {selectedDate ? <span>Selected: <strong>{selectedDate} ({selectedSession})</strong></span> : "Please select a slot"}
+                            {selectedDate ? <span>Selected: <strong>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} ({selectedSession})</strong></span> : "Please select a slot"}
                         </div>
                         <Button onClick={() => setIsConfirmDialogOpen(true)} disabled={!selectedDate || !selectedSession} className="bg-amber-900 w-full sm:w-auto">Submit Schedule</Button>
                     </DialogFooter>

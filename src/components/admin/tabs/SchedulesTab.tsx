@@ -231,13 +231,13 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                         <CardContent className="pt-6 bg-white">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* count students for morning and afternoon session */}
-                                {['morning', 'afternoon'].map((session) => {
-                                    const is_morning = session === 'morning';
+                                {['AM', 'PM'].map((session) => {
+                                    const is_morning = session === 'AM';
 
                                     //list of students
                                     const roster = is_morning 
-                                    ? day.bookings.filter(p => p.period === "morning") 
-                                    : day.bookings.filter(p => p.period === "afternoon");
+                                    ? day.bookings.filter(p => p.period === "AM") 
+                                    : day.bookings.filter(p => p.period === "PM");
                                     
                                     const bookedCount = roster.length;
 
@@ -349,8 +349,8 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                                 </div>
                                                 
                                                 {/* display status using badges */}
-                                                {student.student.StudentAuth.status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
-                                                {student.student.StudentAuth.status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
+                                                {student.student.studentAuth.status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
+                                                {student.student.studentAuth.status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
                                             </div>
                                         ))}
                                         

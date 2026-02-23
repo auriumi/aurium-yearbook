@@ -32,7 +32,7 @@ export interface Booking {
   id: number;
   student_number: number;
   booking_day_id: number;
-  period: 'morning' | 'afternoon';
+  period: 'AM' | 'PM';
   created_at: string;
   student: Student
 }

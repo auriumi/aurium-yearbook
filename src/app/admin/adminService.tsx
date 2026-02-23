@@ -1,19 +1,19 @@
 //Admin Services Module - Do not modify <3
 
-export async function fetchStudents() {
+export async function fetchStudents(page: number) {
     try {
         const res = await fetch(
-            'http://localhost:4000/api/admin/student/fetch', 
+            `http://localhost:4000/api/admin/student/fetch?page=${page}`, 
             { credentials: 'include' }
         );
 
         if (!res.ok) throw new Error("API Error");
 
         const data = await res.json();
-        return Array.isArray(data) ? data : [];
+        return { success: true, data };
     } catch (err) {
         console.error(err);
-        return [];
+        return { success: false };
     }
 };
 

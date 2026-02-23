@@ -9,43 +9,31 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area"; 
 import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft } from "lucide-react";
 
-// Notice the 'export' keyword here. This is required!
-export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents: any[], onVerify: (id: number) => void }) {
-  // STATES
-  const [searchInput, setSearchInput] = useState(""); // Ang gi-type sa user
-  const [appliedSearch, setAppliedSearch] = useState(""); // Ang i-search inig click sa button
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1); // BAG-O: State para sa pagination
-  
-  const ITEMS_PER_PAGE = 8; // BAG-O: 8 students per page base sa reference 
+type VerifacationProps = {
+    pendingStudents: any[];
+    currentPage: number;
+    totalUnverified: number;
+    onVerify: (id: number) => void;
+    setCurrentPage: (page: number) => void;
+}
 
-  // BAG-O: Handler kung i-click ang Search Button
+export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage ,onVerify }: VerifacationProps) {
+  // STATES
+  const [searchInput, setSearchInput] = useState(""); 
+  const [appliedSearch, setAppliedSearch] = useState(""); 
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  
+  const ITEMS_PER_PAGE = 8; 
+
+  //TODO :3
   const handleSearch = () => {
     setAppliedSearch(searchInput);
-    setCurrentPage(1); // I-reset sa Page 1 kung naay bag-ong gi-search
-    setSelectedStudent(null); // I-clear ang gi-select
+    setCurrentPage(1); 
+    setSelectedStudent(null);
   };
 
-  // Safely filter pending students (gamit ang appliedSearch, dili ang searchInput dritso)
-  const filteredPending = pendingStudents.filter(stud => {
-    const term = appliedSearch.toLowerCase();
-    const lastName = stud.last_name || "";
-    const firstName = stud.first_name || "";
-    const studentNum = stud.StudentAuth?.student_number ? String(stud.StudentAuth.student_number) : "";
-    
-    return lastName.toLowerCase().includes(term) || 
-           firstName.toLowerCase().includes(term) ||
-           studentNum.includes(term);
-  });
+  const totalPages = Math.ceil(totalUnverified / ITEMS_PER_PAGE) || 1;
 
-  // BAG-O: Pagination Logic (Kuhaon ra ang 8 items depende sa current page)
-  const totalPages = Math.ceil(filteredPending.length / ITEMS_PER_PAGE) || 1;
-  const paginatedStudents = filteredPending.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE, 
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Helper function para sa page numbers (Para dili mo-taas kaayo kung 70 pages)
   const getPageNumbers = () => {
     const pages = [];
     let start = Math.max(1, currentPage - 2);
@@ -62,10 +50,10 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
         <Card className={`lg:col-span-4 xl:col-span-3 shadow-sm flex flex-col h-full rounded-2xl ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
             <div className="p-4 border-b bg-stone-50/50 flex justify-between items-center">
                 <span className="font-bold text-stone-500 text-xs uppercase">Pending</span>
-                <Badge variant="secondary">{filteredPending.length}</Badge>
+                <Badge variant="secondary">{totalUnverified}</Badge>
             </div>
             
-            {/* BAG-O: Search Field with Button */}
+            {/* Search Field with Button */}
             <div className="p-3 border-b flex gap-2">
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-stone-400"/>
@@ -84,8 +72,8 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
 
             <ScrollArea className="flex-1 p-3">
                 <div className="space-y-2">
-                    {paginatedStudents.length > 0 ? (
-                        paginatedStudents.map(student => (
+                    {pendingStudents.length > 0 ? (
+                        pendingStudents.map(student => (
                             <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 border transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white hover:bg-stone-50 border-transparent"}`}>
                                 <Avatar><AvatarImage src={student.photo} /><AvatarFallback>{student.first_name?.charAt(0)}</AvatarFallback></Avatar>
                                 <div className="flex-1 min-w-0">
@@ -101,13 +89,13 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
                 </div>
             </ScrollArea>
 
-            {/* BAG-O: Pagination Buttons (Footer) */}
+            {/* Pagination Buttons (Footer) */}
             <div className="p-3 border-t bg-stone-50/50 flex items-center justify-between">
                 <Button 
                    variant="outline" 
                    size="icon" 
                    className="h-8 w-8" 
-                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                   onClick={() => setCurrentPage(currentPage - 1)}
                    disabled={currentPage === 1}
                 >
                     <ChevronLeft className="h-4 w-4" />
@@ -130,7 +118,7 @@ export function VerificationTab({ pendingStudents, onVerify }: { pendingStudents
                    variant="outline" 
                    size="icon" 
                    className="h-8 w-8"
-                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                   onClick={() => setCurrentPage(currentPage + 1)}
                    disabled={currentPage === totalPages}
                 >
                     <ChevronRight className="h-4 w-4" />

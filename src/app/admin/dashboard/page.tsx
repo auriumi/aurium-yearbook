@@ -31,6 +31,11 @@ export default function AdminDashboard() {
   
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1); 
+  const [totalUnverified, setTotalUnverified] = useState(0);
+
+
+  //Schedules 
   const { schedules, fetchSchedules } = useSchedules();  
 
   // State specific to the Graduate Review Tab (Moved from Staff)
@@ -44,19 +49,26 @@ export default function AdminDashboard() {
     avatar: "https://github.com/shadcn.png" 
   });
 
-  const loadStudents = useCallback(async () => {
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
+    loadStudents(page);
+  }
+
+  const loadStudents = useCallback(async (page: number) => {
     try {
-        const students = await adminService.fetchStudents();
-        setPendingStudents(students || []);
+        const students = await adminService.fetchStudents(page);
+        if (!students.success) setPendingStudents([]);
+
+        setPendingStudents(students.data.student_list);
+        setTotalUnverified(students.data.total);
     } catch (error) {
         console.error("Error loading students:", error);
     }
   }, []);
 
   useEffect(() => {
-    loadStudents();
-    localStorage.setItem("aurium_admin_session", "true");
-  }, [loadStudents]);
+    loadStudents(currentPage);
+  }, [loadStudents, currentPage]);
 
   const updateOnVerify = async (studentId: number) => {
     const res = await adminService.handleVerify(studentId);
@@ -143,7 +155,13 @@ export default function AdminDashboard() {
         <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* 1. ORIGINAL ADMIN VERIFICATION (Queue) */}
             {activeTab === "verification" && (
-                <VerificationTab pendingStudents={pendingStudents} onVerify={updateOnVerify} />
+                <VerificationTab 
+                  pendingStudents={pendingStudents} 
+                  currentPage={currentPage}
+                  totalUnverified={totalUnverified}
+                  onVerify={updateOnVerify}
+                  setCurrentPage={onPageChange}
+                />
             )}
 
             {/* 2. MERGED STAFF VERIFICATION (Detailed Review) */}

@@ -17,6 +17,28 @@ export async function fetchStudents(page: number) {
     }
 };
 
+export async function searchStudentById(student_number: number) {
+    try {
+        const res = await fetch(
+            `http://localhost:4000/api/admin/student/search?id=${student_number}`, 
+            { credentials: 'include' }
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+            if (res.status == 404) {
+                return { success: false, reason: data.reason }
+            }
+            return { success: false, reason: "Something went wrong.." }
+        };
+
+        return { success: true, data };
+    } catch (err) {
+        console.error(err);
+        return { success: false };
+    }
+};
+
 export async function handleVerify(studentId: number) {
     try {
         await fetch("http://localhost:4000/api/admin/student/verify", {

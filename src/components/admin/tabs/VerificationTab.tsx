@@ -14,21 +14,19 @@ type VerifacationProps = {
     currentPage: number;
     totalUnverified: number;
     onVerify: (id: number) => void;
+    onSearch: (student_id: number) => void;
     setCurrentPage: (page: number) => void;
 }
 
-export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage ,onVerify }: VerifacationProps) {
+export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onSearch }: VerifacationProps) {
   // STATES
   const [searchInput, setSearchInput] = useState(""); 
-  const [appliedSearch, setAppliedSearch] = useState(""); 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   
   const ITEMS_PER_PAGE = 8; 
 
-  //TODO :3
   const handleSearch = () => {
-    setAppliedSearch(searchInput);
-    setCurrentPage(1); 
+    onSearch(parseInt(searchInput));
     setSelectedStudent(null);
   };
 

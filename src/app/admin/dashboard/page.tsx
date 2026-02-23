@@ -54,10 +54,28 @@ export default function AdminDashboard() {
     loadStudents(page);
   }
 
+  const searchStudentById = async (student_number: number) => {
+    try {
+      const students = await adminService.searchStudentById(student_number);
+      if (!students.success) {
+        console.log(students.reason);
+        setPendingStudents([]);
+        return;
+      }
+
+      setPendingStudents([students.data]);
+    } catch (error) {
+      console.error("Error loading student:", error);
+    }
+  }
+
   const loadStudents = useCallback(async (page: number) => {
     try {
         const students = await adminService.fetchStudents(page);
-        if (!students.success) setPendingStudents([]);
+        if (!students.success) {
+          setPendingStudents([]);
+          return;
+        }
 
         setPendingStudents(students.data.student_list);
         setTotalUnverified(students.data.total);
@@ -160,6 +178,7 @@ export default function AdminDashboard() {
                   currentPage={currentPage}
                   totalUnverified={totalUnverified}
                   onVerify={updateOnVerify}
+                  onSearch={searchStudentById}
                   setCurrentPage={onPageChange}
                 />
             )}

@@ -33,7 +33,8 @@ export default function AdminDashboard() {
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1); 
   const [totalUnverified, setTotalUnverified] = useState(0);
-
+  //TODO: make and use types.. zz
+  const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
 
   //Schedules 
   const { schedules, fetchSchedules } = useSchedules();  
@@ -70,6 +71,12 @@ export default function AdminDashboard() {
   }
 
   const loadStudents = useCallback(async (page: number) => {
+    //using cache to avoid fetching again
+    if (studentCache[page]) {
+      setPendingStudents(studentCache[page]);
+      return;
+    }
+
     try {
         const students = await adminService.fetchStudents(page);
         if (!students.success) {
@@ -79,10 +86,15 @@ export default function AdminDashboard() {
 
         setPendingStudents(students.data.student_list);
         setTotalUnverified(students.data.total);
+        setStudentCache(prev => ({
+          ...prev,
+          [page]: students.data.student_list
+        }));
+
     } catch (error) {
         console.error("Error loading students:", error);
     }
-  }, []);
+  }, [studentCache]);
 
   useEffect(() => {
     loadStudents(currentPage);

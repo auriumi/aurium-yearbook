@@ -71,11 +71,16 @@ export default function AdminDashboard() {
   }
 
   const loadStudents = useCallback(async (page: number) => {
-    //using cache to avoid fetching again
+
+    /*
+    using cache to avoid fetching again
+    (experimental for now, doesn't seem to work well with the current pagination feature)
+
     if (studentCache[page]) {
       setPendingStudents(studentCache[page]);
       return;
     }
+    */
 
     try {
         const students = await adminService.fetchStudents(page);
@@ -94,7 +99,7 @@ export default function AdminDashboard() {
     } catch (error) {
         console.error("Error loading students:", error);
     }
-  }, [studentCache]);
+  }, []);
 
   useEffect(() => {
     loadStudents(currentPage);

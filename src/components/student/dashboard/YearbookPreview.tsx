@@ -1,7 +1,4 @@
 "use client";
-
-import React from "react";
-// Gitangtang ang Link kay dili na nato need mo-navigate to another page
 import { 
   ArrowLeft, 
   MapPin, 
@@ -13,40 +10,43 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// BAG-O: Gidugang ang interface para modawat og data (user) ug action (onClose) gikan sa parent
 interface YearbookPreviewProps {
-  user: any; // Gidawat ang user data gikan sa StudentDashboard
-  onClose: () => void; // Function para i-close ang preview
+  user: any; //TODO: update types zzz..
+  onClose: () => void; 
 }
 
-// BAG-O: Giusab gikan sa "export default function YearbookPreviewPage()"
 export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
-  
-  // BAG-O: Imbes nga hardcoded STUDENT_DATA, atong i-map ang `user` prop padulong sa imong existing object structure
-  // In this way, dili nato kailangan usbon ang imong mga {details.personal.lname} sa ubos.
+  const stud_detail = user.studentDetail;
+
+  //if there's a guardian, means no parent info
+  const guardian: boolean = stud_detail.guardians_name;
+
   const details = {
     personal: {
-      fname: user?.first_name || "Juan",
-      mname: "Santos", // Placeholder lang usa ni kung wala sa DB
-      lname: user?.last_name || "Dela Cruz",
-      suffix: "Jr.",
-      nickname: user?.first_name || "Juanny",
-      birthdate: "January 1, 2000",
+      fname: user?.first_name,
+      mname: user?.mid_name,
+      lname: user?.last_name,
+      suffix: user?.suffix,
+      nickname: user?.first_name, 
+      birthdate: new Date(stud_detail.birth_date).toLocaleDateString(),
     },
     address: {
-      full: "Apokon, Tagum City, Davao del Norte"
+      barangay: stud_detail.barangay,
+      city: stud_detail.city,
+      province: stud_detail.province
     },
     academic: {
-      course: user?.course || "BACHELOR OF SCIENCE IN COMPUTER SCIENCE",
-      major: user?.major || "Data Science", // Karon dynamic na ni
-      thesis: "Development of an AI-Powered Yearbook Layout System using Genetic Algorithms",
-      email: `${(user?.first_name || "Juan").toLowerCase()}.${(user?.last_name || "DelaCruz").toLowerCase().replace(/\s/g, '')}@gmail.com`,
-      contact: "09123456789"
-    },
-    family: {
-      father: "Mr. Pedro Santos Dela Cruz",
-      mother: "Mrs. Maria Santos Dela Cruz",
-    }
+      course: user?.course,
+      major: user?.major,
+      thesis: user?.thesis_title,
+      email: user?.personal_email,
+      contact: stud_detail.contact_num
+     },
+     family: {
+        guardian: stud_detail?.guardians_name,
+        father: stud_detail?.fathers_name,
+        mother: stud_detail?.mothers_name,
+     }
   };
 
   const photoUrl = user?.photo_url || "https://i.pinimg.com/736x/09/7b/2d/097b2d53634008344447550541004724.jpg";
@@ -150,7 +150,7 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                              <h4 className="font-bold text-amber-500 text-[10px] uppercase tracking-widest mb-1">Hometown</h4>
                              <div className="flex items-start gap-2">
                                 <MapPin className="w-3 h-3 mt-1 shrink-0 text-amber-500" />
-                                <p>{details.address.full}</p>
+                                <p>{`${details.address.barangay}, ${details.address.city}, ${details.address.province}`}</p>
                              </div>
                           </div>
                           <div>
@@ -164,10 +164,18 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
 
                        <div className="space-y-6">
                           <div>
-                             <h4 className="font-bold text-amber-500 text-[10px] uppercase tracking-widest mb-1">Parents</h4>
+                             <h4 className="font-bold text-amber-500 text-[10px] uppercase tracking-widest mb-1">
+                              {guardian ? "Guardian" : "Parents"}
+                             </h4>
                              <div className="space-y-1">
-                                <p>{details.family.father}</p>
-                                <p>{details.family.mother}</p>
+                                {guardian ? (
+                                   <p>{details.family.guardian}</p>
+                                ) : (
+                                   <>
+                                      <p>{details.family.father}</p>
+                                      <p>{details.family.mother}</p>
+                                   </>
+                                )}
                              </div>
                           </div>
                           <div>
@@ -180,13 +188,10 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                              </div>
                           </div>
                        </div>
-
                     </div>
                 </div>
-
             </div>
         </div>
-
       </div>
     </div>
   );

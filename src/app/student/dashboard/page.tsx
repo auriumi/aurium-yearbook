@@ -27,11 +27,9 @@ export default function StudentDashboard() {
   const fetchStudent = useCallback(async () => {
     try {
       const res = await studentService.getStudentProfile();
-      console.log(res);
-
       const hasBooking = res.booking.length > 0 ? res.booking[0] : null;
-      if (hasBooking) setBooking(hasBooking);
 
+      if (hasBooking) setBooking(hasBooking);
       setUser(res);
     } catch(err) {
       console.error(err);
@@ -56,16 +54,14 @@ export default function StudentDashboard() {
     const res = await studentService.addBook(booking_id, period)
 
     if (!res) {
-      // BAG-O: Ilisan ang alert og toast.error
       toast.error("Something went wrong submitting the book!");
     } else {
-      // BAG-O: Ilisan ang alert og toast.success
       toast.success("Successfully booked! Please be on time!");
       fetchStudent(); // Refresh the student data to get the latest booking info
     }
   };
 
-  // BAG-O: Gi-ilisan ang plain nga "Loading..." og nindot nga spinner UI
+  //show loading screen while waiting for the record to load
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center font-sans">

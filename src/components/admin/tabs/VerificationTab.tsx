@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area"; 
 import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft } from "lucide-react";
-import toast from "react-hot-toast";
 
 type VerifacationProps = {
     pendingStudents: any[];
@@ -172,7 +171,6 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                             className="bg-green-600 hover:bg-green-700" 
                             onClick={() => { 
                                 onVerify(selectedStudent.student_number); 
-                                toast.success("Student Verified!");
                                 setSelectedStudent(null); 
                             }}
                         >

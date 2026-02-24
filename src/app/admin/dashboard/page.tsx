@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu } from "lucide-react";
+import toast from "react-hot-toast";
 
 // Modular Imports
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -109,7 +110,10 @@ export default function AdminDashboard() {
     const res = await adminService.handleVerify(studentId);
     if (res) {
       setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
+      toast.success("Student Verified!");
+      return;
     }
+    toast.error("Something went wrong!");
   }
 
   const onLogout = async () => {

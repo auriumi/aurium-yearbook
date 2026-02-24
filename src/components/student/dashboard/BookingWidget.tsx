@@ -40,11 +40,13 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
 
   return (
     <Card className="md:col-span-2 shadow-sm border-stone-200">
-      <CardHeader className={booking ? "collapse" : "visible"}>
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-stone-700">
           <Calendar className="w-5 h-5 text-amber-700" /> Pictorial Schedule
         </CardTitle>
-        <CardDescription>Select a date for your official yearbook photoshoot.</CardDescription>
+        <CardDescription className={booking ? "collapse" : "visible"}>
+          Select a date for your official yearbook photoshoot.
+        </CardDescription>
       </CardHeader>
       <CardContent className="min-h-[200px] flex items-center justify-center">
         {booking ? (

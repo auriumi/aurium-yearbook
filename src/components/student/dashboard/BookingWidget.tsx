@@ -13,7 +13,7 @@ interface BookingWidgetProps {
   bookingList: Schedule[], 
   booking: any,
   idNumber: string;
-  onBook: (student_number: string, booking_id: number, period: string) => void;
+  onBook: (booking_id: number, period: string) => void;
 };
 
 export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
@@ -32,7 +32,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
 
   const handleConfirm = () => {
     if (selectedDate && selectedSession) {
-        onBook(idNumber, selectedBookingId, selectedSession);
+        onBook(selectedBookingId, selectedSession);
         setIsConfirmDialogOpen(false);
         setIsBookingModalOpen(false);
     }

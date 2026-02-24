@@ -11,10 +11,24 @@ export interface Student {
   major: string;
   nickname: string;
   suffix: string;
+  thesis_title: string;
+  personal_email: string;
   studentAuth: StudentAuth;
+  studentDetail: StduentDetail;
   photo_url: string | null;
   quote: string | null;
   created_at: string;
+}
+
+export interface StduentDetail {
+  guardians_name: string;
+  fathers_name: string;
+  mothers_name: string;
+  birth_date: string;
+  barangay: string;
+  city: string;
+  province: string;
+  contact_num: string;
 }
 
 export interface StudentAuth {

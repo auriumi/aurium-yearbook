@@ -9,9 +9,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Student } from "@/types";
 
 interface YearbookPreviewProps {
-  user: any; //TODO: update types zzz..
+  user: Student;
   onClose: () => void; 
 }
 
@@ -19,7 +20,7 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const stud_detail = user.studentDetail;
 
   //if there's a guardian, means no parent info
-  const guardian: boolean = stud_detail.guardians_name;
+  const guardian = stud_detail.guardians_name;
 
   const details = {
     personal: {

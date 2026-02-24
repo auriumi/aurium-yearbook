@@ -40,7 +40,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
 
   return (
     <Card className="md:col-span-2 shadow-sm border-stone-200">
-      <CardHeader>
+      <CardHeader className={booking ? "collapse" : "visible"}>
         <CardTitle className="flex items-center gap-2 text-stone-700">
           <Calendar className="w-5 h-5 text-amber-700" /> Pictorial Schedule
         </CardTitle>

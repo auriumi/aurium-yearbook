@@ -2,7 +2,7 @@
 
 export interface Student {
   id: string; 
-  student_id: string; 
+  student_number: string; 
   first_name: string;
   mid_name: string;
   last_name: string;
@@ -34,7 +34,11 @@ export interface Booking {
   booking_day_id: number;
   period: 'AM' | 'PM';
   created_at: string;
-  student: Student
+  booking_day: BookingDay;
+}
+
+export interface BookingDay {
+  date: string;
 }
 
 export interface Schedule {

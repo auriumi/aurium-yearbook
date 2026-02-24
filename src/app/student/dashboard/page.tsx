@@ -11,13 +11,14 @@ import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
 // BAG-O: I-import ang refactored nga YearbookPreview component
 import { YearbookPreview } from "@/components/student/dashboard/YearbookPreview";
 
-import { Schedule } from "@/types/index";
+import { Booking, Schedule } from "@/types/index";
 import * as studentService from "@/app/student/studentService";
 import { Student } from "@/types";
 
 export default function StudentDashboard() {
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
+  const [booking, setBooking] = useState<Booking>();
   
   // BAG-O: State para pag-show/hide sa Yearbook Preview
   const [showPreview, setShowPreview] = useState(false);
@@ -25,6 +26,12 @@ export default function StudentDashboard() {
   const fetchStudent = useCallback(async () => {
     try {
       const res = await studentService.getStudentProfile();
+      console.log(res);
+
+      //check if student already has a booking (as a business req, student can only have one booking, this is temporary for now: TODO)
+      const hasBooking = res.booking.length > 0 ? res.booking[0] : null;
+      if (hasBooking) setBooking(hasBooking);
+
       setUser(res);
     } catch(err) {
       console.error(err);
@@ -67,7 +74,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans">
-      <StudentHeader user={{ fname: user.first_name, idNumber: user.student_id, photoUrl: undefined}} />
+      <StudentHeader user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: undefined}} />
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         
@@ -93,7 +100,7 @@ export default function StudentDashboard() {
           {/* 1. Profile Card Component */}
           <ProfileCard
             fullName={`${user.first_name} ${user.last_name}`}
-            idNumber={user.student_id}
+            idNumber={user.student_number}
             course={user.course}
             photoUrl={user.photo_url}
           />
@@ -101,8 +108,8 @@ export default function StudentDashboard() {
           {/* 2. Booking Widget Component */}
           <BookingWidget
             bookingList={schedule}
-            booking={false} //TODO: Pass booking data if already booked
-            idNumber={user.student_id}
+            booking={booking} 
+            idNumber={user.student_number}
             onBook={handleBooking}
           />
 

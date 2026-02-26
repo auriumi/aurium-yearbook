@@ -21,7 +21,6 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [booking, setBooking] = useState<Booking>();
-  
   const [showPreview, setShowPreview] = useState(false);
 
   const fetchStudent = useCallback(async () => {

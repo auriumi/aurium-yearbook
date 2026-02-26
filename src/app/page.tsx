@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image"; 
 import { motion, useScroll, useTransform, easeOut, AnimatePresence } from "framer-motion";
@@ -30,14 +30,26 @@ import {
 import { Button } from "@/components/ui/button";
 
 export default function AuriumLandingPage() {
-  const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const carouselRef = useRef(null);
   
-  // --- REF FOR EDITIONS CAROUSEL ---
   const editionsRef = useRef<HTMLDivElement>(null);
+
+  const getStatus = useCallback(async () => { 
+    try {
+      const res = await fetch('api/status');
+      const status = await res.json();
+      setIsLoggedIn(status.logged_in);
+    } catch (err) {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    getStatus();
+  }, [getStatus]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -181,17 +193,20 @@ export default function AuriumLandingPage() {
 
           {/* Desktop Action Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href="/auth/login">
+            <Link href={!isLoggedIn ? "/auth/login" : "/student/dashboard"}>
               <Button variant="ghost" className="text-amber-900 hover:bg-amber-50 gap-2 font-medium">
                 <UserCircle size={20} />
-                <span className="hidden sm:inline">Portal Login</span>
+                <span className="hidden sm:inline">{!isLoggedIn ? "Portal Login" : "Profile Dashboard"}</span>
               </Button>
             </Link>
-            <Link href="/auth/register">
-              <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
-                Pre-Register
-              </Button>
-            </Link>
+
+            {!isLoggedIn && (
+              <Link href="/auth/register">
+                <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
+                  Pre-Register
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Placeholder to balance the flex layout on mobile (invisible) */}
@@ -214,16 +229,22 @@ export default function AuriumLandingPage() {
                 <Link href="#about" onClick={toggleMobileMenu} className="hover:text-amber-800 py-2 border-b border-stone-100">About</Link>
               </nav>
               <div className="flex flex-col gap-3 pt-2">
-                <Link href="/auth/register" onClick={toggleMobileMenu} className="w-full">
-                  <Button className="w-full bg-amber-900 hover:bg-amber-800 text-white h-12 text-lg">
-                    Pre-Register Now
-                  </Button>
-                </Link>
-                <Link href="/auth/login" onClick={toggleMobileMenu} className="w-full">
+
+                {!isLoggedIn && (
+                  <Link href="/auth/register" onClick={toggleMobileMenu} className="w-full">
+                    <Button className="w-full bg-amber-900 hover:bg-amber-800 text-white h-12 text-lg">
+                      Pre-Register Now
+                    </Button>
+                  </Link>
+                )}
+
+                <Link href={!isLoggedIn ? "/auth/login" : "/student/dashboard"}>
                   <Button variant="outline" className="w-full border-amber-200 text-amber-900 h-12 text-lg">
-                    <UserCircle className="mr-2" size={20} /> Portal Login
+                    <UserCircle className="mr-2" size={20} /> 
+                    {!isLoggedIn ? "Portal Login" : "Profile Dashboard"}
                   </Button>
                 </Link>
+
               </div>
             </motion.div>
           )}
@@ -271,12 +292,15 @@ export default function AuriumLandingPage() {
             </motion.p>
             
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto bg-amber-900 hover:bg-amber-800 text-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full shadow-xl shadow-amber-900/20 transition-transform hover:-translate-y-1 font-bold">
-                  Start Registration
-                </Button>
-              </Link>
-              
+
+              {!isLoggedIn && (
+                <Link href="/auth/register" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-amber-900 hover:bg-amber-800 text-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full shadow-xl shadow-amber-900/20 transition-transform hover:-translate-y-1 font-bold">
+                    Start Registration
+                  </Button>
+                </Link>
+              )}
+
               <div className="w-full sm:w-auto">
                 <Link href="#editions" className="block w-full">
                     <Button size="lg" variant="outline" className="w-full border-amber-200 bg-white/50 backdrop-blur-sm text-amber-900 hover:bg-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full font-medium">

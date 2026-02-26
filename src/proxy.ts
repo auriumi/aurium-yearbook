@@ -20,11 +20,6 @@ export async function proxy(req: NextRequest) {
             return NextResponse.redirect(new URL('/admin', req.url));
         }
 
-        //todo: will merge staff and admin endpoint
-        if (pathname.startsWith('/staff')) {
-            return NextResponse.redirect(new URL('/admin', req.url));
-        }
-
         if (pathname.startsWith('/student')) {
             return NextResponse.redirect(new URL('/auth/login', req.url));
         }
@@ -35,10 +30,17 @@ export async function proxy(req: NextRequest) {
     try {
         const { payload } = await jwtVerify(session_token, getSauceKey());
 
-        //check if alrd logged in
+        //check if alrd logged in (admin)
         if (pathname === '/admin') {
             if (payload.is_admin) {
                 return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+            }
+        }
+
+        //check if alrd logged in (student)
+        if (pathname === '/auth/login') {
+            if (payload.student_number) {
+                return NextResponse.redirect(new URL('/student/dashboard', req.url));
             }
         }
         
@@ -69,5 +71,6 @@ export const config = {
     '/admin/:path*',
     '/staff/:path*',
     '/student/:path*',
+    '/auth/login'
   ],
 }

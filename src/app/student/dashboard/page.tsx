@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-// BAG-O: Nag-add ko og Loader2 diri para sa atong nindot nga loading animation
+import { useState, useCallback, useEffect } from "react";
 import { CheckCircle, Clock, Loader2, LogOut } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge";
 import { StudentHeader } from "@/components/student/dashboard/StudentHeader";
@@ -10,10 +9,9 @@ import { BookingWidget } from "@/components/student/dashboard/BookingWidget";
 import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
 import { YearbookPreview } from "@/components/student/dashboard/YearbookPreview";
 import { useRouter } from "next/navigation"; 
-
-// BAG-O: I-import ang toast
 import toast from "react-hot-toast";
 
+//types and services
 import { Booking, Schedule } from "@/types/index";
 import * as studentService from "@/app/student/studentService";
 import { Student } from "@/types";
@@ -23,17 +21,13 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [booking, setBooking] = useState<Booking>();
-  
   const [showPreview, setShowPreview] = useState(false);
-  
-  // @Koi: State para mu-gawas ang Logout Confirmation Modal
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fetchStudent = useCallback(async () => {
     try {
       const res = await studentService.getStudentProfile(); 
-      console.log(res);
 
       const hasBooking = res.booking.length > 0 ? res.booking[0] : null;
       if (hasBooking) setBooking(hasBooking);
@@ -69,22 +63,21 @@ export default function StudentDashboard() {
     }
   };
 
-  // @Koi: Tinuod nga Logout Handler
+  //handle logout
+  const onLogout = async () => {
+    const res = await fetch("http://localhost:4000/api/auth/logout", {
+      credentials: 'include'
+    });
+    if (res.ok) router.push('/');
+  }
+
   const confirmLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // 1. I-clear ang local storage basin naa siyay gibilin diri
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // 2. I-call ang API sa backend para i-clear ang HTTP Cookies. 
-      // (Basta mag-logout sa Next.js, kailangan naay API call para ma-destroy ang session sa server)
-      await fetch('http://localhost:4000/api/student/logout', { method: 'POST' }).catch(() => {});
-
+      await onLogout();
       toast.success("You have successfully logged out.");
-      
-      // 3. I-redirect sa Landing Page (/) unya i-refresh para limpyo ang state
-      window.location.href = "/"; 
+      router.push('/');
+
     } catch (err) {
       toast.error("Failed to log out properly.");
       console.error(err);
@@ -92,7 +85,7 @@ export default function StudentDashboard() {
     }
   };
 
-  // BAG-O: Gi-ilisan ang plain nga "Loading..." og nindot nga spinner UI
+  //show loading screen when user is still fetching
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center font-sans">
@@ -109,7 +102,6 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-stone-50 font-sans relative">
       
-      {/* @Koi: Gipasa nako ang setShowLogoutConfirm(true) padulong sa header imbes lahos logout */}
       <StudentHeader 
         user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: undefined}} 
         onLogout={() => setShowLogoutConfirm(true)} 

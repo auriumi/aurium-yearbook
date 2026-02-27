@@ -1239,11 +1239,11 @@ export default function RegistrationWizard() {
                     
                     <Button 
                     className={`min-w-[140px] shadow-lg ${isStepValid() ? "bg-amber-900 hover:bg-amber-800 text-white shadow-amber-900/20" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
-                    onClick={currentStep === 8 ? onSubmit : handleNext}
+                    onClick={currentStep === 7 ? onSubmit : handleNext}
                     disabled={!isStepValid()}
                     >
                     {/* @Koi: Updated to Step 8 para ma-submit */}
-                    {currentStep === 8 ? "Submit Registration" : "Next Step"}
+                    {currentStep === 7 ? "Submit Registration" : "Next Step"}
                     </Button>
                 </CardFooter>
             </Card>

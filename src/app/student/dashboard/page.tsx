@@ -65,7 +65,7 @@ export default function StudentDashboard() {
 
   //handle logout
   const onLogout = async () => {
-    const res = await fetch("http://localhost:4000/api/auth/logout", {
+    const res = await fetch("/api/auth/logout", {
       credentials: 'include'
     });
     if (res.ok) router.push('/');

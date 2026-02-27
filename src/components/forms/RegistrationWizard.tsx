@@ -465,7 +465,7 @@ export default function RegistrationWizard() {
     };
 
     try {
-      const res = await fetch("http://localhost:4000/api/student/submit", {
+      const res = await fetch("/api/student/submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

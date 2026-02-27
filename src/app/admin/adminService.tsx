@@ -3,7 +3,7 @@
 export async function fetchStudents(page: number) {
     try {
         const res = await fetch(
-            `http://localhost:4000/api/admin/student/fetch?page=${page}`, 
+            `/api/admin/student/fetch?page=${page}`, 
             { credentials: 'include' }
         );
 
@@ -20,7 +20,7 @@ export async function fetchStudents(page: number) {
 export async function searchStudentById(student_number: number) {
     try {
         const res = await fetch(
-            `http://localhost:4000/api/admin/student/search?id=${student_number}`, 
+            `/api/admin/student/search?id=${student_number}`, 
             { credentials: 'include' }
         );
         const data = await res.json();
@@ -41,7 +41,7 @@ export async function searchStudentById(student_number: number) {
 
 export async function handleVerify(studentId: number) {
     try {
-        await fetch("http://localhost:4000/api/admin/student/verify", {
+        await fetch("/api/admin/student/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: studentId }),
@@ -65,7 +65,7 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
     };
 
     try {
-        const res = await fetch("http://localhost:4000/api/admin/book/add", {
+        const res = await fetch("/api/admin/book/add", {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -98,7 +98,7 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
 export async function fetchSchedule() {
     try {
         const res = await fetch(
-            "http://localhost:4000/api/admin/book/fetch",
+            "/api/admin/book/fetch",
             { credentials: 'include' }
         );
 

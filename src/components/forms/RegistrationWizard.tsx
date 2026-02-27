@@ -112,8 +112,8 @@ const steps = [
   { id: 4, name: "Family", title: "Parents or Guardian" },
   { id: 5, name: "Photo", title: "Upload Formal Photo" },
   { id: 6, name: "Review", title: "Review Details" }, 
-  { id: 7, name: "Verify", title: "Email Verification" }, 
-  { id: 8, name: "Privacy", title: "Data Privacy" },
+  //{ id: 7, name: "Verify", title: "Email Verification" }, 
+  { id: 7, name: "Privacy", title: "Data Privacy" },
 ];
 
 // Title Case function
@@ -311,9 +311,12 @@ export default function RegistrationWizard() {
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   // --- STATE: EMAIL VERIFICATION (NEW FOR STEP 7) ---
+
+  /*
   const [verificationCode, setVerificationCode] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  */
 
   // --- DERIVED ACADEMIC OPTIONS ---
   const currentCourses = useMemo(() => {
@@ -356,7 +359,7 @@ export default function RegistrationWizard() {
     fileInputRef.current?.click();
   };
 
-  // --- VERIFICATION HANDLERS (STEP 7) ---
+  /* --- VERIFICATION HANDLERS (STEP 7) ---
   const handleSendCode = () => {
     setIsCodeSent(true);
     // @Koi: Diri isalpak ang API pang send og Email Verification sa backend nato.
@@ -373,6 +376,7 @@ export default function RegistrationWizard() {
       alert("Please enter a valid verification code.");
     }
   };
+  */
 
   // --- VALIDATION ---
   const isStepValid = () => {
@@ -394,9 +398,8 @@ export default function RegistrationWizard() {
       case 6: 
         return reviewConfirmed;
       case 7: 
-        return isEmailVerified; // @Koi: Validation sa Step 7 (Must be verified)
-      case 8: 
-        return privacyAgreed;   // @Koi: Validation sa Step 8 (Must agree)
+        //return isEmailVerified; 
+        return privacyAgreed;   
       default:
         return false;
     }
@@ -1131,6 +1134,7 @@ export default function RegistrationWizard() {
                     )}
 
                     {/* --- STEP 7: EMAIL VERIFICATION (NEW STEP) --- */}
+                    {/*
                     {currentStep === 7 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="bg-blue-50 p-5 rounded-lg border border-blue-100">
@@ -1180,10 +1184,11 @@ export default function RegistrationWizard() {
                             )}
                         </div>
                     )}
+                    */}
 
                     {/* --- STEP 8: PRIVACY --- */}
                     {/* @Koi: Nahimo na ning Step 8 */}
-                    {currentStep === 8 && (
+                    {currentStep === 7 && (
                         <div className="space-y-4">
                         <div className="p-5 bg-stone-50 border border-stone-200 rounded-lg h-72 overflow-y-auto text-sm text-stone-600 leading-relaxed text-justify pr-2 scrollbar-thin scrollbar-thumb-stone-300 scrollbar-track-transparent">
                             <h4 className="font-bold text-amber-900 mb-3 text-base">Data Privacy Consent</h4>

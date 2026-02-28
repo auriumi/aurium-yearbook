@@ -36,7 +36,7 @@ const departmentOptions = [
     ]
   },
   {
-    name: "DEPARTMENT OF ART AND SCIENCES EDUCATION",
+    name: "DEPARTMENT OF ARTS AND SCIENCES EDUCATION",
     courses: [
       { name: "BACHELOR OF ARTS IN ENGLISH", majors: [] },
       { name: "BACHELOR OF SCIENCE IN PSYCHOLOGY", majors: [] }
@@ -75,7 +75,7 @@ const departmentOptions = [
     ]
   },
   {
-    name: "HOSPITALITY AND TOURISM MANAGEMENT EDUCATION",
+    name: "DEPARTMENT OF HOSPITALITY EDUCATION",
     courses: [
       { name: "BACHELOR OF SCIENCE IN HOSPITALITY MANAGEMENT", majors: [] },
       { name: "BACHELOR OF SCIENCE IN HOTEL AND RESTAURANT MANAGEMENT", majors: [] },

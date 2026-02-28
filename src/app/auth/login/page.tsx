@@ -192,7 +192,7 @@ export default function StudentLoginPage() {
                         <CardFooter className="justify-center pb-8 border-t border-stone-100 pt-6">
                             <p className="text-sm text-stone-500">
                                 Don't have an account?{' '}
-                                <Link href="/register" className="font-bold text-amber-700 hover:underline">
+                                <Link href="/auth/register" className="font-bold text-amber-700 hover:underline">
                                     Register here
                                 </Link>
                             </p>

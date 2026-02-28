@@ -3,7 +3,6 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 export async function handleLogin(id: string, pass: string, is_admin?: boolean) {
     try {
-        console.log(baseUrl);
         const res = await fetch(`${baseUrl}/api/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

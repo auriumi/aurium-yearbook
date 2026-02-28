@@ -1,9 +1,10 @@
 //Student Service
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 export async function getStudentProfile() {
     try {
         const res = await fetch(
-            "/api/student/profile/fetch",
+            `${baseUrl}/api/student/profile/fetch`,
             { credentials: 'include' }
         );
 
@@ -21,7 +22,7 @@ export async function getStudentProfile() {
 export async function fetchSchedules() {
     try {
         const res = await fetch(
-            "/api/student/book/fetch",
+            `${baseUrl}/api/student/book/fetch`,
             { credentials: 'include' }
         );
 
@@ -38,7 +39,7 @@ export async function fetchSchedules() {
 
 export async function addBook(booking_id: number, period: string) {
     try {
-        const res = await fetch("/api/student/book/create", {
+        const res = await fetch(`${baseUrl}/api/student/book/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

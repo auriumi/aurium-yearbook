@@ -1,4 +1,5 @@
 "use client";
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -466,7 +467,7 @@ export default function RegistrationWizard() {
     };
 
     try {
-      const res = await fetch("/api/student/submit", {
+      const res = await fetch(`${baseUrl}/api/student/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

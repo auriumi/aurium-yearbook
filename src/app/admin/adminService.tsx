@@ -1,9 +1,10 @@
 //Admin Services Module - Do not modify <3
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 export async function fetchStudents(page: number) {
     try {
         const res = await fetch(
-            `/api/admin/student/fetch?page=${page}`, 
+            `${baseUrl}/api/admin/student/fetch?page=${page}`, 
             { credentials: 'include' }
         );
 
@@ -20,7 +21,7 @@ export async function fetchStudents(page: number) {
 export async function searchStudentById(student_number: number) {
     try {
         const res = await fetch(
-            `/api/admin/student/search?id=${student_number}`, 
+            `${baseUrl}/api/admin/student/search?id=${student_number}`, 
             { credentials: 'include' }
         );
         const data = await res.json();
@@ -41,7 +42,7 @@ export async function searchStudentById(student_number: number) {
 
 export async function handleVerify(studentId: number) {
     try {
-        await fetch("/api/admin/student/verify", {
+        await fetch(`${baseUrl}/api/admin/student/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: studentId }),
@@ -65,7 +66,7 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
     };
 
     try {
-        const res = await fetch("/api/admin/book/add", {
+        const res = await fetch(`${baseUrl}/api/admin/book/add`, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
@@ -98,7 +99,7 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
 export async function fetchSchedule() {
     try {
         const res = await fetch(
-            "/api/admin/book/fetch",
+            `${baseUrl}/api/admin/book/fetch`,
             { credentials: 'include' }
         );
 

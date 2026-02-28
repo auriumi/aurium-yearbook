@@ -1,4 +1,5 @@
 "use client";
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image"; 
@@ -117,7 +118,7 @@ export default function AdminDashboard() {
   }
 
   const onLogout = async () => {
-    const res = await fetch("/api/auth/logout", {
+    const res = await fetch(`${baseUrl}/api/auth/logout`, {
       credentials: 'include'
     });
     if (res.ok) router.push('/');

@@ -1,4 +1,5 @@
 "use client";
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useCallback, useEffect } from "react";
 import { CheckCircle, Clock, Loader2, LogOut } from "lucide-react"; 
@@ -65,7 +66,7 @@ export default function StudentDashboard() {
 
   //handle logout
   const onLogout = async () => {
-    const res = await fetch("/api/auth/logout", {
+    const res = await fetch(`${baseUrl}/api/auth/logout`, {
       credentials: 'include'
     });
     if (res.ok) router.push('/');

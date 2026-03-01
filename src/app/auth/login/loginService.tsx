@@ -14,8 +14,6 @@ export async function handleLogin(id: string, pass: string, is_admin?: boolean) 
             credentials: 'include',
         });
 
-        const body = res.json();
-
         if (!res.ok) {
             if (res.status == 401) {
                 return {
@@ -30,9 +28,11 @@ export async function handleLogin(id: string, pass: string, is_admin?: boolean) 
             }
         }
 
+        const body = await res.json();
         return {
             success: true,
-            reason: "Succesfully logged in!"
+            reason: "Succesfully logged in!",
+            is_new: body.is_new
         }
 
     } catch(err) {

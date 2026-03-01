@@ -835,7 +835,7 @@ export default function RegistrationWizard() {
                             />
                             {   umEmail &&
                                 !umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph") &&
-                                <p className="text-[10px] text-red-500">Must be a valid institutional address.</p>
+                                <p className="text-[10px] text-red-500">Please enter a valid institutional address.</p>
                             }
                         </div>
                         </div>

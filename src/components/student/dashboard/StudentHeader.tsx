@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// @Koi: Gidugang nako ang LogOut icon diri
+// Added the LogOut icon here
 import { LogOut } from "lucide-react"; 
 
 interface StudentHeaderProps {
@@ -12,7 +12,7 @@ interface StudentHeaderProps {
     idNumber?: string;
     photoUrl?: string | null; 
   };
-  // @Koi: Gidugang ang onLogout function as prop
+  // Added the onLogout function as a prop
   onLogout: () => void; 
 }
 
@@ -23,11 +23,12 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="flex items-center gap-2">
              <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden">
-               <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill sizes="40px" className="object-contain"/>
+               {/* FIXED: Changed to the UMTC logo */}
+               <Image src="/images/umtc-logo.png" alt="UMTC Logo" fill sizes="40px" className="object-contain"/>
              </div>
              <div className="h-6 w-[1px] bg-stone-300"></div>
              <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden">
-                <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill className="object-contain"/>
+                <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill sizes="40px" className="object-contain"/>
              </div>
           </div>
           <div className="flex flex-col">
@@ -47,7 +48,7 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
              <AvatarFallback className="bg-amber-100 text-amber-800 text-xs">JD</AvatarFallback>
           </Avatar>
           
-          {/* @Koi: Kani ang Logout Button nga gisumpay ra nako sa kilid sa avatar */}
+          {/* Placed the Logout Button right next to the avatar */}
           <div className="h-6 w-[1px] bg-stone-200 ml-1"></div>
           <button 
             onClick={onLogout} 

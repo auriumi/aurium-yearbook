@@ -588,7 +588,9 @@ export default function RegistrationWizard() {
                                 id="idNumber" 
                                 value={idNumber} 
                                 onChange={e => setIdNumber(e.target.value)} 
-                                placeholder="e.g. 142478" 
+                                placeholder="e.g. 142478"
+                                inputMode="numeric"
+                                maxLength={7}
                                 className="h-11 font-mono text-amber-900 font-medium bg-amber-50/30 border-amber-200" 
                             />
                         </div>
@@ -801,7 +803,14 @@ export default function RegistrationWizard() {
 
                         <div className="space-y-2">
                             <Label>Personal Email Address <span className="text-red-500">*</span></Label>
-                            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="juandelacruz@email.com" className="h-11" />
+                            <Input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="juandelacruz@email.com"
+                                inputMode="email"
+                                className="h-11"
+                            />
                         </div>
 
                         {/* Updated placeholder to match actual UM student email format */}
@@ -811,7 +820,8 @@ export default function RegistrationWizard() {
                                 type="email" 
                                 value={umEmail} 
                                 onChange={e => setUmEmail(e.target.value)} 
-                                placeholder="j.delacruz.142458.tc@umindanao.edu.ph" 
+                                placeholder="j.delacruz.142458.tc@umindanao.edu.ph"
+                                inputMode="numeric"
                                 className="h-11" 
                             />
                         </div>

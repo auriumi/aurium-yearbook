@@ -363,15 +363,19 @@ export default function RegistrationWizard() {
   };
   */
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+  
   // --- VALIDATION ---
   const isStepValid = () => {
     switch (currentStep) {
-      case 1: 
-        return idNumber.trim() !== "" && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
+      case 1:
+        return idNumber.trim().length > 0 && idNumber.length <= 7 && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
       case 2: 
         return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
       case 3: 
-        return selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && email.trim() !== "" && umEmail.trim() !== "";
+        return selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmail(email.trim()) && umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph")
       case 4: 
         if (useGuardian) {
            return guardianLname.trim() !== "" && guardianFname.trim() !== "" && guardianRel.trim() !== "";
@@ -586,8 +590,8 @@ export default function RegistrationWizard() {
                             <Label htmlFor="idNumber">Student ID Number <span className="text-red-500">*</span></Label>
                             <Input 
                                 id="idNumber" 
-                                value={idNumber} 
-                                onChange={e => setIdNumber(e.target.value)} 
+                                value={idNumber}
+                                onChange={e => setIdNumber(e.target.value.replace(/[^0-9]/g, ""))}
                                 placeholder="e.g. 142478"
                                 inputMode="numeric"
                                 maxLength={7}
@@ -811,6 +815,11 @@ export default function RegistrationWizard() {
                                 inputMode="email"
                                 className="h-11"
                             />
+                            {
+                                email &&
+                                !isValidEmail(email.trim()) &&
+                                <p className="text-[10px] text-red-500">Please enter a valid email address.</p>
+                            }
                         </div>
 
                         {/* Updated placeholder to match actual UM student email format */}
@@ -824,6 +833,10 @@ export default function RegistrationWizard() {
                                 inputMode="numeric"
                                 className="h-11" 
                             />
+                            {   umEmail &&
+                                !umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph") &&
+                                <p className="text-[10px] text-red-500">Must be a valid institutional address.</p>
+                            }
                         </div>
                         </div>
                     )}

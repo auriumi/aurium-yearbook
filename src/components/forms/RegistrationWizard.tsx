@@ -371,11 +371,11 @@ export default function RegistrationWizard() {
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return idNumber.trim().length > 0 && idNumber.length <= 7 && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
+        return idNumber.trim().length > 0 && idNumber.trim().length <= 7 && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
       case 2: 
         return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
       case 3: 
-        return selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmail(email.trim()) && umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph")
+        return selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim().length === 11 && isValidEmail(email.trim()) && umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph")
       case 4: 
         if (useGuardian) {
            return guardianLname.trim() !== "" && guardianFname.trim() !== "" && guardianRel.trim() !== "";
@@ -797,12 +797,18 @@ export default function RegistrationWizard() {
                             <Label>Primary Contact Number <span className="text-red-500">*</span></Label>
                             <Input 
                                 value={contactNum} 
-                                onChange={e => setContactNum(e.target.value)} 
+                                onChange={e => setContactNum(e.target.value.replace(/[^0-9]/g, ""))} 
                                 placeholder="09XXXXXXXXX" 
-                                inputMode="numeric" 
-                                maxLength={11} 
-                                className="h-11" 
+                                inputMode="tel"
+                                maxLength={11}
+                                pattern="09[0-9]{9}"
+                                className="h-11"
                             />
+                            {
+                                contactNum &&
+                                ((contactNum.trim().length > 2 && contactNum.trim().length < 11) || !contactNum.trim().startsWith("09")) &&
+                                <p className="text-[12px] text-red-500">Please enter a valid 11-digit mobile number.</p>
+                            }
                         </div>
 
                         <div className="space-y-2">
@@ -818,7 +824,7 @@ export default function RegistrationWizard() {
                             {
                                 email &&
                                 !isValidEmail(email.trim()) &&
-                                <p className="text-[10px] text-red-500">Please enter a valid email address.</p>
+                                <p className="text-[12px] text-red-500">Please enter a valid email address.</p>
                             }
                         </div>
 
@@ -835,7 +841,7 @@ export default function RegistrationWizard() {
                             />
                             {   umEmail &&
                                 !umEmail.trim().toLowerCase().endsWith(".tc@umindanao.edu.ph") &&
-                                <p className="text-[10px] text-red-500">Please enter a valid institutional address.</p>
+                                <p className="text-[12px] text-red-500">Please enter a valid institutional address.</p>
                             }
                         </div>
                         </div>

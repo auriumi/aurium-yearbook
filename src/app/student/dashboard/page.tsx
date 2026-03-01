@@ -26,6 +26,15 @@ export default function StudentDashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  //get photo url
+  const getObjectKey = (url: string): string => {
+    const findStr = `/aurium/`;
+    const idx = url.indexOf(findStr);
+
+    if (idx === -1) return "";
+    return "https://auriumi.cloud/" + url.substring(idx + findStr.length);
+  }
+
   const fetchStudent = useCallback(async () => {
     try {
       const res = await studentService.getStudentProfile(); 
@@ -133,7 +142,7 @@ export default function StudentDashboard() {
             fullName={`${user.first_name} ${user.last_name}`}
             idNumber={user.student_number}
             course={user.course}
-            photoUrl={user.photo_url}
+            photoUrl={getObjectKey(user.studentDetail.photo_url)}
             onCheckEntry={() => setShowPreview(true)} 
           />
 

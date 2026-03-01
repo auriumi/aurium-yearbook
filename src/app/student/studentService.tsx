@@ -59,3 +59,43 @@ export async function addBook(booking_id: number, period: string) {
         return false;
     }
 };
+
+//request uplaod url from backend
+export async function getUploadUrl(file: File) {
+    const ext = file.name.split(".").pop();
+    const mime = file.type;
+
+    const res = await fetch(`${baseUrl}/api/student/profile/get-upload?ext=${ext}&mime=${mime}`, {
+        credentials: "include",
+    }); 
+    return await res.json();
+}
+
+//uplaod directly with presigned url
+export async function uploadToR2(upload_url: string, file: File) {
+    console.log("file type: ", file.type);
+
+    const res = await fetch(upload_url, {
+        method: 'PUT',
+        headers: { "Content-Type": file.type },
+        body: file,
+    });
+
+    if (!res.ok) {
+        return {
+            success: false,
+            reason: "Something went wrong!"
+        };
+    }
+    return { success: true }
+}
+
+//send photo url to backend
+export async function sendPhotoUrl(photo_url: string) {
+    await fetch(`${baseUrl}/api/student/profile/upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photo_url }),
+        credentials: "include"
+    });
+}

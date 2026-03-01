@@ -29,6 +29,7 @@ export interface StduentDetail {
   city: string;
   province: string;
   contact_num: string;
+  photo_url: string;
 }
 
 export interface StudentAuth {

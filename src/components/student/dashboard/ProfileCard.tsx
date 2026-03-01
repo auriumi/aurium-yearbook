@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
+//student service
+import * as studentService from "@/app/student/studentService";
+
 // Imported toast for upload notifications
 import toast from "react-hot-toast";
 
@@ -22,7 +25,8 @@ interface ProfileCardProps {
 
 // Destructured onCheckEntry from props
 export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry }: ProfileCardProps) {
-  
+  console.log(photoUrl);
+
   // --- PHOTO UPLOAD STATES & REFS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -59,17 +63,18 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
     
     setIsUploading(true);
     try {
-      // TODO (for Koi): Insert actual API call for Cloudflare Image Upload here
-      // Example: 
-      // const formData = new FormData(); formData.append("file", selectedFile);
-      // await fetch("/api/student/upload-photo", { method: "POST", body: formData });
-      
-      // Simulating a 1.5-second upload delay for the loading animation
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const { upload_url, photo_url } = await studentService.getUploadUrl(selectedFile);
+
+      const upl_res = await studentService.uploadToR2(upload_url, selectedFile);
+      if (!upl_res.success) {
+        return toast.error(upl_res.reason!);
+      }
+
+      await studentService.sendPhotoUrl(photo_url);
       toast.success("Formal photo successfully uploaded!");
       setSelectedFile(null);
-      // Note: Can trigger student data refresh here once the real API is ready
+
+      // TODO: Can trigger student data refresh here once the real API is ready
     } catch (err) {
       toast.error("Failed to upload photo. Please try again.");
     } finally {

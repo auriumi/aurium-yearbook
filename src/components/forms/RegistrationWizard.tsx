@@ -106,16 +106,15 @@ const departmentOptions = [
   }
 ];
 
-// Temporarily reverted to 7 steps. Email verification is commented out for now.
+// Temporarily reverted to 6 steps. Email verification is commented out for now.
 const steps = [
   { id: 1, name: "Personal", title: "Personal Information" },
   { id: 2, name: "Address", title: "Home Address" },
   { id: 3, name: "Academic", title: "Academic & Contact" },
   { id: 4, name: "Family", title: "Parents or Guardian" },
-  { id: 5, name: "Photo", title: "Upload Formal Photo" },
-  { id: 6, name: "Review", title: "Review Details" }, 
-  //{ id: 7, name: "Verify", title: "Email Verification" }, 
-  { id: 7, name: "Privacy", title: "Data Privacy" },
+  { id: 5, name: "Review", title: "Review Details" }, 
+  //{ id: 6, name: "Verify", title: "Email Verification" }, 
+  { id: 6, name: "Privacy", title: "Data Privacy" },
 ];
 
 // Title Case function
@@ -306,9 +305,7 @@ export default function RegistrationWizard() {
   const [guardianLname, setGuardianLname] = useState("");
   const [guardianRel, setGuardianRel] = useState("");
 
-  // --- STATE: Photo, Review & Privacy ---
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // --- STATE: Review & Privacy ---
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
@@ -346,20 +343,6 @@ export default function RegistrationWizard() {
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
 
   /* --- VERIFICATION HANDLERS (STEP 7) ---
   const handleSendCode = () => {
@@ -396,10 +379,8 @@ export default function RegistrationWizard() {
            return (fatherLname.trim() !== "" && fatherFname.trim() !== "") && (motherLname.trim() !== "" && motherFname.trim() !== "");
         }
       case 5: 
-        return photoPreview !== null;
-      case 6: 
         return reviewConfirmed;
-      case 7: 
+      case 6: 
         // return isEmailVerified; 
         return privacyAgreed;   
       default:
@@ -933,62 +914,8 @@ export default function RegistrationWizard() {
                         </div>
                     )}
 
-                    {/* --- STEP 5: PHOTO --- */}
+                    {/* --- STEP 5: REVIEW --- */}
                     {currentStep === 5 && (
-                        <div className="space-y-6">
-                        <input 
-                            type="file" 
-                            accept="image/png, image/jpeg, image/jpg" 
-                            className="hidden" 
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                        />
-                        <div 
-                            onClick={triggerFileInput}
-                            className="flex flex-col items-center justify-center py-10 space-y-4 border-2 border-dashed border-amber-300 rounded-xl bg-amber-50/50 hover:bg-amber-50 transition-colors cursor-pointer min-h-[300px]"
-                        >
-                            {photoPreview ? (
-                                <div className="relative group">
-                                <img 
-                                    src={photoPreview} 
-                                    alt="Preview" 
-                                    className="w-48 h-48 object-cover rounded-md border-4 border-white shadow-xl rotate-1 group-hover:rotate-0 transition-transform duration-300" 
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 rounded-md transition-opacity text-white text-sm font-bold">
-                                    Change Image
-                                </div>
-                                </div>
-                            ) : (
-                                <>
-                                <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center text-amber-800 mb-2">
-                                    <UserCircle size={64} />
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-xl font-serif text-amber-900">Upload Formal Photo</p>
-                                    <p className="text-sm text-stone-500 mt-1">JPG or PNG, max 5MB</p>
-                                </div>
-                                </>
-                            )}
-                            <Button variant="outline" className="mt-4 pointer-events-none border-amber-200 text-amber-900">
-                                {photoPreview ? "Replace Photo" : "Select from Device"}
-                            </Button>
-                        </div>
-                        <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800 border border-blue-100 flex gap-3">
-                            <div className="mt-0.5">ℹ️</div>
-                            <div>
-                                <strong>Requirements:</strong>
-                                <ul className="list-disc pl-4 mt-1 space-y-1 text-blue-700/80">
-                                <li>Plain or solid background color</li>
-                                <li>Wear formal business attire</li>
-                                <li>High resolution (not blurry)</li>
-                                </ul>
-                            </div>
-                        </div>
-                        </div>
-                    )}
-
-                    {/* --- STEP 6: REVIEW --- */}
-                    {currentStep === 6 && (
                         <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="bg-stone-50/80 border border-stone-200 rounded-xl p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-stone-200">
@@ -1108,29 +1035,6 @@ export default function RegistrationWizard() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <h4 className="flex items-center gap-2 text-sm font-bold text-amber-900 uppercase tracking-wider">
-                                Attached Photo
-                                </h4>
-                                <div className="bg-white p-4 rounded-lg border border-stone-100 shadow-sm flex items-center justify-between">
-                                    {photoPreview ? (
-                                    <div className="flex items-center gap-4">
-                                        <img src={photoPreview} className="w-16 h-16 rounded-full object-cover border-2 border-amber-500 shadow-sm" />
-                                        <div>
-                                        <span className="text-green-700 font-bold text-sm block mb-1">Photo Attached Successfully</span>
-                                        <span className="text-stone-400 text-xs">Ready for submission</span>
-                                        </div>
-                                    </div>
-                                    ) : (
-                                    <span className="text-red-500 text-sm font-medium flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-red-500"></div> No photo uploaded
-                                    </span>
-                                    )}
-                                    <Button variant="ghost" size="sm" onClick={() => jumpToStep(5)} className="text-amber-700 hover:text-amber-900 text-xs">
-                                    Edit
-                                    </Button>
-                                </div>
-                            </div>
                             </div>
                         </div>
 
@@ -1200,8 +1104,8 @@ export default function RegistrationWizard() {
                     )}
                     */}
 
-                    {/* --- STEP 7: PRIVACY --- */}
-                    {currentStep === 7 && (
+                    {/* --- STEP 6: PRIVACY --- */}
+                    {currentStep === 6 && (
                         <div className="space-y-4">
                         <div className="p-5 bg-stone-50 border border-stone-200 rounded-lg h-72 overflow-y-auto text-sm text-stone-600 leading-relaxed text-justify pr-2 scrollbar-thin scrollbar-thumb-stone-300 scrollbar-track-transparent">
                             <h4 className="font-bold text-amber-900 mb-3 text-base">Data Privacy Consent</h4>
@@ -1252,10 +1156,10 @@ export default function RegistrationWizard() {
                     
                     <Button 
                     className={`min-w-[140px] shadow-lg ${isStepValid() ? "bg-amber-900 hover:bg-amber-800 text-white shadow-amber-900/20" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
-                    onClick={currentStep === 7 ? onSubmit : handleNext}
+                    onClick={currentStep === 6 ? onSubmit : handleNext}
                     disabled={!isStepValid()}
                     >
-                    {currentStep === 7 ? "Submit Registration" : "Next Step"}
+                    {currentStep === 6 ? "Submit Registration" : "Next Step"}
                     </Button>
                 </CardFooter>
             </Card>

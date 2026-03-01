@@ -23,7 +23,7 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="flex items-center gap-2">
              <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden">
-                <Image src="/images/umtc-logo.png" alt="UMTC Logo" fill className="object-contain"/>
+               <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill sizes="40px" className="object-contain"/>
              </div>
              <div className="h-6 w-[1px] bg-stone-300"></div>
              <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden">

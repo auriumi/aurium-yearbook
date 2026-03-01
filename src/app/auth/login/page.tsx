@@ -49,13 +49,12 @@ export default function StudentLoginPage() {
       
       if (res.success) {
           toast.success("Successfully logged in!");
-
           if (res.is_new) {
               setIsPasswordUpdateRequired(true);
               setIsLoading(false);
+          } else {
+              router.push('/student/dashboard');
           }
-          router.push('/student/dashboard');
-
       } else {
           toast.error(res.reason || "Invalid ID Number or Password. Please try again.");
           setIsLoading(false);

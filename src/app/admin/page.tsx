@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import * as loginService from "@/app/auth/login/loginService";
+import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -29,11 +30,9 @@ export default function AdminLoginPage() {
     if (res.success) {
       router.push('/admin/dashboard');
     } else {
-      console.log(res.message);
+      toast.error(res.reason);
       setIsLoading(false);
     }
-    //TODO: "Update Password" screen
-    //setIsPasswordUpdateRequired(true); setIsLoading(false);
   };
 
   return (

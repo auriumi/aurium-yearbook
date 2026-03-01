@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1); 
   const [totalUnverified, setTotalUnverified] = useState(0);
   //TODO: make and use types.. zz
-  const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
+  //const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
 
   //Schedules 
   const { schedules, fetchSchedules } = useSchedules();  
@@ -61,7 +61,8 @@ export default function AdminDashboard() {
     try {
       const students = await adminService.searchStudentById(student_number);
       if (!students.success) {
-        console.log(students.reason);
+        toast.error(students.reason);
+
         setPendingStudents([]);
         return;
       }
@@ -93,10 +94,13 @@ export default function AdminDashboard() {
 
         setPendingStudents(students.data.student_list);
         setTotalUnverified(students.data.total);
+
+        /*
         setStudentCache(prev => ({
           ...prev,
           [page]: students.data.student_list
         }));
+        */
 
     } catch (error) {
         console.error("Error loading students:", error);

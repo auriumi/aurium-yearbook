@@ -6,37 +6,72 @@ export async function handleLogin(id: string, pass: string, is_admin?: boolean) 
         const res = await fetch(`${baseUrl}/api/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                id: id, 
+            body: JSON.stringify({
+                id: id,
                 pass: pass,
                 is_admin: is_admin ? is_admin : false
             }),
-            credentials: 'include'
+            credentials: 'include',
         });
 
-        if (res.ok) {
-            return {
-                success: true,
-                message: "Succesfully logged in!"
-            }
-        }
+        const body = res.json();
 
-        if (res.status == 401) {
+        if (!res.ok) {
+            if (res.status == 401) {
+                return {
+                    success: false,
+                    reason: "Invalid credentials. Please check your information!"
+                }
+            } 
+
             return {
                 success: false,
-                message: "Invalid credentials. Please check your ID and Password"
+                reason: "Something went wrong in the server."
             }
-        } 
+        }
 
         return {
-            success: false,
-            message: "Server error" 
+            success: true,
+            reason: "Succesfully logged in!"
         }
+
     } catch(err) {
         console.error(err);
         return {
             success: false,
-            message: "Cannot connect to the server at the moment. Please try agian later"
+            reason: "Cannot connect to the server at the moment. Please try agian later"
+        }
+    }
+};
+
+export async function handleUpdatePass(new_pass: string) {
+    try {
+        const res = await fetch(`${baseUrl}/api/auth/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                new_pass: new_pass,
+            }),
+            credentials: 'include',
+        }); 
+
+        if (!res.ok) {
+            return {
+                success: false,
+                reason: "Something went wrong in the server"
+            }
+        }
+
+        return {
+            success: true,
+            reason: "Password has been updated succesfully!"
+        }
+
+    } catch(err) {
+        console.error(err);
+        return {
+            success: false,
+            reason: "Cannot connect to the server at the moment. Please try agian later"
         }
     }
 };

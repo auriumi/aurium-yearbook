@@ -7,7 +7,16 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
   <div className="space-y-4">
     <div className="space-y-2">
         <Label htmlFor="idNumber">Student ID Number <span className="text-red-500">*</span></Label>
-        <Input id="idNumber" value={idNumber} onChange={e => setIdNumber(e.target.value)} placeholder="e.g. 142478" className="h-11 font-mono text-amber-900 font-medium bg-amber-50/30 border-amber-200" />
+        <Input 
+            id="idNumber" 
+            value={idNumber} 
+            // Gi-add ang replace aron e-delete dritso ang letters
+            onChange={e => setIdNumber(e.target.value.replace(/\D/g, ''))} 
+            placeholder="e.g. 142478" 
+            maxLength={6} // Limit lang sa 6 digits
+            inputMode="numeric" // Number keypad mogawas sa cellphone
+            className="h-11 font-mono text-amber-900 font-medium bg-amber-50/30 border-amber-200" 
+        />
     </div>
     <div className="h-px bg-gray-100 my-2"></div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

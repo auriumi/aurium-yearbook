@@ -1,5 +1,4 @@
 "use client";
-const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useCallback, useEffect } from "react";
 import { CheckCircle, Clock, Loader2, LogOut } from "lucide-react"; 
@@ -9,37 +8,29 @@ import { ProfileCard } from "@/components/student/dashboard/ProfileCard";
 import { BookingWidget } from "@/components/student/dashboard/BookingWidget";
 import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
 import { YearbookPreview } from "@/components/student/dashboard/YearbookPreview";
+// BAG-O: I-import ang bag-ong component
+import { SolicitationWidget } from "@/components/student/dashboard/SolicitationWidget"; 
 import { useRouter } from "next/navigation"; 
-import toast from "react-hot-toast";
 
-//types and services
-import { Booking, Schedule } from "@/types/index";
+import toast from "react-hot-toast";
+import { Booking, Schedule, Student } from "@/types/index";
 import * as studentService from "@/app/student/studentService";
-import { Student } from "@/types";
 
 export default function StudentDashboard() {
   const router = useRouter(); 
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [booking, setBooking] = useState<Booking>();
+  
   const [showPreview, setShowPreview] = useState(false);
+  
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  //get photo url
-  const getObjectKey = (url: string): string => {
-    if (typeof url !== 'string') return "";
-    const findStr = `/aurium/`;
-
-    const idx = url.indexOf(findStr);
-
-    if (idx === -1) return "";
-    return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
-  }
 
   const fetchStudent = useCallback(async () => {
     try {
       const res = await studentService.getStudentProfile(); 
+      console.log(res);
 
       const hasBooking = res.booking.length > 0 ? res.booking[0] : null;
       if (hasBooking) setBooking(hasBooking);
@@ -66,7 +57,6 @@ export default function StudentDashboard() {
 
   const handleBooking = async (booking_id: number, period: string) => {
     const res = await studentService.addBook(booking_id, period)
-
     if (!res) {
       toast.error("Something went wrong submitting the book!");
     } else {
@@ -75,21 +65,14 @@ export default function StudentDashboard() {
     }
   };
 
-  //handle logout
-  const onLogout = async () => {
-    const res = await fetch(`${baseUrl}/api/auth/logout`, {
-      credentials: 'include'
-    });
-    if (res.ok) router.push('/');
-  }
-
   const confirmLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await onLogout();
+      localStorage.clear();
+      sessionStorage.clear();
+      await fetch('http://localhost:4000/api/student/logout', { method: 'POST' }).catch(() => {});
       toast.success("You have successfully logged out.");
-      router.push('/');
-
+      window.location.href = "/"; 
     } catch (err) {
       toast.error("Failed to log out properly.");
       console.error(err);
@@ -97,7 +80,20 @@ export default function StudentDashboard() {
     }
   };
 
-  //show loading screen when user is still fetching
+  // BAG-O: Function para sa pag-save sa Sponsors (para ni Koi puhon)
+  const handleSaveSponsors = async (newSponsors: string[]) => {
+    return new Promise<void>((resolve) => {
+      // Gihimo natong fake delay para makita ang "Saving..." nga UI
+      setTimeout(async () => {
+        // @Koi: Diri nimo isumpay ang API call padulong sa backend.
+        // Example: await studentService.updateSponsors(newSponsors);
+        
+        toast.success("Solicitation sponsors saved successfully!");
+        resolve();
+      }, 1000);
+    });
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center font-sans">
@@ -115,13 +111,12 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-stone-50 font-sans relative">
       
       <StudentHeader 
-        user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: undefined}} 
+        user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: user.photo_url ?? undefined }} 
         onLogout={() => setShowLogoutConfirm(true)} 
       />
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         
-        {/* DASHBOARD TITLE */}
         <header className="md:flex justify-between items-end pb-6 border-b border-stone-200">
             <div>
                 <h1 className="text-3xl font-serif font-bold text-stone-800">Student Dashboard</h1>
@@ -138,25 +133,39 @@ export default function StudentDashboard() {
             )}
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Gi-change nako to grid-cols-1 md:grid-cols-2 lg:grid-cols-3 para mas nindot pagka distribute */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* LEFT COLUMN: Profile ra ang ibilin diri aron dili kaayo taas */}
+          <div className="flex flex-col gap-6 lg:col-span-1">
+            <ProfileCard
+              fullName={`${user.first_name} ${user.last_name}`}
+              idNumber={user.student_number}
+              course={user.course}
+              photoUrl={user.photo_url} 
+              onCheckEntry={() => setShowPreview(true)} 
+            />
+          </div>
 
-          <ProfileCard
-            fullName={`${user.first_name} ${user.last_name}`}
-            idNumber={user.student_number}
-            course={user.course}
-            photoUrl={getObjectKey(user.studentDetail.photo_url)}
-            onCheckEntry={() => setShowPreview(true)} 
-          />
+          {/* RIGHT COLUMN: Booking Widget ug Solicitation Widget (Landscape na siya diri!) */}
+          <div className="flex flex-col gap-6 lg:col-span-2">
+            <BookingWidget
+              bookingList={schedule}
+              booking={booking} 
+              idNumber={user.student_number}
+              onBook={handleBooking}
+            />
 
-          <BookingWidget
-            bookingList={schedule}
-            booking={booking} 
-            idNumber={user.student_number}
-            onBook={handleBooking}
-          />
+            {/* Gibalhin nato diri sa ilalom sa Booking */}
+            <SolicitationWidget 
+              onSave={handleSaveSponsors}
+            />
+          </div>
 
-          {/* 3. Yearbook Teaser Component */}
-          <YearbookTeaser />
+          {/* BOTTOM FULL WIDTH: Yearbook Teaser */}
+          <div className="lg:col-span-3">
+             <YearbookTeaser />
+          </div>
 
         </div>
       </main>

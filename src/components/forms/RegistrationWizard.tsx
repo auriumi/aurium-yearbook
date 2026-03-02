@@ -140,6 +140,7 @@ export default function RegistrationWizard() {
   const [contactNum, setContactNum] = useState("");
   const [email, setEmail] = useState("");
   const [umEmail, setUmEmail] = useState(""); 
+  const [hasUmEmailAccess, setHasUmEmailAccess] = useState(true);
 
   // --- STATE: Family ---
   const [useGuardian, setUseGuardian] = useState(false);
@@ -172,10 +173,21 @@ export default function RegistrationWizard() {
   };
 
   const isStepValid = () => {
+    const isValidEmailFormat = (emailStr: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+
     switch (currentStep) {
       case 1: return idNumber.trim() !== "" && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
       case 2: return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
-      case 3: return selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && email.trim() !== "" && umEmail.trim() !== "";
+      case 3: 
+        // CHECK 1: Naa bay sulod ang text fields ug Valid ba ang Personal Email?
+        const isBaseAcademicValid = selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmailFormat(email);
+        
+        // CHECK 2: Kung nag-ingon siya nga naa pa siyay UM Email, e-check pud ang format.
+        if (hasUmEmailAccess) {
+            return isBaseAcademicValid && isValidEmailFormat(umEmail);
+        }
+        return isBaseAcademicValid; // Kung walay UM Email access, proceed ra as long as valid ang Personal Email.
+        
       case 4: return useGuardian ? (guardianLname.trim() !== "" && guardianFname.trim() !== "" && guardianRel.trim() !== "") : ((fatherLname.trim() !== "" && fatherFname.trim() !== "") && (motherLname.trim() !== "" && motherFname.trim() !== ""));
       case 5: return reviewConfirmed;
       case 6: return privacyAgreed;   
@@ -189,7 +201,25 @@ export default function RegistrationWizard() {
 
   const onSubmit = async () => {
     const relation: any = useGuardian ? { guardian: { guardians_name: `${guardianFname} ${guardianLname}`, relationship: guardianRel } } : { parent: { fathers_name: `${fatherFname} ${fatherMname} ${fatherLname}`, mothers_name: `${motherFname} ${motherMname} ${motherLname}` } };
-    const body = { id: idNumber, personal_email: email, school_email: umEmail, last_name: lname, first_name: fname, middle_name: mname, suffix: suffix, nickname: nickname, birthdate: bdate, contact_num: contactNum, academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: thesisTitle }, ...relation, province: provinceName, city: cityName, barangay: barangayName };
+    
+    // API Payload: Ipasa ra ang umEmail kung naa siyay access, kung wala, empty string i-pasa.
+    const body = { 
+        id: idNumber, 
+        personal_email: email, 
+        school_email: hasUmEmailAccess ? umEmail : "", 
+        last_name: lname, 
+        first_name: fname, 
+        middle_name: mname, 
+        suffix: suffix, 
+        nickname: nickname, 
+        birthdate: bdate, 
+        contact_num: contactNum, 
+        academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: thesisTitle }, 
+        ...relation, 
+        province: provinceName, 
+        city: cityName, 
+        barangay: barangayName 
+    };
 
     try {
       const res = await fetch(`${baseUrl}/api/student/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -252,14 +282,15 @@ export default function RegistrationWizard() {
                 <CardContent className="min-h-[400px] pt-6">
                     <motion.div key={currentStep} initial={{ x: direction * 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: direction * -50, opacity: 0 }} transition={{ duration: 0.2 }}>
                     
-                    {/* =======================================================
-                        SOLID PRINCIPLE IN ACTION: Passing Props to Child Components
-                        ======================================================= */}
+                    {/* SOLID PRINCIPLE IN ACTION: Passing Props to Child Components */}
                     {currentStep === 1 && <PersonalStep idNumber={idNumber} setIdNumber={setIdNumber} lname={lname} setLname={setLname} fname={fname} setFname={setFname} mname={mname} setMname={setMname} suffix={suffix} setSuffix={setSuffix} nickname={nickname} setNickname={setNickname} bdate={bdate} setBdate={setBdate} />}
                     {currentStep === 2 && <AddressStep isLoadingProvinces={isLoadingProvinces} provinceList={provinceList} selectedProvinceCode={selectedProvinceCode} handleProvinceChange={handleProvinceChange} isLoadingCities={isLoadingCities} cityList={cityList} selectedCityCode={selectedCityCode} handleCityChange={handleCityChange} isLoadingBarangays={isLoadingBarangays} barangayList={barangayList} selectedBarangayCode={selectedBarangayCode} setSelectedBarangayCode={setSelectedBarangayCode} />}
-                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} />}
+                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
+                    
+                    {/* FIXED: Nabutang na ang FamilyStep (Step 4) */}
                     {currentStep === 4 && <FamilyStep useGuardian={useGuardian} setUseGuardian={setUseGuardian} guardianLname={guardianLname} setGuardianLname={setGuardianLname} guardianTitle={guardianTitle} setGuardianTitle={setGuardianTitle} guardianFname={guardianFname} setGuardianFname={setGuardianFname} guardianRel={guardianRel} setGuardianRel={setGuardianRel} fatherLname={fatherLname} setFatherLname={setFatherLname} fatherTitle={fatherTitle} setFatherTitle={setFatherTitle} fatherFname={fatherFname} setFatherFname={setFatherFname} fatherMname={fatherMname} setFatherMname={setFatherMname} fatherSuffix={fatherSuffix} setFatherSuffix={setFatherSuffix} motherLname={motherLname} setMotherLname={setMotherLname} motherTitle={motherTitle} setMotherTitle={setMotherTitle} motherFname={motherFname} setMotherFname={setMotherFname} motherMname={motherMname} setMotherMname={setMotherMname} />}
-                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} umEmail={umEmail} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
+                    
+                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
                     {currentStep === 6 && <PrivacyStep privacyAgreed={privacyAgreed} setPrivacyAgreed={setPrivacyAgreed} />}
                     
                     </motion.div>

@@ -32,7 +32,7 @@ export default function StudentDashboard() {
     const idx = url.indexOf(findStr);
 
     if (idx === -1) return "";
-    return "https://auriumi.cloud/" + url.substring(idx + findStr.length);
+    return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
   }
 
   const fetchStudent = useCallback(async () => {

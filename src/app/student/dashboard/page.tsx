@@ -28,7 +28,9 @@ export default function StudentDashboard() {
 
   //get photo url
   const getObjectKey = (url: string): string => {
+    if (typeof url !== 'string') return "";
     const findStr = `/aurium/`;
+
     const idx = url.indexOf(findStr);
 
     if (idx === -1) return "";

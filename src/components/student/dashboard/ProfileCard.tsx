@@ -25,8 +25,6 @@ interface ProfileCardProps {
 
 // Destructured onCheckEntry from props
 export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry }: ProfileCardProps) {
-  console.log(photoUrl);
-
   // --- PHOTO UPLOAD STATES & REFS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

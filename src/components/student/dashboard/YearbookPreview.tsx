@@ -175,9 +175,8 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                                    <p>{details.family.guardian}</p>
                                 ) : (
                                    <>
-                                      {/*  Gibutangan nakog identifier gamay para F: and M: para chada tan-awon */}
-                                      <p><span className="text-amber-500/60 text-xs mr-2">F:</span> {details.family.father}</p>
-                                      <p><span className="text-amber-500/60 text-xs mr-2">M:</span> {details.family.mother}</p>
+                                      <p><span className="text-amber-500/60 text-xs mr-2">Father:</span> {details.family.father}</p>
+                                      <p><span className="text-amber-500/60 text-xs mr-2">Mother:</span> {details.family.mother}</p>
                                    </>
                                 )}
                              </div>

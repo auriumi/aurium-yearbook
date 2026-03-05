@@ -28,7 +28,6 @@ export default function StudentDashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
     const findStr = `/aurium/`;

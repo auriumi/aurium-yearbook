@@ -53,7 +53,16 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
     </div>
     <div className="space-y-2">
         <Label htmlFor="bdate">Birthdate <span className="text-red-500">*</span></Label>
-        <Input id="bdate" type="date" value={bdate} onChange={e => setBdate(e.target.value)} className="block w-full h-11" required />
+        <Input 
+            id="bdate" 
+            type="date" 
+            value={bdate} 
+            onChange={e => setBdate(e.target.value)} 
+            className="block w-full h-11" 
+            min="1950-01-01" // Prevents typing unrealistic old years like 1111
+            max="2012-12-31" // Prevents typing future or impossibly young years
+            required 
+        />
     </div>
   </div>
 );

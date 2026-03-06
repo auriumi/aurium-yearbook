@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, CheckCircle, AlertTriangle } from "lucide-react"; // Removed QrCode icon
-import QRCode from "react-qr-code"; // Import the real generator
+// BAG-O: Gi-add nato ang Loader2 para sa loading spinner
+import { Calendar, CheckCircle, AlertTriangle, Loader2 } from "lucide-react"; 
+import QRCode from "react-qr-code"; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,8 @@ interface BookingWidgetProps {
   bookingList: Schedule[], 
   booking?: Booking,
   idNumber: string;
-  onBook: (booking_id: number, period: string) => void;
+  // BAG-O: Gi-change nato to Promise<void> aron maka-await ta sa API call
+  onBook: (booking_id: number, period: string) => Promise<void> | void;
 };
 
 export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
@@ -22,6 +24,9 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
   const [selectedBookingId, setSelectedBookingId] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSession, setSelectedSession] = useState<"AM" | "PM" | "">("");
+  
+  // BAG-O: State para ma-lock ang button inig submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSelectSlot = (booking_id: number, date: string, session: "AM" | "PM", isFull: boolean) => {
     if (isFull) return;
@@ -30,11 +35,20 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
     setSelectedSession(session);
   };
 
-  const handleConfirm = () => {
+  // BAG-O: Gihimo natong async para mag-huwat sa API ni Koi
+  const handleConfirm = async () => {
     if (selectedDate && selectedSession) {
-        onBook(selectedBookingId, selectedSession);
-        setIsConfirmDialogOpen(false);
-        setIsBookingModalOpen(false);
+        setIsSubmitting(true); // I-lock ang button!
+        try {
+            await onBook(selectedBookingId, selectedSession);
+            // Inig human og save, diha pa nato isira ang dialogs
+            setIsConfirmDialogOpen(false);
+            setIsBookingModalOpen(false);
+        } catch (error) {
+            console.error("Booking failed:", error);
+        } finally {
+            setIsSubmitting(false); // I-unlock ang button (in case nag error)
+        }
     }
   };
 
@@ -52,11 +66,10 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
       </CardHeader>
       <CardContent className="min-h-[200px] flex items-center justify-center">
         {booking ? (
-          // --- CONFIRMED TICKET VIEW (UPDATED) ---
+          // --- CONFIRMED TICKET VIEW ---
           <div className="w-full bg-stone-50 border border-stone-200 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-green-500"></div>
             
-            {/* Ticket Details */}
             <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2">
                 <Badge className="bg-green-600 hover:bg-green-600">CONFIRMED</Badge>
@@ -71,9 +84,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
               <p className="text-xs text-stone-400 italic mt-2">Present this QR to the attendance officer.</p>
             </div>
 
-            {/* REAL QR CODE SECTION */}
             <div className="flex flex-col items-center gap-2 bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
-              {/* This generates a unique QR for this specific ID number */}
               <div style={{ height: "auto", margin: "0 auto", maxWidth: 100, width: "100%" }}>
                 <QRCode
                   size={256}
@@ -86,7 +97,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
             </div>
           </div>
         ) : (
-          // ... (BOOKING UI remains exactly the same as before) ...
+          // --- BOOKING UI ---
           <div className="text-center space-y-4 py-6">
              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-8 h-8 text-amber-600" />
@@ -115,7 +126,6 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                                 <div className="grid grid-cols-2 gap-4">
                                     {['AM', 'PM'].map((sessionType) => {
                                         const isAM = sessionType === 'AM';
-
                                         const booked = isAM ? slot.curr_morning : slot.curr_afternoon;
                                         const capacity = isAM ? slot.max_morning_cap : slot.max_afternoon_cap;
                                         const isFull = booked >= capacity;
@@ -169,8 +179,14 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsConfirmDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleConfirm} className="bg-red-600 hover:bg-red-700 text-white">Yes, Finalize</Button>
+                        {/* BAG-O: I-disable ang Cancel button kung nag submit na */}
+                        <Button variant="outline" onClick={() => setIsConfirmDialogOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                        
+                        {/* BAG-O: Ang Confirm button naay loading state, gi-disable inig click, ug naay spinner */}
+                        <Button onClick={handleConfirm} disabled={isSubmitting} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
+                            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {isSubmitting ? "Booking..." : "Yes, Finalize"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
              </Dialog>

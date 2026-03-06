@@ -10,11 +10,11 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
         <Input 
             id="idNumber" 
             value={idNumber} 
-            // Gi-add ang replace aron e-delete dritso ang letters
+            // Added regex replace to automatically remove non-numeric characters
             onChange={e => setIdNumber(e.target.value.replace(/\D/g, ''))} 
             placeholder="e.g. 142478" 
-            maxLength={6} // Limit lang sa 6 digits
-            inputMode="numeric" // Number keypad mogawas sa cellphone
+            maxLength={6} // Restrict to exactly 6 digits
+            inputMode="numeric" // Trigger numeric keypad on mobile devices
             className="h-11 font-mono text-amber-900 font-medium bg-amber-50/30 border-amber-200" 
         />
     </div>
@@ -40,12 +40,20 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
         </div>
     </div>
     <div className="space-y-2">
-        <Label htmlFor="nickname">Nickname (for Yearbook)</Label>
-        <Input id="nickname" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Juanny" className="h-11" />
+        {/* FIXED: Added the required asterisk indicator */}
+        <Label htmlFor="nickname">Nickname (for Yearbook) <span className="text-red-500">*</span></Label>
+        <Input 
+            id="nickname" 
+            value={nickname} 
+            onChange={(e) => setNickname(e.target.value)} 
+            placeholder="Juanny" 
+            className="h-11" 
+            required // Added required attribute
+        />
     </div>
     <div className="space-y-2">
         <Label htmlFor="bdate">Birthdate <span className="text-red-500">*</span></Label>
-        <Input id="bdate" type="date" value={bdate} onChange={e => setBdate(e.target.value)} className="block w-full h-11" />
+        <Input id="bdate" type="date" value={bdate} onChange={e => setBdate(e.target.value)} className="block w-full h-11" required />
     </div>
   </div>
 );

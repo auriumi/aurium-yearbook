@@ -44,8 +44,13 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
              <p className="text-[10px] text-stone-400 uppercase tracking-wider">{user.idNumber}</p>
           </div>
           <Avatar className="h-9 w-9 border border-amber-200">
-             <AvatarImage src={user.photoUrl ?? undefined} />
-             <AvatarFallback className="bg-amber-100 text-amber-800 text-xs">JD</AvatarFallback>
+             {/* Applied object-cover to prevent stretching. Note: This avatar will update on the next page refresh after the CDN cache clears, as discussed in Issue #51 */}
+             <AvatarImage src={user.photoUrl ?? undefined} className="object-cover" />
+             
+             {/* Made the fallback dynamic based on the user's first name instead of hardcoded 'JD' */}
+             <AvatarFallback className="bg-amber-100 text-amber-800 text-xs">
+                {user.fname ? user.fname.charAt(0).toUpperCase() : "S"}
+             </AvatarFallback>
           </Avatar>
           
           {/* Placed the Logout Button right next to the avatar */}

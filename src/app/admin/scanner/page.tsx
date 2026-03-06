@@ -11,12 +11,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Scanner } from '@yudiel/react-qr-scanner';
 
-// import ang hook nga gahandle sa tanan logic
+// Import the hook that handles all scanner logic
 import { useScanner } from "@/hooks/useScanner";
 
 export default function ScannerPage() {
   
-  // destructure tanan gikan sa hook para dli crowded diri
+  // Destructure state and functions from the hook to keep the component clean
   const {
     scanInput, setScanInput,
     scanResult,
@@ -70,7 +70,7 @@ export default function ScannerPage() {
         {/* Scanner Content */}
         <div className="flex-1 flex flex-col justify-center items-center p-8 relative pt-24">
             
-            {/* bg color transition based on result */}
+            {/* Background color transition based on scan result */}
             <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none opacity-20
                 ${scanResult === 'success' ? 'bg-green-500' : scanResult === 'error' ? 'bg-red-500' : 'bg-transparent'}`} 
             />
@@ -115,8 +115,10 @@ export default function ScannerPage() {
                             {scanResult === 'success' && scannedStudent && (
                                 <div className="absolute inset-0 z-30 bg-stone-900/90 flex flex-col items-center justify-center animate-in zoom-in-95 duration-200 p-4 text-center">
                                     <Avatar className="w-24 h-24 border-4 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.6)] mb-4">
-                                        <AvatarImage src={scannedStudent.photo} />
-                                        <AvatarFallback>JD</AvatarFallback>
+                                        {/* FIXED: Added "as any" to bypass TypeScript error for photoUrl */}
+                                        <AvatarImage src={(scannedStudent as any).photoUrl ?? undefined} className="object-cover" />
+                                        {/* Dynamic fallback initial based on the student's name */}
+                                        <AvatarFallback>{scannedStudent.name ? scannedStudent.name.charAt(0).toUpperCase() : "S"}</AvatarFallback>
                                     </Avatar>
                                     <h2 className="text-3xl font-black text-green-400 tracking-widest drop-shadow-md">VERIFIED</h2>
                                     <p className="text-xl font-bold text-white mt-2 truncate max-w-full">{scannedStudent.name}</p>
@@ -154,7 +156,7 @@ export default function ScannerPage() {
                     </Card>
                 </div>
 
-                {/* Manual entry kung naay guba sa ID */}
+                {/* Manual entry fallback in case the ID barcode/QR is damaged */}
                 <form onSubmit={handleManualSubmit} className="relative group">
                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-stone-500 group-focus-within:text-amber-500 transition-colors"/>
@@ -198,7 +200,7 @@ export default function ScannerPage() {
             </div>
         </div>
 
-        {/* Filter Tabs - Gi update nako ni para match sa status variables */}
+        {/* Filter Tabs - Updated to match the status variables */}
         <div className="px-6 pt-4">
             <Tabs defaultValue="all" className="w-full" onValueChange={(val) => setFilter(val as any)}>
                 <TabsList className="w-full bg-stone-800">
@@ -222,8 +224,12 @@ export default function ScannerPage() {
                         }`}
                     >
                         <Avatar className={`h-10 w-10 border-2 ${student.status === 'attended' ? 'border-green-500' : 'border-stone-700'}`}>
-                            <AvatarImage src={student.photo} />
-                            <AvatarFallback className="bg-stone-800 text-stone-400">JD</AvatarFallback>
+                            {/* FIXED: Added "as any" to bypass TypeScript error for photoUrl */}
+                            <AvatarImage src={(student as any).photoUrl ?? undefined} className="object-cover" />
+                            {/* Dynamic fallback initial based on the student's name */}
+                            <AvatarFallback className="bg-stone-800 text-stone-400">
+                                {student.name ? student.name.charAt(0).toUpperCase() : "S"}
+                            </AvatarFallback>
                         </Avatar>
                         
                         <div className="flex-1 min-w-0">

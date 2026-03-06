@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
 import { departmentOptions } from "./RegistrationConstants";
-import { MailWarning } from "lucide-react"; // Bag-ong icon para sa warning
+// Added AlertCircle for the phone validation warning
+import { MailWarning, AlertCircle } from "lucide-react"; 
 
 export const AcademicStep = ({ 
     selectedDepartment, handleDepartmentChange, 
@@ -14,11 +15,14 @@ export const AcademicStep = ({
     contactNum, setContactNum, 
     email, setEmail, 
     umEmail, setUmEmail,
-    hasUmEmailAccess, setHasUmEmailAccess // Mga bag-ong props!
+    hasUmEmailAccess, setHasUmEmailAccess // New props for email access
 }: any) => {
 
-  // Simple Regex para ma-check kung valid ba ang email (naay @ ug .com)
+  // Simple Regex to check if email format is valid (has @ and domain)
   const isValidEmail = (emailStr: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+
+  // Simple Regex to ensure contact number starts with 09 and is exactly 11 digits long
+  const isValidContact = (num: string) => /^09\d{9}$/.test(num);
 
   return (
     <div className="space-y-5">
@@ -53,12 +57,25 @@ export const AcademicStep = ({
 
       <div className="h-px bg-gray-200 my-2"></div>
 
+      {/* PRIMARY CONTACT NUMBER (Added strict 09 format validation) */}
       <div className="space-y-2">
           <Label>Primary Contact Number <span className="text-red-500">*</span></Label>
-          <Input value={contactNum} onChange={e => setContactNum(e.target.value.replace(/\D/g, ''))} placeholder="09XXXXXXXXX" inputMode="numeric" maxLength={11} className="h-11" />
+          <Input 
+            value={contactNum} 
+            onChange={e => setContactNum(e.target.value.replace(/\D/g, ''))} 
+            placeholder="09XXXXXXXXX" 
+            inputMode="numeric" 
+            maxLength={11} 
+            className={`h-11 ${contactNum.length > 0 && !isValidContact(contactNum) ? "border-red-400 focus-visible:ring-red-400" : ""}`} 
+          />
+          {contactNum.length > 0 && !isValidContact(contactNum) && (
+              <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1">
+                <AlertCircle size={12}/> Must start with "09" and be exactly 11 digits long.
+              </span>
+          )}
       </div>
 
-      {/* PERSONAL EMAIL (Nangayo tag validation format) */}
+      {/* PERSONAL EMAIL (With validation format) */}
       <div className="space-y-2">
           <Label>Personal Email Address <span className="text-red-500">*</span></Label>
           <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="juandelacruz@email.com" className={`h-11 ${email.length > 0 && !isValidEmail(email) ? "border-red-400 focus-visible:ring-red-400" : ""}`} />
@@ -76,7 +93,7 @@ export const AcademicStep = ({
           </div>
       </div>
 
-      {/* UM EMAIL INPUT (Ma-hide ni kung i-uncheck sa babaw) */}
+      {/* UM EMAIL INPUT (Hidden if the toggle above is unchecked) */}
       {hasUmEmailAccess && (
           <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
               <Label>UM Student Email <span className="text-red-500">*</span></Label>

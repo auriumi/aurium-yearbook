@@ -19,9 +19,22 @@ interface YearbookPreviewProps {
 export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const stud_detail = user.studentDetail;
 
-  // Gi-update ang check para kung empty string, di niya i-treat nga naay guardian
+  // HELPER FUNCTION: Safely combines the salutation (Mr/Mrs/Dr) with the name.
+  // It also prevents double titles just in case the student typed "Mr. John" in the name field.
+  const formatNameWithTitle = (name?: string, title?: string, defaultTitle?: string) => {
+    if (!name || name.trim() === "") return null;
+    const finalTitle = title || defaultTitle || "";
+    
+    // Check if the name already starts with the title to avoid "Mr. Mr. John"
+    if (finalTitle && !name.toLowerCase().startsWith(finalTitle.toLowerCase().replace(".", ""))) {
+      return `${finalTitle} ${name}`;
+    }
+    return name;
+  };
+
+  // Updated to include the guardian's salutation if it exists (Bypassed TS with 'as any')
   const guardian = stud_detail?.guardians_name && stud_detail.guardians_name.trim() !== "" 
-      ? stud_detail.guardians_name 
+      ? formatNameWithTitle(stud_detail.guardians_name, (stud_detail as any)?.guardians_salutation) 
       : null;
 
   const details = {
@@ -31,7 +44,12 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
       lname: user?.last_name,
       suffix: user?.suffix,
       nickname: user?.nickname, 
-      birthdate: new Date(stud_detail.birth_date).toLocaleDateString(),
+      // FIXED: Formatted the date to spell out the month (e.g., June 28, 2001)
+      birthdate: new Date(stud_detail.birth_date).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }),
     },
     address: {
       barangay: stud_detail.barangay,
@@ -47,8 +65,9 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
      },
      family: {
        guardian: guardian,
-       father: stud_detail?.fathers_name, 
-       mother: stud_detail?.mothers_name,
+       // FIXED: Added (stud_detail as any) to bypass TS errors, defaulting to Mr. and Mrs.
+       father: formatNameWithTitle(stud_detail?.fathers_name, (stud_detail as any)?.fathers_salutation, "Mr."), 
+       mother: formatNameWithTitle(stud_detail?.mothers_name, (stud_detail as any)?.mothers_salutation, "Mrs."),
      }
   };
 

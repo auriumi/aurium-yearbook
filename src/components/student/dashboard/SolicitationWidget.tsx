@@ -19,12 +19,12 @@ interface Sponsor {
 
 const TITLES = ["Mr.", "Mrs.", "Ms.", "Dr.", "Atty.", "Engr.", "Arch.", "Prof.", "Rev.", "Hon."];
 
-export function SolicitationWidget({ initialSponsors = ["", "", "", "", ""], onSave }: SolicitationWidgetProps) {
+export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave }: SolicitationWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const parseInitialSponsors = (): Sponsor[] => {
-    const defaultSponsors = initialSponsors.length === 5 ? initialSponsors : ["", "", "", "", ""];
+    const defaultSponsors = initialSponsors.length === 4 ? initialSponsors : ["", "", "", ""];
     return defaultSponsors.map(val => {
       if (!val) return { type: "individual", title: "Mr.", name: "" };
       for (const t of TITLES) {
@@ -76,21 +76,20 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", "", ""], onS
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-stone-100">
         <div className="flex items-center gap-2 text-stone-800">
           <Users className="text-amber-600" size={20} />
-          <h2 className="font-bold font-serif text-lg">Solicitation Sponsors</h2>
+          <h2 className="font-bold text-lg">Solicitation Sponsors</h2>
         </div>
         {!isEditing ? (
           <button onClick={() => setIsEditing(true)} className="flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-md hover:bg-amber-100 transition-colors">
             <Edit3 size={14} /> Edit Names
           </button>
         ) : (
-           <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{filledCount} / 5 Added</div>
+           <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{filledCount} / 4 Added</div>
         )}
       </div>
 
       {/* CONTENT */}
       <div className="flex-1 space-y-3">
         {isEditing ? (
-          // --- EDIT MODE ---
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3 flex gap-2 items-start mb-2">
               <Info className="text-amber-600 shrink-0 mt-0.5" size={16} />
@@ -99,7 +98,6 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", "", ""], onS
               </p>
             </div>
             
-            {/* BAG-O: Naka Grid na sila by 2 columns para dili taas kaayo sa screen! */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sponsors.map((sponsor, index) => (
                 <div key={index} className="p-3 bg-stone-50 border border-stone-100 rounded-lg space-y-2">
@@ -147,15 +145,13 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", "", ""], onS
             </div>
           </div>
         ) : (
-          // --- VIEW MODE ---
           <div className="space-y-2 animate-in fade-in duration-300">
             {filledCount === 0 ? (
               <div className="text-center py-6 text-stone-400">
                 <p className="text-sm">No sponsors added yet.</p>
-                <p className="text-xs mt-1">Click edit to add them here</p>
+                <p className="text-xs mt-1">Click edit to add your 4 forms.</p>
               </div>
             ) : (
-              // Naka-grid nasad ni nga list para presentable
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {sponsors.map((sponsor, index) => (
                   sponsor.name.trim() !== "" && (

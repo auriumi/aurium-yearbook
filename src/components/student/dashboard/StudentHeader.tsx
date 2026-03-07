@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// Added the LogOut icon here
 import { LogOut } from "lucide-react"; 
 
 interface StudentHeaderProps {
@@ -12,7 +11,6 @@ interface StudentHeaderProps {
     idNumber?: string;
     photoUrl?: string | null; 
   };
-  // Added the onLogout function as a prop
   onLogout: () => void; 
 }
 
@@ -23,7 +21,6 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="flex items-center gap-2">
              <div className="relative w-8 h-8 md:w-10 md:h-10 overflow-hidden">
-               {/* FIXED: Changed to the UMTC logo */}
                <Image src="/images/umtc-logo.png" alt="UMTC Logo" fill sizes="40px" className="object-contain"/>
              </div>
              <div className="h-6 w-[1px] bg-stone-300"></div>
@@ -40,7 +37,7 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
         {/* User Profile & Logout */}
         <div className="flex items-center gap-3">
           <div className="text-right hidden md:block">
-             <p className="text-xs font-bold text-stone-700 leading-none">Hi, {user.fname}</p>
+             <p className="text-sm font-bold text-stone-700 leading-none">Hi, {user.fname}</p>
              <p className="text-[10px] text-stone-400 uppercase tracking-wider">{user.idNumber}</p>
           </div>
           <Avatar className="h-9 w-9 border border-amber-200">
@@ -49,7 +46,7 @@ export function StudentHeader({ user, onLogout }: StudentHeaderProps) {
              
              {/* Made the fallback dynamic based on the user's first name instead of hardcoded 'JD' */}
              <AvatarFallback className="bg-amber-100 text-amber-800 text-xs">
-                {user.fname ? user.fname.charAt(0).toUpperCase() : "S"}
+                {user.fname ? user.fname.charAt(0).toUpperCase() : "UM"}
              </AvatarFallback>
           </Avatar>
           

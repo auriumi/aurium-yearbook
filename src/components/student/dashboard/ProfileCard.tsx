@@ -150,9 +150,8 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
                 {photoUrl ? "Update Formal Photo" : "Upload Formal Photo"}
               </Button>
               
-              {/* Added reminder text for CDN caching as instructed by Backend */}
-              <p className="text-[10px] text-stone-400 leading-tight px-1">
-                Note: Uploaded photos may take a few hours to fully update due to server caching.
+              <p className="text-[12px] text-stone-400 leading-tight px-1">
+                Note: Uploading a picture may take a few hours to reflect in your dashboard
               </p>
             </div>
           )}

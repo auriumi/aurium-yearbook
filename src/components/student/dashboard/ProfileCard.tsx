@@ -86,7 +86,7 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
     <Card className="md:col-span-1 border-t-4 border-t-amber-900 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-stone-700">
-          <UserCircle className="w-5 h-5 text-amber-700" /> Yearbook Profile
+          <UserCircle className="w-5 h-5 text-amber-700" />Profile
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center text-center space-y-4">

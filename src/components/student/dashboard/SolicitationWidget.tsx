@@ -152,7 +152,7 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", "", ""], onS
             {filledCount === 0 ? (
               <div className="text-center py-6 text-stone-400">
                 <p className="text-sm">No sponsors added yet.</p>
-                <p className="text-xs mt-1">Click edit to add your 5 forms.</p>
+                <p className="text-xs mt-1">Click edit to add them here</p>
               </div>
             ) : (
               // Naka-grid nasad ni nga list para presentable

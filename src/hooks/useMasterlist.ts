@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 // --- 1. CONFIGURATIONS ---
-// @Koi: Ako nani gi set daan ang mga departments ug majors nato para magamit sa dropdown filters sa UI
 export const ACADEMIC_CONFIG = [
   {
     name: "GRADUATE SCHOOL",
@@ -79,7 +78,6 @@ export const ACADEMIC_CONFIG = [
   }
 ];
 
-// @Koi: Base sa imong request, kani na ang imong 1-5 tracking steps
 export const STATUS_STEPS = [
   { id: 1, label: "Registered", color: "bg-stone-500" },      
   { id: 2, label: "Approved", color: "bg-blue-500" },        
@@ -90,87 +88,109 @@ export const STATUS_STEPS = [
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
-export function useMasterlist(studentsData: any[]) {
+// Notice: We no longer accept 'studentsData' array. We will fetch dynamically.
+export function useMasterlist() {
+  // --- UI STATES ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
-  
   const [expandedDepts, setExpandedDepts] = useState<string[]>([]);
 
-  const processedData = useMemo(() => {
-    // @Koi: I-filter nato daan ang data nga e-pass nimo gikan sa DB
-    // Siguroha lang nga tugma ang property names ani sa imong JSON response ha?
-    const filtered = (studentsData || []).filter(s => {
-      
-      const matchesSearch = 
-        (s.lname || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (s.fname || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (s.idNumber || "").includes(searchQuery);
+  // --- DATA STATES (For Lazy Loading) ---
+  // Stores the high-level count of students per department and course
+  const [summaryData, setSummaryData] = useState<any>({ groups: {}, sortedDepts: [], deptCounts: {}, totalResults: 0 });
+  
+  // Cache for storing paginated students fetched per course (e.g., { "BSIT-page-1": [...] })
+  const [courseStudentsCache, setCourseStudentsCache] = useState<Record<string, any[]>>({});
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
-      const matchesDept = activeDeptFilter === "ALL" || s.department === activeDeptFilter;
-      const matchesStatus = activeStatusFilter === "ALL" || s.statusStep === parseInt(activeStatusFilter);
-
-      return matchesSearch && matchesDept && matchesStatus;
-    });
-
-    // Grouping logic nato aron ma-organize by Dept -> Program
-    const groups: Record<string, Record<string, any[]>> = {};
-    const deptCounts: Record<string, number> = {};
-
-    filtered.forEach(student => {
-      if (!groups[student.department]) {
-        groups[student.department] = {};
-        deptCounts[student.department] = 0;
-      }
-      if (!groups[student.department][student.program]) {
-        groups[student.department][student.program] = [];
-      }
-      groups[student.department][student.program].push(student);
-      deptCounts[student.department]++;
-    });
-
-    const sortedDepts = Object.keys(groups).sort((a, b) => {
-      const indexA = DEPARTMENT_ORDER.indexOf(a);
-      const indexB = DEPARTMENT_ORDER.indexOf(b);
-      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
-    });
-
-    return { groups, sortedDepts, deptCounts, totalResults: filtered.length };
-  }, [searchQuery, activeDeptFilter, activeStatusFilter, studentsData]);
-
-  // @Koi: Na fix na nako ang infinite loop error diri
-  // Nag add kog stringify check aron di mag sige ug update ang state kung same ra ang gina search
+  // --- 1. DEBOUNCE SEARCH LOGIC ---
+  // Waits 500ms after the user stops typing before triggering backend requests
   useEffect(() => {
-    if (searchQuery.trim() !== "") {
-        const currentSorted = JSON.stringify(processedData.sortedDepts);
-        const currentExpanded = JSON.stringify(expandedDepts);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // --- 2. FETCH SUMMARY DATA ---
+  // Triggers whenever filters or search changes.
+  useEffect(() => {
+    const fetchSummary = async () => {
+      setIsLoadingSummary(true);
+      try {
+        /* TODO (@Koi): Replace this block with your actual GET endpoint for summary data.
+          Expected logic: Your backend should count how many students match the search/filters 
+          and return the grouped structure so the frontend can render the folders accurately.
+          
+          Example implementation:
+          const res = await fetch(`/api/masterlist/summary?search=${debouncedSearch}&dept=${activeDeptFilter}&status=${activeStatusFilter}`);
+          const data = await res.json();
+          setSummaryData(data);
+        */
         
-        if (currentSorted !== currentExpanded) {
-            setExpandedDepts(processedData.sortedDepts);
-        }
-    } else {
-        if (expandedDepts.length > 0) {
-            setExpandedDepts([]);
-        }
+        console.log("Fetching summary from DB with:", { debouncedSearch, activeDeptFilter, activeStatusFilter });
+        
+        // Mocking empty structure for now to prevent UI crashes
+        setSummaryData({ groups: {}, sortedDepts: [], deptCounts: {}, totalResults: 0 });
+
+      } catch (error) {
+        console.error("Failed to fetch summary data:", error);
+      } finally {
+        setIsLoadingSummary(false);
+      }
+    };
+
+    fetchSummary();
+  }, [debouncedSearch, activeDeptFilter, activeStatusFilter]);
+
+  // --- 3. FETCH PAGINATED STUDENTS PER COURSE ---
+  // Called by the UI only when a user opens a course folder or clicks next page
+  const fetchCourseStudents = async (courseName: string, page: number, limit: number = 9) => {
+    const cacheKey = `${courseName}-page-${page}`;
+    
+    // Return cached data if we already fetched this page
+    if (courseStudentsCache[cacheKey]) return;
+
+    try {
+      /* TODO (@Koi): Replace this with your paginated GET endpoint for specific students.
+        Expected logic: Return exactly 'limit' number of students for the given course & page.
+        
+        Example implementation:
+        const res = await fetch(`/api/masterlist/students?course=${courseName}&page=${page}&limit=${limit}&search=${debouncedSearch}&status=${activeStatusFilter}`);
+        const data = await res.json();
+        setCourseStudentsCache(prev => ({ ...prev, [cacheKey]: data.students }));
+      */
+      
+      console.log(`Fetching students -> Course: ${courseName} | Page: ${page} | Limit: ${limit}`);
+      
+    } catch (error) {
+      console.error(`Failed to fetch students for ${courseName}:`, error);
     }
-    // gi disable nako ang linter diri tuyo aron di mo reklamo inig build
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery]); 
+  };
 
   const toggleDept = (dept: string) => {
-    setExpandedDepts(prev => 
-      prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]
-    );
+    setExpandedDepts(prev => prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]);
   };
 
   return {
+    // States & Handlers
     searchQuery, setSearchQuery,
     selectedStudent, setSelectedStudent,
     activeDeptFilter, setActiveDeptFilter,
     activeStatusFilter, setActiveStatusFilter,
     expandedDepts, toggleDept,
-    processedData, DEPARTMENT_ORDER, STATUS_STEPS
+    
+    // Data & Fetching Functions
+    summaryData, 
+    isLoadingSummary,
+    courseStudentsCache, 
+    fetchCourseStudents,
+    
+    // Constants
+    DEPARTMENT_ORDER, STATUS_STEPS
   };
 }

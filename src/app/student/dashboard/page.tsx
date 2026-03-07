@@ -101,9 +101,8 @@ export default function StudentDashboard() {
     return new Promise<void>((resolve) => {
       // Simulate API call delay
       setTimeout(async () => {
-        // @Koi: Diri nimo isumpay ang API call padulong sa backend.
-        // Example: await studentService.updateSponsors(newSponsors);
         
+        //TODO: save sponsorship
         toast.success("Solicitation sponsors saved successfully!");
         resolve();
       }, 1000);
@@ -127,7 +126,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-stone-50 font-sans relative">
       
       <StudentHeader 
-        user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: undefined}} 
+        user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: getObjectKey(user.studentDetail.photo_url)}} 
         onLogout={() => setShowLogoutConfirm(true)} 
       />
 

@@ -41,6 +41,19 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
     return pages;
   };
 
+  // HELPER: to format the birthdate in a more readable way (e.g., "January 01, 2000" instead of "2000-01-01")
+  const formatFriendlyDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid Date";
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-220px)]">
         
@@ -152,7 +165,10 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-widest mb-3"><User size={14}/> Personal</h3>
                                     <div className="space-y-2 text-sm">
                                         <p><span className="text-stone-400 font-bold text-xs block">Email</span> {selectedStudent.personal_email}</p>
-                                        <p><span className="text-stone-400 font-bold text-xs block">Birthdate</span> {selectedStudent.studentDetail?.birth_date ? String(selectedStudent.studentDetail.birth_date).substring(0,10) : 'N/A'}</p>
+                                        <p><span className="text-stone-400 font-bold text-xs block">Birthdate</span> 
+                                          {/* FIXED: Use formatFriendlyDate function */}
+                                          {selectedStudent.studentDetail?.birth_date ? formatFriendlyDate(selectedStudent.studentDetail.birth_date) : 'N/A'}
+                                        </p>
                                     </div>
                                 </div>
                                 <div>

@@ -62,7 +62,7 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
      }
   };
 
-  const photoUrl = user?.photo_url || "https://i.pinimg.com/736x/09/7b/2d/097b2d53634008344447550541004724.jpg";
+  const photoUrl = user?.photo_url || "";
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto min-h-screen bg-[#2a1a10] text-amber-50 font-sans selection:bg-amber-500/30">

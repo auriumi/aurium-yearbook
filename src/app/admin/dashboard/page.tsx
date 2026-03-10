@@ -154,9 +154,9 @@ export default function AdminDashboard() {
         onLogout={() => onLogout()}
       />
 
-      <main className="flex-1 md:ml-72 p-4 md:p-8 min-h-screen bg-[#FDFBF7]">
+      <main className="flex-1 md:ml-72 p-4 md:px-8 md:pt-4 md:pb-8 min-h-screen bg-[#FDFBF7]">
         
-        <header className="flex items-center justify-between mb-8 py-4 border-b border-stone-200/50">
+        <header className="flex items-center justify-between mb-5 py-3 border-b border-stone-200/50">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" className="md:hidden text-stone-500" onClick={() => setIsMobileMenuOpen(true)}>
                     <Menu className="h-6 w-6"/>

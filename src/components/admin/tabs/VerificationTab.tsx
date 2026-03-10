@@ -40,7 +40,6 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
     return pages;
   };
 
-  // Format date to a human-readable string
   const formatFriendlyDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -54,16 +53,15 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-220px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-240px)]">
         
         {/* LEFT: LIST */}
-        <Card className={`lg:col-span-4 xl:col-span-3 shadow-sm flex flex-col h-full rounded-2xl ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
+        <Card className={`lg:col-span-4 xl:col-span-3 shadow-sm flex flex-col h-full rounded-2xl overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
             <div className="p-4 border-b bg-stone-50/50 flex justify-between items-center">
                 <span className="font-bold text-stone-500 text-xs uppercase">Pending</span>
                 <Badge variant="secondary">{totalUnverified}</Badge>
             </div>
             
-            {/* Search Field with Button */}
             <div className="p-3 border-b flex gap-2">
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-stone-400"/>
@@ -80,11 +78,11 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 </Button>
             </div>
 
-            <ScrollArea className="flex-1">
-                <div className="space-y-2 p-3 pr-5 pb-6">
+            <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-2 p-3 pr-8 pb-6">
                     {pendingStudents.length > 0 ? (
                         pendingStudents.map(student => (
-                            <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 border transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white hover:bg-stone-50 border-transparent"}`}>
+                            <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 shadow-sm ring-1 ring-amber-200" : "bg-white hover:bg-stone-50 ring-1 ring-transparent"}`}>
                                 <Avatar><AvatarImage src={student.photo} /><AvatarFallback>{student.first_name?.charAt(0)}</AvatarFallback></Avatar>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-sm truncate text-stone-800">
@@ -101,24 +99,23 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 </div>
             </ScrollArea>
 
-            {/* Pagination Buttons */}
-            <div className="p-3 border-t bg-stone-50/50 flex items-center justify-between">
+            <div className="p-3 border-t bg-stone-50/50 flex items-center justify-between mt-auto">
                 <Button 
                    variant="outline" 
                    size="icon" 
-                   className="h-8 w-8" 
+                   className="h-8 w-8 shrink-0" 
                    onClick={() => setCurrentPage(currentPage - 1)}
                    disabled={currentPage === 1}
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
-                <div className="flex gap-1">
+                <div className="flex gap-1 overflow-x-auto mx-2 no-scrollbar">
                    {getPageNumbers().map(pageNum => (
                        <Button
                           key={pageNum}
                           variant={currentPage === pageNum ? "default" : "ghost"}
-                          className={`h-8 w-8 text-xs ${currentPage === pageNum ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
+                          className={`h-8 w-8 text-xs shrink-0 ${currentPage === pageNum ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
                           onClick={() => setCurrentPage(pageNum)}
                        >
                           {pageNum}
@@ -129,7 +126,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 <Button 
                    variant="outline" 
                    size="icon" 
-                   className="h-8 w-8"
+                   className="h-8 w-8 shrink-0"
                    onClick={() => setCurrentPage(currentPage + 1)}
                    disabled={currentPage === totalPages}
                 >
@@ -163,10 +160,9 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                         </div>
                     </div>
 
-                    <div className="flex-1 p-8 overflow-y-auto bg-white">
+                    <div className="flex-1 p-8 overflow-y-auto bg-white min-h-0">
                         <div className="space-y-8 max-w-5xl mx-auto">
                             
-                            {/* Academic Section */}
                             <div className="bg-stone-50/70 p-6 md:p-8 rounded-2xl border border-stone-100">
                                 <h3 className="flex items-center gap-2 text-sm font-bold text-amber-600 uppercase tracking-widest mb-6">
                                     <GraduationCap size={18}/> Academic Information
@@ -183,10 +179,8 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                 </div>
                             </div>
 
-                            {/* Personal & Location Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 
-                                {/* Personal Section */}
                                 <div className="bg-stone-50/70 p-6 md:p-8 rounded-2xl border border-stone-100">
                                     <h3 className="flex items-center gap-2 text-sm font-bold text-amber-600 uppercase tracking-widest mb-6">
                                         <User size={18}/> Personal Details
@@ -205,7 +199,6 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     </div>
                                 </div>
 
-                                {/* Location Section */}
                                 <div className="bg-stone-50/70 p-6 md:p-8 rounded-2xl border border-stone-100">
                                     <h3 className="flex items-center gap-2 text-sm font-bold text-amber-600 uppercase tracking-widest mb-6">
                                         <MapPin size={18}/> Location
@@ -226,7 +219,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                         </div>
                     </div>
                     
-                    <CardFooter className="p-5 border-t bg-stone-50 flex justify-end gap-3">
+                    <CardFooter className="p-5 border-t bg-stone-50 flex justify-end gap-3 shrink-0">
                         <Button variant="outline" className="px-6" onClick={() => setSelectedStudent(null)}>Cancel</Button>
                         <Button 
                             className="bg-green-600 hover:bg-green-700 px-8 shadow-md shadow-green-600/20" 

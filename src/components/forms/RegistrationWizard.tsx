@@ -18,6 +18,7 @@ import { AcademicStep } from "@/components/registration/AcademicStep";
 import { FamilyStep } from "@/components/registration/FamilyStep";
 import { ReviewStep } from "@/components/registration/ReviewStep";
 import { PrivacyStep } from "@/components/registration/PrivacyStep";
+import toast from "react-hot-toast";
 
 const steps = [
   { id: 1, name: "Personal", title: "Personal Information" },
@@ -179,14 +180,13 @@ export default function RegistrationWizard() {
       case 1: return idNumber.trim() !== "" && lname.trim() !== "" && fname.trim() !== "" && bdate !== "";
       case 2: return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
       case 3: 
-        // CHECK 1: Naa bay sulod ang text fields ug Valid ba ang Personal Email?
+
         const isBaseAcademicValid = selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmailFormat(email);
         
-        // CHECK 2: Kung nag-ingon siya nga naa pa siyay UM Email, e-check pud ang format.
         if (hasUmEmailAccess) {
             return isBaseAcademicValid && isValidEmailFormat(umEmail);
         }
-        return isBaseAcademicValid; // Kung walay UM Email access, proceed ra as long as valid ang Personal Email.
+        return isBaseAcademicValid;
         
       case 4: return useGuardian ? (guardianLname.trim() !== "" && guardianFname.trim() !== "" && guardianRel.trim() !== "") : ((fatherLname.trim() !== "" && fatherFname.trim() !== "") && (motherLname.trim() !== "" && motherFname.trim() !== ""));
       case 5: return reviewConfirmed;
@@ -200,9 +200,21 @@ export default function RegistrationWizard() {
   const jumpToStep = (stepId: number) => { if (stepId < currentStep) { setDirection(-1); setCurrentStep(stepId); } };
 
   const onSubmit = async () => {
-    const relation: any = useGuardian ? { guardian: { guardians_name: `${guardianFname} ${guardianLname}`, relationship: guardianRel } } : { parent: { fathers_name: `${fatherFname} ${fatherMname} ${fatherLname}`, mothers_name: `${motherFname} ${motherMname} ${motherLname}` } };
+    const relation: any = useGuardian ? { 
+      guardian: { 
+        guardians_name: `${guardianFname} ${guardianLname}`, 
+        relationship: guardianRel 
+      } 
+    } : { 
+      parent: {
+       fathers_name: `${fatherFname} ${fatherMname} ${fatherLname}`, 
+       fathers_title: fatherTitle,
+       fathers_suffix: fatherSuffix,
+       mothers_name: `${motherFname} ${motherMname} ${motherLname}`, 
+       mothers_title: motherTitle,
+      } 
+    };
     
-    // API Payload: Ipasa ra ang umEmail kung naa siyay access, kung wala, empty string i-pasa.
     const body = { 
         id: idNumber, 
         personal_email: email, 
@@ -222,11 +234,19 @@ export default function RegistrationWizard() {
     };
 
     try {
-      const res = await fetch(`${baseUrl}/api/student/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(`${baseUrl}/api/student/submit`, {
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify(body) 
+      });
+
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      alert("Information has been submit succesfully!");
+      toast.success("Information has been submitted succesfully!")
       router.push('/');
-    } catch (err) { console.error("Something went wrong..", err); }
+
+    } catch (err) { 
+      console.error("Something went wrong..", err); 
+    }
   };
 
   return (

@@ -1,12 +1,6 @@
 "use client";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Quote, 
-  GraduationCap 
-} from "lucide-react";
+
+import { ArrowLeft, MapPin, Phone, Mail, Quote, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Student } from "@/types";
@@ -19,7 +13,7 @@ interface YearbookPreviewProps {
 export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const stud_detail = user.studentDetail;
 
-  // HELPER FUNCTION: Safely combines the salutation (Mr/Mrs/Dr) with the name.
+  // HELPER FUNCTION: Safely combines the title (Mr/Mrs/Dr) with the name.
   // It also prevents double titles just in case the student typed "Mr. John" in the name field.
   const formatNameWithTitle = (name?: string, title?: string, defaultTitle?: string) => {
     if (!name || name.trim() === "") return null;
@@ -32,9 +26,8 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
     return name;
   };
 
-  // Updated to include the guardian's salutation if it exists (Bypassed TS with 'as any')
   const guardian = stud_detail?.guardians_name && stud_detail.guardians_name.trim() !== "" 
-      ? formatNameWithTitle(stud_detail.guardians_name, (stud_detail as any)?.guardians_salutation) 
+      ? formatNameWithTitle(stud_detail.guardians_name, stud_detail?.guardians_title) 
       : null;
 
   const details = {
@@ -44,7 +37,6 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
       lname: user?.last_name,
       suffix: user?.suffix,
       nickname: user?.nickname, 
-      // FIXED: Formatted the date to spell out the month (e.g., June 28, 2001)
       birthdate: new Date(stud_detail.birth_date).toLocaleDateString('en-US', { 
         month: 'long', 
         day: 'numeric', 
@@ -65,21 +57,18 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
      },
      family: {
        guardian: guardian,
-       // FIXED: Added (stud_detail as any) to bypass TS errors, defaulting to Mr. and Mrs.
-       father: formatNameWithTitle(stud_detail?.fathers_name, (stud_detail as any)?.fathers_salutation, "Mr."), 
-       mother: formatNameWithTitle(stud_detail?.mothers_name, (stud_detail as any)?.mothers_salutation, "Mrs."),
+       father: formatNameWithTitle(stud_detail?.fathers_name, stud_detail?.fathers_title, "Mr."), 
+       mother: formatNameWithTitle(stud_detail?.mothers_name, stud_detail?.mothers_title, "Mrs."),
      }
   };
 
   const photoUrl = user?.photo_url || "https://i.pinimg.com/736x/09/7b/2d/097b2d53634008344447550541004724.jpg";
 
   return (
-    // BAG-O: Gidugangan og "fixed inset-0 z-50 overflow-y-auto" para mahimo siyang overlay/modal imbes nga bag-ong page.
     <div className="fixed inset-0 z-50 overflow-y-auto min-h-screen bg-[#2a1a10] text-amber-50 font-sans selection:bg-amber-500/30">
       
       {/* FLOATING BACK BUTTON - UPDATED CONTRAST */}
       <div className="fixed top-4 left-4 z-50">
-        {/* BAG-O: Gitangtang ang Link, gibutangan og onClick={onClose} */}
         <Button 
           onClick={onClose}
           className="bg-white/90 text-stone-900 hover:bg-white hover:text-black border border-white rounded-full gap-2 shadow-lg transition-all hover:scale-105 font-bold"

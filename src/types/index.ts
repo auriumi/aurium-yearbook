@@ -22,8 +22,12 @@ export interface Student {
 
 export interface StduentDetail {
   guardians_name: string;
+  guardians_title: string;
   fathers_name: string;
+  fathers_title: string;
+  fathers_suffix: string;
   mothers_name: string;
+  mothers_title: string;
   birth_date: string;
   barangay: string;
   city: string;

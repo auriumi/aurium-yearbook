@@ -19,7 +19,6 @@ type VerifacationProps = {
 }
 
 export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onSearch }: VerifacationProps) {
-  // STATES
   const [searchInput, setSearchInput] = useState(""); 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   
@@ -41,7 +40,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
     return pages;
   };
 
-  // HELPER: Para nindot basahon ang date (e.g. "January 04, 2004")
+  // Format date to a human-readable string
   const formatFriendlyDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -88,7 +87,6 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                             <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 border transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-200 shadow-sm" : "bg-white hover:bg-stone-50 border-transparent"}`}>
                                 <Avatar><AvatarImage src={student.photo} /><AvatarFallback>{student.first_name?.charAt(0)}</AvatarFallback></Avatar>
                                 <div className="flex-1 min-w-0">
-                                    {/* FIXED: Gi-ilisan ang middle_name ngadto sa mid_name para sa Initial */}
                                     <p className="font-bold text-sm truncate text-stone-800">
                                         {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.last_name}
                                     </p>
@@ -103,7 +101,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 </div>
             </ScrollArea>
 
-            {/* Pagination Buttons (Footer) */}
+            {/* Pagination Buttons */}
             <div className="p-3 border-t bg-stone-50/50 flex items-center justify-between">
                 <Button 
                    variant="outline" 
@@ -140,13 +138,12 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
             </div>
         </Card>
 
-        {/* RIGHT: DETAIL*/}
+        {/* RIGHT: DETAIL */}
         <div className={`lg:col-span-8 xl:col-span-9 h-full ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
             {selectedStudent ? (
                 <Card className="h-full flex flex-col shadow-lg overflow-hidden rounded-2xl">
                     <div className="p-8 bg-stone-50 border-b flex justify-between items-start">
                         <div>
-                            {/* FIXED: Gi-ilisan ang middle_name ngadto sa mid_name para sa Full Name sa header */}
                             <h2 className="text-2xl md:text-3xl font-black font-serif text-stone-800 mb-1">
                                 {selectedStudent.first_name} {selectedStudent.mid_name} {selectedStudent.last_name} {selectedStudent.suffix}
                             </h2>

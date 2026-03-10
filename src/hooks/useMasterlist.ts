@@ -108,11 +108,11 @@ export function useMasterlist() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
 
   // --- 1. DEBOUNCE SEARCH LOGIC ---
-  // Waits 500ms after the user stops typing before triggering backend requests
+  // @Koi: Changed from 500ms to 2500ms to prevent database spamming while typing
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 500);
+    }, 2500); // <--- KANI ANG GI-USAB NATO BAY
     return () => clearTimeout(handler);
   }, [searchQuery]);
 

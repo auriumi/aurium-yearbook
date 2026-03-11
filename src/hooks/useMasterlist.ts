@@ -5,75 +5,75 @@ export const ACADEMIC_CONFIG = [
   {
     name: "GRADUATE SCHOOL",
     courses: [
-      { name: "MASTER OF ARTS IN EDUCATION (MAED)", majors: ["EDUCATIONAL MANAGEMENT", "GUIDANCE & COUNSELING", "PHYSICAL EDUCATION", "TEACHING ENGLISH", "TEACHING MATHEMATICS", "TEACHING SCIENCE"] },
-      { name: "MASTER IN BUSINESS ADMINISTRATION", majors: [] },
-      { name: "MASTER IN MANAGEMENT", majors: [] }
+      { name: "MASTER OF ARTS IN EDUCATION (MAED)" },
+      { name: "MASTER IN BUSINESS ADMINISTRATION" },
+      { name: "MASTER IN MANAGEMENT" }
     ]
   },
   {
     name: "DEPARTMENT OF ENGINEERING EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN COMPUTER ENGINEERING", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN ELECTRICAL ENGINEERING", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN ELECTRONICS ENGINEERING", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN COMPUTER ENGINEERING" },
+      { name: "BACHELOR OF SCIENCE IN ELECTRICAL ENGINEERING" },
+      { name: "BACHELOR OF SCIENCE IN ELECTRONICS ENGINEERING" }
     ]
   },
   {
     name: "DEPARTMENT OF ART AND SCIENCES EDUCATION",
     courses: [
-      { name: "BACHELOR OF ARTS IN ENGLISH", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN PSYCHOLOGY", majors: [] }
+      { name: "BACHELOR OF ARTS IN ENGLISH" },
+      { name: "BACHELOR OF SCIENCE IN PSYCHOLOGY" }
     ]
   },
   {
     name: "DEPARTMENT OF ACCOUNTING EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN ACCOUNTANCY", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN ACCOUNTING TECHNOLOGY", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN MANAGEMENT ACCOUNTING", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN ACCOUNTANCY" },
+      { name: "BACHELOR OF SCIENCE IN ACCOUNTING TECHNOLOGY" },
+      { name: "BACHELOR OF SCIENCE IN MANAGEMENT ACCOUNTING" }
     ]
   },
   {
     name: "DEPARTMENT OF TEACHER EDUCATION",
     courses: [
-      { name: "BACHELOR OF ELEMENTARY EDUCATION (GENERALIST)", majors: [] },
-      { name: "BACHELOR OF PHYSICAL EDUCATION", majors: [] },
-      { name: "BACHELOR OF SECONDARY EDUCATION", majors: ["ENGLISH", "FILIPINO", "MATHEMATICS", "SCIENCE", "SOCIAL STUDIES"] }
+      { name: "BACHELOR OF ELEMENTARY EDUCATION (GENERALIST)" },
+      { name: "BACHELOR OF PHYSICAL EDUCATION" },
+      { name: "BACHELOR OF SECONDARY EDUCATION" }
     ]
   },
   {
     name: "DEPARTMENT OF BUSINESS ADMINISTRATION EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN BUSINESS ADMINISTRATION", majors: ["FINANCIAL MANAGEMENT", "HUMAN RESOURCE MANAGEMENT", "MARKETING MANAGEMENT"] },
-      { name: "BACHELOR OF SCIENCE IN COMMERCE", majors: ["MANAGEMENT"] }
+      { name: "BACHELOR OF SCIENCE IN BUSINESS ADMINISTRATION" },
+      { name: "BACHELOR OF SCIENCE IN COMMERCE" }
     ]
   },
   {
     name: "HOSPITALITY AND TOURISM MANAGEMENT EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN HOSPITALITY MANAGEMENT", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN HOTEL AND RESTAURANT MANAGEMENT", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN TOURISM MANAGEMENT", majors: [] },
-      { name: "BACHELOR OF ARTS IN ECONOMICS", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN HOSPITALITY MANAGEMENT" },
+      { name: "BACHELOR OF SCIENCE IN HOTEL AND RESTAURANT MANAGEMENT" },
+      { name: "BACHELOR OF SCIENCE IN TOURISM MANAGEMENT" },
+      { name: "BACHELOR OF ARTS IN ECONOMICS" }
     ]
   },
   {
     name: "DEPARTMENT OF CRIMINAL JUSTICE EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN CRIMINOLOGY", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN CRIMINOLOGY" }
     ]
   },
   {
     name: "DEPARTMENT OF COMPUTING EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN COMPUTER SCIENCE", majors: [] },
-      { name: "BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN COMPUTER SCIENCE" },
+      { name: "BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY" }
     ]
   },
   {
     name: "DEPARTMENT OF NURSING EDUCATION",
     courses: [
-      { name: "BACHELOR OF SCIENCE IN NURSING", majors: [] }
+      { name: "BACHELOR OF SCIENCE IN NURSING" }
     ]
   }
 ];
@@ -88,109 +88,106 @@ export const STATUS_STEPS = [
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
-// Notice: We no longer accept 'studentsData' array. We will fetch dynamically.
 export function useMasterlist() {
-  // --- UI STATES ---
+  // --- UI INPUT STATES ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
+  const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL"); 
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
-  const [expandedDepts, setExpandedDepts] = useState<string[]>([]);
-
-  // --- DATA STATES (For Lazy Loading) ---
-  // Stores the high-level count of students per department and course
-  const [summaryData, setSummaryData] = useState<any>({ groups: {}, sortedDepts: [], deptCounts: {}, totalResults: 0 });
   
-  // Cache for storing paginated students fetched per course (e.g., { "BSIT-page-1": [...] })
-  const [courseStudentsCache, setCourseStudentsCache] = useState<Record<string, any[]>>({});
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  // --- APPLIED FILTERS ---
+  const [appliedFilters, setAppliedFilters] = useState({
+      search: "",
+      dept: "ALL",
+      course: "ALL",
+      status: "ALL"
+  });
 
-  // --- 1. DEBOUNCE SEARCH LOGIC ---
-  // Waits 500ms after the user stops typing before triggering backend requests
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  // --- DATA STATES ---
+  const [students, setStudents] = useState<any[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const ITEMS_PER_PAGE = 9; 
+
+  // Reset Course Filter kung ilisan ang Department
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+      setActiveCourseFilter("ALL");
+  }, [activeDeptFilter]);
 
-  // --- 2. FETCH SUMMARY DATA ---
-  // Triggers whenever filters or search changes.
-  useEffect(() => {
-    const fetchSummary = async () => {
-      setIsLoadingSummary(true);
-      try {
-        /* TODO (@Koi): Replace this block with your actual GET endpoint for summary data.
-          Expected logic: Your backend should count how many students match the search/filters 
-          and return the grouped structure so the frontend can render the folders accurately.
-          
-          Example implementation:
-          const res = await fetch(`/api/masterlist/summary?search=${debouncedSearch}&dept=${activeDeptFilter}&status=${activeStatusFilter}`);
-          const data = await res.json();
-          setSummaryData(data);
-        */
-        
-        console.log("Fetching summary from DB with:", { debouncedSearch, activeDeptFilter, activeStatusFilter });
-        
-        // Mocking empty structure for now to prevent UI crashes
-        setSummaryData({ groups: {}, sortedDepts: [], deptCounts: {}, totalResults: 0 });
-
-      } catch (error) {
-        console.error("Failed to fetch summary data:", error);
-      } finally {
-        setIsLoadingSummary(false);
-      }
-    };
-
-    fetchSummary();
-  }, [debouncedSearch, activeDeptFilter, activeStatusFilter]);
-
-  // --- 3. FETCH PAGINATED STUDENTS PER COURSE ---
-  // Called by the UI only when a user opens a course folder or clicks next page
-  const fetchCourseStudents = async (courseName: string, page: number, limit: number = 9) => {
-    const cacheKey = `${courseName}-page-${page}`;
-    
-    // Return cached data if we already fetched this page
-    if (courseStudentsCache[cacheKey]) return;
-
-    try {
-      /* TODO (@Koi): Replace this with your paginated GET endpoint for specific students.
-        Expected logic: Return exactly 'limit' number of students for the given course & page.
-        
-        Example implementation:
-        const res = await fetch(`/api/masterlist/students?course=${courseName}&page=${page}&limit=${limit}&search=${debouncedSearch}&status=${activeStatusFilter}`);
-        const data = await res.json();
-        setCourseStudentsCache(prev => ({ ...prev, [cacheKey]: data.students }));
-      */
-      
-      console.log(`Fetching students -> Course: ${courseName} | Page: ${page} | Limit: ${limit}`);
-      
-    } catch (error) {
-      console.error(`Failed to fetch students for ${courseName}:`, error);
-    }
+  // --- EXPLICIT ACTIONS ---
+  const handleSearchClick = () => {
+      setAppliedFilters({ search: searchQuery, dept: "ALL", course: "ALL", status: "ALL" });
+      setActiveDeptFilter("ALL");
+      setActiveCourseFilter("ALL");
+      setActiveStatusFilter("ALL");
+      setCurrentPage(1);
   };
 
-  const toggleDept = (dept: string) => {
-    setExpandedDepts(prev => prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]);
+  const handleLoadClick = () => {
+      setAppliedFilters({ search: "", dept: activeDeptFilter, course: activeCourseFilter, status: activeStatusFilter });
+      setSearchQuery("");
+      setCurrentPage(1);
   };
+
+  const handleSearchKeyDown = (e: any) => {
+      if (e.key === 'Enter') handleSearchClick();
+  };
+
+  // --- FETCHING LOGIC (API INTEGRATION READY) ---
+  useEffect(() => {
+      const fetchFromAPI = async () => {
+          setIsLoading(true);
+          try {
+              /* TODO (@Koi): Replace this with your actual database query endpoint.
+                The frontend now uses a Flat Grid structure to avoid N+1 query problems.
+                
+                Expected implementation:
+                const queryParams = new URLSearchParams({
+                    page: currentPage.toString(),
+                    limit: ITEMS_PER_PAGE.toString(),
+                    search: appliedFilters.search,
+                    dept: appliedFilters.dept,
+                    course: appliedFilters.course,
+                    status: appliedFilters.status
+                });
+
+                const res = await fetch(`/api/masterlist?${queryParams}`);
+                const data = await res.json();
+                
+                setStudents(data.students);
+                setTotalResults(data.totalResults);
+              */
+              
+              console.log("Ready for API Call with params:", { ...appliedFilters, page: currentPage });
+              
+              // Temporary empty state until API is hooked up
+              setStudents([]);
+              setTotalResults(0);
+          } catch (error) {
+              console.error("Failed to fetch students:", error);
+              setStudents([]);
+              setTotalResults(0);
+          } finally {
+              setIsLoading(false);
+          }
+      };
+
+      fetchFromAPI();
+  }, [appliedFilters, currentPage]);
 
   return {
-    // States & Handlers
     searchQuery, setSearchQuery,
     selectedStudent, setSelectedStudent,
     activeDeptFilter, setActiveDeptFilter,
+    activeCourseFilter, setActiveCourseFilter,
     activeStatusFilter, setActiveStatusFilter,
-    expandedDepts, toggleDept,
-    
-    // Data & Fetching Functions
-    summaryData, 
-    isLoadingSummary,
-    courseStudentsCache, 
-    fetchCourseStudents,
-    
-    // Constants
-    DEPARTMENT_ORDER, STATUS_STEPS
+    currentPage, setCurrentPage,
+    handleSearchClick, handleLoadClick, handleSearchKeyDown,
+    students, totalResults, isLoading, ITEMS_PER_PAGE,
+    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   };
 }

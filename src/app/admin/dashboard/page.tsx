@@ -154,7 +154,8 @@ export default function AdminDashboard() {
         onLogout={() => onLogout()}
       />
 
-      <main className="flex-1 md:ml-72 p-4 md:p-8 min-h-screen bg-[#FDFBF7]">
+      {/* FIX APPLIED HERE: md:p-8 was changed to md:px-8 md:pt-4 */}
+      <main className="flex-1 md:ml-72 p-4 md:px-8 md:pt-4 min-h-screen bg-[#FDFBF7]">
         
         <header className="flex items-center justify-between mb-8 py-4 border-b border-stone-200/50">
             <div className="flex items-center gap-4">

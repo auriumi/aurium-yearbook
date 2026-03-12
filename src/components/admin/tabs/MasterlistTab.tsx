@@ -19,6 +19,14 @@ export function MasterlistTab() {
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   } = useMasterlist();
 
+  const getObjectKey = (url: string): string => {
+    if (typeof url !== 'string') return "";
+      const findStr = `/aurium/`;
+      const idx = url.indexOf(findStr);
+      if (idx === -1) return "";
+      return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
+  }
+
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
 
   const getPageNumbers = () => {
@@ -316,7 +324,7 @@ export function MasterlistTab() {
                                 <div className="pt-4 border-t border-stone-200">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 block mb-2 text-center">Reference (Pre-Reg)</span>
                                     <div className="w-24 h-24 bg-white p-1 shadow-sm border border-stone-200 rounded-lg mx-auto">
-                                        <img src={selectedStudent.studentDetail.photo_url ?? null} className="w-full h-full object-cover rounded-sm opacity-90" alt="Reference" />
+                                        <img src={selectedStudent.studentDetail.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : undefined} className="w-full h-full object-cover rounded-sm opacity-90" alt="Reference" />
                                     </div>
                                 </div>
                             </div>

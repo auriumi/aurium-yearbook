@@ -80,11 +80,11 @@ export const ACADEMIC_CONFIG = [
 ];
 
 export const STATUS_STEPS = [
-  { id: 1, label: "Registered", color: "bg-stone-500" },      
-  { id: 2, label: "Approved", color: "bg-blue-500" },        
-  { id: 3, label: "Booked", color: "bg-orange-500" },        
-  { id: 4, label: "Attended", color: "bg-purple-500" },      
-  { id: 5, label: "Fully Verified", color: "bg-green-600" }, 
+  { id: 1, label: "REGISTERED", color: "bg-stone-500" },      
+  { id: 2, label: "APPROVED", color: "bg-blue-500" },        
+  { id: 3, label: "BOOKED", color: "bg-orange-500" },        
+  { id: 4, label: "ATTENDED", color: "bg-purple-500" },      
+  { id: 5, label: "FULLY VERIFIED", color: "bg-green-600" }, 
 ];
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);

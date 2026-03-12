@@ -179,7 +179,7 @@ export function MasterlistTab() {
                 <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[300px] content-start">
                         {students.map((student: any) => {
-                            const statusInfo = STATUS_STEPS.find(s => s.id === student.statusStep) || STATUS_STEPS[0];
+                            const statusInfo = STATUS_STEPS.find(s => s.label === student.studentAuth.status);
                             return (
                                 <div 
                                     key={student.id} 
@@ -193,7 +193,7 @@ export function MasterlistTab() {
                                             <p className="font-bold text-stone-800 group-hover:text-amber-800 transition-colors text-sm truncate pr-2">
                                                 {student.last_name}, {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.suffix}
                                             </p>
-                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo.color} shadow-sm`} title={statusInfo.label}></div>
+                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo!.color} shadow-sm`} title={statusInfo!.label}></div>
                                         </div>
                                         <p className="text-[11px] font-mono text-stone-500 mt-1">{student.student_number}</p>
                                     </div>
@@ -202,7 +202,7 @@ export function MasterlistTab() {
                                         <div className="min-w-0 flex-1">
                                             <p className="text-[9px] font-bold text-stone-400 truncate uppercase">{student.course}</p>
                                         </div>
-                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo.label}</span>
+                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo!.label}</span>
                                     </div>
                                 </div>
                             )
@@ -378,8 +378,8 @@ export function MasterlistTab() {
                             
                             <div className="space-y-0 relative pl-2">
                                 {STATUS_STEPS.map((step, index) => {
-                                    const isDone = step.id <= (selectedStudent.statusStep || 1);
-                                    const isCurrent = step.id === selectedStudent.statusStep;
+                                    const isDone = step.id <= STATUS_STEPS.find(s => s.label === selectedStudent.studentAuth.status)!.id; 
+                                    const isCurrent = step.label === selectedStudent.studentAuth.status;
                                     
                                     return (
                                         <div key={step.id} className="flex gap-3 relative pb-8 last:pb-0 group">

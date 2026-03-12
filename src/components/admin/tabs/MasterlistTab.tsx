@@ -191,11 +191,11 @@ export function MasterlistTab() {
                                     <div className="relative z-10 w-full pl-1 mb-3">
                                         <div className="flex justify-between items-start">
                                             <p className="font-bold text-stone-800 group-hover:text-amber-800 transition-colors text-sm truncate pr-2">
-                                                {student.lname}, {student.fname} {student.mname?.charAt(0) ? `${student.mname.charAt(0)}.` : ""} {student.suffix}
+                                                {student.last_name}, {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.suffix}
                                             </p>
                                             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo.color} shadow-sm`} title={statusInfo.label}></div>
                                         </div>
-                                        <p className="text-[11px] font-mono text-stone-500 mt-1">{student.idNumber}</p>
+                                        <p className="text-[11px] font-mono text-stone-500 mt-1">{student.student_number}</p>
                                     </div>
 
                                     <div className="relative z-10 w-full pl-1 pt-3 border-t border-stone-200 flex justify-between items-center gap-2">
@@ -251,12 +251,12 @@ export function MasterlistTab() {
             )}
         </div>
 
-        {/* --- PROFILE MODAL: Remains unchanged --- */}
+        {/* --- PROFILE MODAL: --- */}
         <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
             <DialogContent className="max-w-[95vw] md:max-w-7xl h-[92vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl bg-white flex flex-col md:flex-row [&>button]:hidden">
                 <div className="sr-only">
                     <DialogHeader>
-                        <DialogTitle>Student Profile: {selectedStudent?.lname}</DialogTitle>
+                        <DialogTitle>Student Profile: {selectedStudent?.last_name}</DialogTitle>
                         <DialogDescription>Detailed view of student information.</DialogDescription>
                     </DialogHeader>
                 </div>
@@ -273,8 +273,8 @@ export function MasterlistTab() {
                         <div className="w-full md:w-[360px] bg-stone-100 p-6 flex flex-col items-center border-r border-stone-200 overflow-y-auto shrink-0 relative">
                             <div className="text-center w-full mb-6 mt-8">
                                 <h2 className="text-2xl font-black text-stone-900 uppercase leading-none tracking-tight">
-                                    {selectedStudent.lname}, <br/> 
-                                    {selectedStudent.fname} {selectedStudent.mname?.charAt(0) ? `${selectedStudent.mname.charAt(0)}.` : ""}
+                                    {selectedStudent.last_name}, <br/> 
+                                    {selectedStudent.first_name} {selectedStudent.mid_name?.charAt(0) ? `${selectedStudent.mid_name.charAt(0)}.` : ""}
                                     {selectedStudent.suffix && <span className="ml-1 text-stone-600">{selectedStudent.suffix}</span>}
                                 </h2>
                                 <p className="text-amber-700 font-serif italic text-lg mt-1">"{selectedStudent.nickname}"</p>
@@ -316,7 +316,7 @@ export function MasterlistTab() {
                                 <div className="pt-4 border-t border-stone-200">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 block mb-2 text-center">Reference (Pre-Reg)</span>
                                     <div className="w-24 h-24 bg-white p-1 shadow-sm border border-stone-200 rounded-lg mx-auto">
-                                        <img src={selectedStudent.photo} className="w-full h-full object-cover rounded-sm opacity-90" alt="Reference" />
+                                        <img src={selectedStudent.studentDetail.photo_url ?? null} className="w-full h-full object-cover rounded-sm opacity-90" alt="Reference" />
                                     </div>
                                 </div>
                             </div>
@@ -335,7 +335,7 @@ export function MasterlistTab() {
                                     <InfoField label="Program / Course" value={selectedStudent.course} />
                                     <InfoField label="Major" value={selectedStudent.major} />
                                     <div className="col-span-2">
-                                        <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.details.thesis}"`} icon={FileText} fullWidth />
+                                        <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.thesis_title}"`} icon={FileText} fullWidth />
                                     </div>
                                 </div>
                             </div>
@@ -347,10 +347,10 @@ export function MasterlistTab() {
                                         <h3 className="text-sm font-bold text-stone-800 uppercase tracking-widest">Personal & Family</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
-                                        <InfoField label="Date of Birth" value={selectedStudent.details.birthdate} />
-                                        <InfoField label="Father's Name" value={selectedStudent.details.father} />
-                                        <InfoField label="Mother's Name" value={selectedStudent.details.mother} />
-                                        <InfoField label="Guardian" value={selectedStudent.details.guardian} />
+                                        <InfoField label="Date of Birth" value={selectedStudent.studentDetail.birth_date} />
+                                        <InfoField label="Father's Name" value={selectedStudent.studentDetail.fathers_name} />
+                                        <InfoField label="Mother's Name" value={selectedStudent.studentDetail.mothers_name} />
+                                        <InfoField label="Guardian" value={selectedStudent.studentDetail.guardians_name} />
                                     </div>
                                 </div>
 
@@ -360,10 +360,10 @@ export function MasterlistTab() {
                                         <h3 className="text-sm font-bold text-stone-800 uppercase tracking-widest">Contact Details</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
-                                        <InfoField label="Home Address" value={selectedStudent.details.address} icon={Home} />
-                                        <InfoField label="Mobile Number" value={selectedStudent.details.contact} icon={Phone} />
-                                        <InfoField label="Personal Email" value={selectedStudent.details.personalEmail} icon={Mail} />
-                                        <InfoField label="School Email" value={selectedStudent.details.email} icon={Mail} />
+                                        <InfoField label="Home Address" value={selectedStudent.studentDetail.province} icon={Home} />
+                                        <InfoField label="Mobile Number" value={selectedStudent.studentDetail.contact_num} icon={Phone} />
+                                        <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
+                                        <InfoField label="School Email" value={selectedStudent.school_email} icon={Mail} />
                                     </div>
                                 </div>
                             </div>

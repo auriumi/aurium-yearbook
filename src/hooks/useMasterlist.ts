@@ -89,9 +89,32 @@ export const STATUS_STEPS = [
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
+const normalizeStudents = (data: any): any[] => {
+  if (Array.isArray(data?.students)) return data.students;
+  if (Array.isArray(data?.data?.students)) return data.data.students;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.result)) return data.result;
+  if (data?.student && typeof data.student === "object") return [data.student];
+
+  if (data && typeof data === "object" && !Array.isArray(data) && ("student_number" in data || "id" in data)) {
+    return [data];
+  }
+
+  return [];
+};
+
+const normalizeTotalResults = (data: any, normalizedStudents: any[]): number => {
+  if (typeof data?.total_result === "number") return data.total_result;
+  if (typeof data?.totalResults === "number") return data.totalResults;
+  if (typeof data?.total === "number") return data.total;
+  if (typeof data?.count === "number") return data.count;
+  return normalizedStudents.length;
+};
+
 export function useMasterlist() {
   // --- UI INPUT STATES ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
   const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL"); 
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
@@ -119,15 +142,13 @@ export function useMasterlist() {
 
   // --- EXPLICIT ACTIONS ---
   const handleSearchClick = () => {
-      setAppliedFilters({dept: "ALL", course: "ALL", status: "ALL" });
-      setActiveDeptFilter("ALL");
-      setActiveCourseFilter("ALL");
-      setActiveStatusFilter("ALL");
-      setCurrentPage(1);
+    setAppliedSearchQuery(searchQuery.trim());
+    setCurrentPage(1);
   };
 
   const handleLoadClick = () => {
       setAppliedFilters({dept: activeDeptFilter, course: activeCourseFilter, status: activeStatusFilter });
+      setAppliedSearchQuery("");
       setSearchQuery("");
       setCurrentPage(1);
   };
@@ -136,27 +157,35 @@ export function useMasterlist() {
       if (e.key === 'Enter') handleSearchClick();
   };
 
-  // --- FETCHING LOGIC (API INTEGRATION READY) ---
+  // --- FETCHING LOGIC ---
   useEffect(() => {
     const fetchFromAPI = async () => {
       setIsLoading(true);
       try {
-        const queryParams = new URLSearchParams({
-          page: currentPage.toString(),
-          dept: appliedFilters.dept,
-          course: appliedFilters.course,
-          status: appliedFilters.status
-        });
+        let query = new URLSearchParams();
 
-        const res = await fetch(`${baseUrl}/api/admin/masterlist?${queryParams}`, {
+        if (appliedSearchQuery) {
+          query.append("id", appliedSearchQuery);
+        } else {
+          query.append("page", currentPage.toString());
+          query.append("dept", appliedFilters.dept);
+          query.append("course", appliedFilters.course);
+          query.append("status", appliedFilters.status);
+        }
+
+        const res = await fetch(`${baseUrl}/api/admin/masterlist?${query}`, {
           credentials: 'include'
         });
 
         if (res.ok) {
           const data = await res.json();
+          const normalizedStudents = normalizeStudents(data);
 
-          setStudents(data.students);
-          setTotalResults(data.total_result);
+          setStudents(normalizedStudents);
+          setTotalResults(normalizeTotalResults(data, normalizedStudents));
+        } else {
+          setStudents([]);
+          setTotalResults(0);
         }
 
       } catch (error) {
@@ -169,7 +198,7 @@ export function useMasterlist() {
     };
 
     fetchFromAPI();
-  }, [appliedFilters, currentPage]);
+  }, [appliedFilters, appliedSearchQuery, currentPage]);
 
   return {
     searchQuery, setSearchQuery,

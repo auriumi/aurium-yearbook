@@ -115,6 +115,8 @@ export default function AdminDashboard() {
     const res = await adminService.handleVerify(studentId);
     if (res) {
       setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
+      loadStudents(currentPage);
+
       toast.success("Student succesfully verified!");
       return;
     }
@@ -125,6 +127,8 @@ export default function AdminDashboard() {
     const res = await adminService.handleCancel(studentId);
     if (res) {
       setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
+      loadStudents(currentPage);
+
       toast.success("Student succesfully rejected!")
       return;
     }

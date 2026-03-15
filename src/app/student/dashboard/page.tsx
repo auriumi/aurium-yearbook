@@ -172,10 +172,11 @@ export default function StudentDashboard() {
               onBook={handleBooking}
             />
 
-            {/* BAG-O: Ang Solicitation Widget gibutang sa ilalom sa Booking */}
+            {/* TODO: non-functional as of yet..
             <SolicitationWidget 
               onSave={handleSaveSponsors}
             />
+            */}
           </div>
 
           {/* BOTTOM FULL WIDTH: Yearbook Teaser */}

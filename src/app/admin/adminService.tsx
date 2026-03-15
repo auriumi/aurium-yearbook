@@ -42,21 +42,31 @@ export async function searchStudentById(student_number: number) {
 
 export async function handleVerify(studentId: number) {
     try {
-        await fetch(`${baseUrl}/api/admin/student/verify`, {
+        const res = await fetch(`${baseUrl}/api/admin/student/verify`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: studentId }),
             credentials: 'include'
         });
-
-    //    alert(`Student Verified!`);
-        return true;
+        return !res.ok ? false : true;
     } catch (err) {
         console.error(err); 
-    //   alert("Verification failed.");
         return false;
     }
 };
+
+export async function handleCancel(studentId: number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/student/${studentId}`, {
+            method: "DELETE",
+            credentials: 'include'
+        });
+        return !res.ok ? false : true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
 
 export async function addSchedule(date: string, am_cap: number, pm_cap: number) {
     const body = { 

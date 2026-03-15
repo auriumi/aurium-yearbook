@@ -25,15 +25,14 @@ type VerifacationProps = {
   currentPage: number;
   totalUnverified: number;
   onVerify: (id: number) => void;
+  onCancel: (id: number) => void;
   onSearch: (student_id: number) => void;
   setCurrentPage: (page: number) => void;
 }
 
-export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onSearch }: VerifacationProps) {
+export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onCancel, onSearch }: VerifacationProps) {
   const [searchInput, setSearchInput] = useState(""); 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  
-  // FIX #5: State para ma-trigger ang confirmation modal
   const [showVerifyConfirm, setShowVerifyConfirm] = useState(false);
   
   const ITEMS_PER_PAGE = 8; 
@@ -66,12 +65,17 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
     });     
   };
 
-  // FIX #5: I-execute rani kung mo-confirm siya
   const handleConfirmVerify = () => {
       onVerify(selectedStudent.student_number); 
       setSelectedStudent(null); 
       setShowVerifyConfirm(false);
   };
+
+  //TODO: add confimration dialog box for safety
+  const handleCancel = () => {
+    onCancel(selectedStudent.student_number);
+    setSelectedStudent(null);
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-160px)] min-h-0">
@@ -250,7 +254,8 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                     </div>
                     
                     <CardFooter className="p-5 border-t bg-stone-50 flex justify-end gap-3 shrink-0">
-                        <Button variant="outline" className="px-6" onClick={() => setSelectedStudent(null)}>Cancel</Button>
+                        {/* TODO: use confirmation box for final prompt */}
+                        <Button variant="outline" className="px-6" onClick={() => handleCancel()}>Cancel</Button>
                         <Button 
                             className="bg-green-600 hover:bg-green-700 px-8 shadow-md shadow-green-600/20" 
                             onClick={() => setShowVerifyConfirm(true)}

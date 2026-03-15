@@ -6,7 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft } from "lucide-react";
+import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft, CheckCircle2 } from "lucide-react";
+
+// FIX #5: Gi-import ang AlertDialog para sa confirmation prompt
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type VerifacationProps = {
   pendingStudents: any[];
@@ -20,6 +32,9 @@ type VerifacationProps = {
 export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onSearch }: VerifacationProps) {
   const [searchInput, setSearchInput] = useState(""); 
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  
+  // FIX #5: State para ma-trigger ang confirmation modal
+  const [showVerifyConfirm, setShowVerifyConfirm] = useState(false);
   
   const ITEMS_PER_PAGE = 8; 
 
@@ -48,7 +63,14 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
       month: 'long',
       day: '2-digit',
       year: 'numeric'
-    });
+    });     
+  };
+
+  // FIX #5: I-execute rani kung mo-confirm siya
+  const handleConfirmVerify = () => {
+      onVerify(selectedStudent.student_number); 
+      setSelectedStudent(null); 
+      setShowVerifyConfirm(false);
   };
 
   return (
@@ -68,7 +90,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2 h-4 w-4 text-stone-400"/>
                     <Input 
-                      placeholder="Search..." 
+                      placeholder="Search by ID Number..." 
                       className="pl-8 h-8 text-sm" 
                       value={searchInput} 
                       onChange={e => setSearchInput(e.target.value)}
@@ -231,12 +253,9 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                         <Button variant="outline" className="px-6" onClick={() => setSelectedStudent(null)}>Cancel</Button>
                         <Button 
                             className="bg-green-600 hover:bg-green-700 px-8 shadow-md shadow-green-600/20" 
-                            onClick={() => { 
-                                onVerify(selectedStudent.student_number); 
-                                setSelectedStudent(null); 
-                            }}
+                            onClick={() => setShowVerifyConfirm(true)}
                         >
-                            Approve Verification
+                            <CheckCircle2 size={18} className="mr-2" /> Approve Verification
                         </Button>
                     </CardFooter>
                 </Card>
@@ -244,6 +263,26 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 <div className="h-full flex flex-col items-center justify-center text-stone-400 border-2 border-dashed rounded-2xl bg-white min-h-0"><User size={40} className="opacity-20"/><p className="mt-2">Select a student to verify</p></div>
             )}
         </div>
+
+        {/* FIX #5: CONFIRMATION MODAL */}
+        <AlertDialog open={showVerifyConfirm} onOpenChange={setShowVerifyConfirm}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Approve Verification?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to verify {selectedStudent?.first_name} {selectedStudent?.last_name}? 
+                        This action will mark the student's pre-registration details as verified in the system.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmVerify} className="bg-green-600 hover:bg-green-700">
+                        Yes, Approve
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
     </div>
   );
 }

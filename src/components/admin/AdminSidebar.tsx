@@ -87,6 +87,10 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
             <NavItem id="slots" label="Schedules" icon={Calendar} />
         )}
         
+        {/* FIX #20: Gibalhin ang scanner dire dapita sa pinaka-ubos para dili ma-misclick sa taas */}
+        <div className="mt-4 my-2 border-t border-stone-800/50"></div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Tools</p>
+
         <Link href="/admin/scanner">
             <Button variant="ghost" className="w-full justify-start gap-4 h-12 text-sm font-medium text-stone-400 hover:text-white hover:bg-stone-900">
                 <ScanLine size={18} /> Attendance Scanner

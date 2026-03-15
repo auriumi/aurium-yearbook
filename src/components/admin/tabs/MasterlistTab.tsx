@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,9 @@ export function MasterlistTab() {
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   } = useMasterlist();
+
+  // FIX #2: State para sa Image Lightbox / Zoom
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
@@ -38,6 +42,13 @@ export function MasterlistTab() {
       return pages;
   };
 
+  const formatDate = (dateString: string) => {
+      if (!dateString || dateString === "N/A") return "N/A";
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString; 
+      return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+  };
+
   const InfoField = ({ label, value, icon: Icon, fullWidth = false }: any) => (
     <div className={`flex flex-col space-y-1 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -53,7 +64,7 @@ export function MasterlistTab() {
   const availableCourses = selectedDeptConfig ? selectedDeptConfig.courses.map(c => c.name) : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 w-full overflow-x-hidden">
         
         <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5">
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -70,15 +81,13 @@ export function MasterlistTab() {
                 </Badge>
             </div>
             
-            {/* FIXED OVERLAP: Added min-w-0 on main wrappers */}
             <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-stone-50/50 p-2 rounded-xl border border-stone-100 min-w-0">
                 
-                {/* Type 1: Query by Name/ID */}
                 <div className="flex gap-2 w-full xl:w-[30%] min-w-0">
                     <div className="relative flex-1 min-w-0">
                         <Search className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
                         <Input 
-                            placeholder="Search Name or ID..." 
+                            placeholder="Search by ID Number..." 
                             className="pl-10 h-11 bg-white border-stone-200 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm w-full" 
                             value={searchQuery} 
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -92,16 +101,13 @@ export function MasterlistTab() {
 
                 <div className="hidden xl:block text-stone-300 font-medium text-sm px-1 shrink-0">OR</div>
 
-                {/* Type 2: Query by Filters */}
                 <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-[65%] justify-end min-w-0">
                     
-                    {/* Status Dropdown */}
                     <div className="w-full sm:w-[150px] shrink-0">
                         <Select value={activeStatusFilter} onValueChange={setActiveStatusFilter}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
                                 <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
                                     <ListFilter size={16} className="shrink-0" />
-                                    {/* The [&>span] classes ensure the inner Shadcn text truncates properly */}
                                     <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
                                         <SelectValue placeholder="Status" />
                                     </div>
@@ -121,7 +127,6 @@ export function MasterlistTab() {
                         </Select>
                     </div>
 
-                    {/* Department Dropdown */}
                     <div className="w-full sm:flex-1 min-w-0">
                         <Select value={activeDeptFilter} onValueChange={setActiveDeptFilter}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
@@ -141,7 +146,6 @@ export function MasterlistTab() {
                         </Select>
                     </div>
 
-                    {/* Course Dropdown */}
                     <div className="w-full sm:flex-1 min-w-0">
                         <Select value={activeCourseFilter} onValueChange={setActiveCourseFilter} disabled={activeDeptFilter === "ALL"}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
@@ -161,7 +165,6 @@ export function MasterlistTab() {
                         </Select>
                     </div>
 
-                    {/* Load Button */}
                     <Button onClick={handleLoadClick} className="h-11 px-5 bg-amber-600 hover:bg-amber-700 shadow-sm text-white font-bold tracking-wide w-full sm:w-auto shrink-0">
                         <Download size={16} className="mr-2 shrink-0"/> LOAD
                     </Button>
@@ -201,7 +204,7 @@ export function MasterlistTab() {
                                             <p className="font-bold text-stone-800 group-hover:text-amber-800 transition-colors text-sm truncate pr-2">
                                                 {student.last_name}, {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.suffix}
                                             </p>
-                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo!.color} shadow-sm`} title={statusInfo!.label}></div>
+                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo?.color || 'bg-stone-400'} shadow-sm`} title={statusInfo?.label || 'Unknown'}></div>
                                         </div>
                                         <p className="text-[11px] font-mono text-stone-500 mt-1">{student.student_number}</p>
                                     </div>
@@ -210,7 +213,7 @@ export function MasterlistTab() {
                                         <div className="min-w-0 flex-1">
                                             <p className="text-[9px] font-bold text-stone-400 truncate uppercase">{student.course}</p>
                                         </div>
-                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo!.label}</span>
+                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo?.label || 'Unknown'}</span>
                                     </div>
                                 </div>
                             )
@@ -259,7 +262,7 @@ export function MasterlistTab() {
             )}
         </div>
 
-        {/* --- PROFILE MODAL: --- */}
+        {/* --- PROFILE MODAL --- */}
         <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
             <DialogContent className="max-w-[95vw] md:max-w-7xl h-[92vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl bg-white flex flex-col md:flex-row [&>button]:hidden">
                 <div className="sr-only">
@@ -288,14 +291,18 @@ export function MasterlistTab() {
                                 <p className="text-amber-700 font-serif italic text-lg mt-1">"{selectedStudent.nickname}"</p>
                             </div>
 
-                            <div className="w-full space-y-4">
+                            <div className="w-full space-y-6">
+                                {/* FIX #2: Graduation Photo - Clickable with hover state */}
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Graduation Photo
                                     </span>
-                                    <div className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg">
+                                    <div 
+                                        className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg cursor-pointer hover:border-amber-400 transition-colors group"
+                                        onClick={() => selectedStudent.photo_grad && setEnlargedImage(selectedStudent.photo_grad)}
+                                    >
                                         {selectedStudent.photo_grad ? (
-                                            <img src={selectedStudent.photo_grad} className="w-full h-full object-cover rounded-sm" alt="Graduation" />
+                                            <img src={selectedStudent.photo_grad} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Graduation" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
@@ -305,13 +312,17 @@ export function MasterlistTab() {
                                     </div>
                                 </div>
 
+                                {/* FIX #2: Creative Photo - Clickable with hover state */}
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Creative Photo
                                     </span>
-                                    <div className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg">
+                                    <div 
+                                        className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg cursor-pointer hover:border-amber-400 transition-colors group"
+                                        onClick={() => selectedStudent.photo_creative && setEnlargedImage(selectedStudent.photo_creative)}
+                                    >
                                         {selectedStudent.photo_creative ? (
-                                            <img src={selectedStudent.photo_creative} className="w-full h-full object-cover rounded-sm" alt="Creative" />
+                                            <img src={selectedStudent.photo_creative} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Creative" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
@@ -321,10 +332,26 @@ export function MasterlistTab() {
                                     </div>
                                 </div>
                                 
-                                <div className="pt-4 border-t border-stone-200">
-                                    <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 block mb-2 text-center">Reference (Pre-Reg)</span>
-                                    <div className="w-24 h-24 bg-white p-1 shadow-sm border border-stone-200 rounded-lg mx-auto">
-                                        <img src={selectedStudent.studentDetail.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : undefined} className="w-full h-full object-cover rounded-sm opacity-90" alt="Reference" />
+                                {/* FIX #2: Reference Photo - Changed to aspect-[4/5] and made clickable */}
+                                <div className="space-y-1">
+                                    <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
+                                        <ImageIcon size={10} /> Reference (Pre-Reg)
+                                    </span>
+                                    <div 
+                                        className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg cursor-pointer hover:border-amber-400 transition-colors group"
+                                        onClick={() => {
+                                            const refUrl = selectedStudent.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : undefined;
+                                            if (refUrl) setEnlargedImage(refUrl);
+                                        }}
+                                    >
+                                        {selectedStudent.studentDetail?.photo_url ? (
+                                            <img src={getObjectKey(selectedStudent.studentDetail.photo_url)} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Reference" />
+                                        ) : (
+                                            <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
+                                                <ImageIcon size={24} className="opacity-20 mb-1"/>
+                                                <span className="text-[10px] italic">Not Uploaded</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -355,10 +382,10 @@ export function MasterlistTab() {
                                         <h3 className="text-sm font-bold text-stone-800 uppercase tracking-widest">Personal & Family</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
-                                        <InfoField label="Date of Birth" value={selectedStudent.studentDetail.birth_date} />
-                                        <InfoField label="Father's Name" value={selectedStudent.studentDetail.fathers_name} />
-                                        <InfoField label="Mother's Name" value={selectedStudent.studentDetail.mothers_name} />
-                                        <InfoField label="Guardian" value={selectedStudent.studentDetail.guardians_name} />
+                                        <InfoField label="Date of Birth" value={formatDate(selectedStudent.studentDetail?.birth_date)} />
+                                        <InfoField label="Father's Name" value={selectedStudent.studentDetail?.fathers_name} />
+                                        <InfoField label="Mother's Name" value={selectedStudent.studentDetail?.mothers_name} />
+                                        <InfoField label="Guardian" value={selectedStudent.studentDetail?.guardians_name} />
                                     </div>
                                 </div>
 
@@ -368,8 +395,8 @@ export function MasterlistTab() {
                                         <h3 className="text-sm font-bold text-stone-800 uppercase tracking-widest">Contact Details</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
-                                        <InfoField label="Home Address" value={selectedStudent.studentDetail.province} icon={Home} />
-                                        <InfoField label="Mobile Number" value={selectedStudent.studentDetail.contact_num} icon={Phone} />
+                                        <InfoField label="Home Address" value={selectedStudent.studentDetail?.province} icon={Home} />
+                                        <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} />
                                         <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
                                         <InfoField label="School Email" value={selectedStudent.school_email} icon={Mail} />
                                     </div>
@@ -386,8 +413,10 @@ export function MasterlistTab() {
                             
                             <div className="space-y-0 relative pl-2">
                                 {STATUS_STEPS.map((step, index) => {
-                                    const isDone = step.id <= STATUS_STEPS.find(s => s.label === selectedStudent.studentAuth.status)!.id; 
-                                    const isCurrent = step.label === selectedStudent.studentAuth.status;
+                                    const studentStatusItem = STATUS_STEPS.find(s => s.label === selectedStudent.studentAuth?.status);
+                                    const currentStatusId = studentStatusItem ? studentStatusItem.id : 1;
+                                    const isDone = step.id <= currentStatusId;
+                                    const isCurrent = step.id === currentStatusId;
                                     
                                     return (
                                         <div key={step.id} className="flex gap-3 relative pb-8 last:pb-0 group">
@@ -423,6 +452,28 @@ export function MasterlistTab() {
                 )}
             </DialogContent>
         </Dialog>
+
+        {/* FIX #2: IMAGE LIGHTBOX MODAL */}
+        <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>
+            <DialogContent className="max-w-4xl p-1 bg-transparent border-0 shadow-none flex justify-center items-center [&>button]:hidden">
+                <div className="relative">
+                    <button 
+                        onClick={() => setEnlargedImage(null)} 
+                        className="absolute -top-4 -right-4 z-50 p-2 bg-white hover:bg-stone-100 rounded-full text-stone-600 shadow-xl border border-stone-200 transition-all"
+                    >
+                        <X size={20}/>
+                    </button>
+                    {enlargedImage && (
+                        <img 
+                            src={enlargedImage} 
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl bg-black/5 backdrop-blur-sm border border-white/20" 
+                            alt="Enlarged view" 
+                        />
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

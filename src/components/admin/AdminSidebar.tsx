@@ -10,8 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-
-// import nato ang hook nga gihimo para limpyo 
 import { useSidebar } from "@/hooks/useSidebar";
 
 interface SidebarProps {
@@ -24,11 +22,9 @@ interface SidebarProps {
 }
 
 export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
-  
-  // kwaon nato ang check gikan sa hook 
   const { isAdmin, displayPosition, userInitials } = useSidebar(user);
 
-  // Gamay nga helper para sa mga buttons
+  // Navigation item helper component
   const NavItem = ({ id, label, icon: Icon }: any) => (
     <Button 
       variant="ghost" 
@@ -42,7 +38,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
   return (
     <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'hidden md:flex w-72 h-screen fixed left-0 top-0'} bg-stone-950 text-stone-300 flex-col border-r border-stone-800 shadow-2xl transition-transform`}>
       
-      {/* HEADER */}
       <div className="p-8 border-b border-stone-800/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
             <div className="relative w-8 h-8"><Image src="/images/umtc-logo.png" alt="UMTC" fill className="object-contain" /></div>
@@ -53,7 +48,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         {isMobile && setIsOpen && <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}><X className="h-5 w-5 text-stone-400" /></Button>}
       </div>
 
-      {/* NAV MENU */}
       <nav className="flex-1 p-6 space-y-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Menu</p>
         
@@ -65,14 +59,13 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         
         <div className="my-2 border-t border-stone-800/50"></div>
         
-        {/* --- TABS NGA ADMIN RA MAKAKITA --- */}
+        {/* Admin-exclusive tabs */}
         {isAdmin && (
            <>
              <NavItem id="verification" label="Verification Queue" icon={Users} />
            </>
         )}
         
-        {/* --- GIBAYLO NGA TABS BASE SA REQUEST NI KOI --- */}
         <NavItem id="graduate-review" label="Graduate Verification" icon={FileCheck} />
         
         <div className="my-2 px-3 text-[10px] font-bold uppercase tracking-widest text-stone-600 mt-4">Review & Notes</div>
@@ -82,12 +75,10 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         <div className="my-2 border-t border-stone-800/50"></div>
 
-        {/* --- TABS NGA ADMIN RA MAKAKITA --- */}
         {isAdmin && (
             <NavItem id="slots" label="Schedules" icon={Calendar} />
         )}
         
-        {/* FIX #20: Gibalhin ang scanner dire dapita sa pinaka-ubos para dili ma-misclick sa taas */}
         <div className="mt-4 my-2 border-t border-stone-800/50"></div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Tools</p>
 
@@ -100,7 +91,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         <NavItem id="profile" label="My Profile" icon={User} />
       </nav>
 
-      {/* FOOTER */}
       <div className="p-6 border-t border-stone-800/50 bg-stone-950">
         <div className="flex items-center gap-3 mb-4">
             <Avatar className="border-2 border-stone-600 bg-stone-800">
@@ -109,7 +99,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
             </Avatar>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-white truncate">{user.name}</p>
-                {/* Diri mu gawas ang gi-edit nga position gikan sa profile tab */}
                 <p className="text-[10px] text-amber-500 truncate uppercase tracking-wider">{displayPosition}</p>
             </div>
         </div>

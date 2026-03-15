@@ -20,9 +20,9 @@ export function MasterlistTab() {
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   } = useMasterlist();
 
-  // FIX #2: State para sa Image Lightbox / Zoom
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
+  // Helper to extract the proper object key from AWS S3 URLs
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
       const findStr = `/aurium/`;
@@ -173,7 +173,6 @@ export function MasterlistTab() {
             </div>
         </div>
 
-        {/* --- Flat Grid Results --- */}
         <div className="space-y-4 pb-10 min-h-[500px]">
             {isLoading ? (
                 <div className="text-center py-24 text-stone-400 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">
@@ -262,7 +261,6 @@ export function MasterlistTab() {
             )}
         </div>
 
-        {/* --- PROFILE MODAL --- */}
         <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
             <DialogContent className="max-w-[95vw] md:max-w-7xl h-[92vh] p-0 overflow-hidden rounded-xl border-0 shadow-2xl bg-white flex flex-col md:flex-row [&>button]:hidden">
                 <div className="sr-only">
@@ -292,7 +290,6 @@ export function MasterlistTab() {
                             </div>
 
                             <div className="w-full space-y-6">
-                                {/* FIX #2: Graduation Photo - Clickable with hover state */}
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Graduation Photo
@@ -312,7 +309,6 @@ export function MasterlistTab() {
                                     </div>
                                 </div>
 
-                                {/* FIX #2: Creative Photo - Clickable with hover state */}
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Creative Photo
@@ -332,7 +328,6 @@ export function MasterlistTab() {
                                     </div>
                                 </div>
                                 
-                                {/* FIX #2: Reference Photo - Changed to aspect-[4/5] and made clickable */}
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Reference (Pre-Reg)
@@ -453,7 +448,7 @@ export function MasterlistTab() {
             </DialogContent>
         </Dialog>
 
-        {/* FIX #2: IMAGE LIGHTBOX MODAL */}
+        {/* IMAGE LIGHTBOX MODAL */}
         <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>
             <DialogContent className="max-w-4xl p-1 bg-transparent border-0 shadow-none flex justify-center items-center [&>button]:hidden">
                 <div className="relative">

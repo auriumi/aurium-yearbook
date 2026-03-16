@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, AlertCircle, X, Check, Filter, CheckCircle2, BookOpen, Building2, ListFilter, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,21 +31,15 @@ interface VerificationTabProps {
 
 export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStudent }: VerificationTabProps) {
   
-  // Pass data to the hook to handle logic and filtering
   const {
     searchQuery, setSearchQuery,
-    activeDeptFilter, setActiveDeptFilter,
-    activeCourseFilter, setActiveCourseFilter,
-    activeStatusFilter, setActiveStatusFilter,
     currentPage, setCurrentPage,
-    handleSearchClick, handleLoadClick, handleSearchKeyDown,
+    handleSearchClick, handleSearchKeyDown,
     students, totalResults, pendingCount, isLoading, ITEMS_PER_PAGE,
     isEditing, setIsEditing,
     handleSaveEdit, handlePhotoUpload, handleFinalize,
-    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   } = useGraduateReview(staffUser, selectedStudent, setSelectedStudent);
 
-  // Pagination helper for the flat list
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
   const getPageNumbers = () => {
       const pages = [];
@@ -57,36 +50,49 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
       return pages;
   };
 
-  // Helper function to format the date as requested (e.g., October 07, 2004)
   const formatDate = (dateString: string) => {
       if (!dateString || dateString === "N/A") return "N/A";
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Fallback just in case an invalid date format comes from the DB
+      if (isNaN(date.getTime())) return dateString; 
       return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
   };
 
-  // Small helper component to avoid repeating this UI structure
+  const getObjectKey = (url: string): string => {
+    if (typeof url !== 'string') return "";
+      const findStr = `/aurium/`;
+      const idx = url.indexOf(findStr);
+      if (idx === -1) return "";
+      return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
+  }
+
   const InfoField = ({ label, value, icon: Icon, fullWidth = false }: any) => (
-    <div className={`flex flex-col space-y-1 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
-        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
-            {Icon && <Icon size={10} />} {label}
+    <div className={`flex flex-col space-y-1.5 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
+        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+            {Icon && <Icon size={12} />} {label}
         </span>
-        <div className="p-2.5 bg-stone-50 rounded-md border border-stone-200 text-sm font-semibold text-stone-800 break-words leading-snug">
+        <div className="px-3 py-2.5 bg-white rounded-lg border border-stone-200 text-xs font-semibold text-stone-800 break-words leading-tight shadow-sm min-h-[38px] flex items-center">
             {value || <span className="text-stone-300 italic">N/A</span>}
         </div>
     </div>
   );
 
-  // Refs to trigger the hidden file inputs when clicking the upload boxes
+  // Helper function to combine Prefix, Name, and Suffix dynamically
+  const formatParentName = (prefix?: string, name?: string, suffix?: string) => {
+      if (!name || name === "N/A" || name.trim() === "") return "N/A";
+      const p = prefix && prefix !== "N/A" ? `${prefix} ` : "";
+      const s = suffix && suffix !== "N/A" ? ` ${suffix}` : "";
+      return `${p}${name}${s}`.trim();
+  };
+
   const gradPhotoRef = useRef<HTMLInputElement>(null);
   const creativePhotoRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Local states for modals
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
   const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
   const [pendingFormEvent, setPendingFormEvent] = useState<React.FormEvent<HTMLFormElement> | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const onSaveInfoClick = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,408 +107,357 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
     setShowInfoSaveConfirm(false);
   };
 
-  const selectedDeptConfig = ACADEMIC_CONFIG.find(d => d.name === activeDeptFilter);
-  const availableCourses = selectedDeptConfig ? selectedDeptConfig.courses.map(c => c.name) : [];
-
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 h-[calc(100vh-140px)] flex flex-col min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-120px)] min-h-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
         
-        {/* --- Header Section --- */}
-        <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5 flex-shrink-0">
-            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div>
-                    <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-                        <BookOpen className="h-6 w-6 text-amber-600"/> Graduate Verification
-                    </h2>
-                    <p className="text-sm text-stone-500 mt-1">
-                        Secure repository of verified graduates. Monitoring all students from Registration to Final Verification.
-                    </p>
-                </div>
-                <Badge variant="secondary" className={`px-4 py-1.5 text-sm h-fit ${pendingCount === 0 ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
-                    {pendingCount === 0 ? "All Caught Up!" : `${pendingCount} Pending Verification`}
-                </Badge>
-            </div>
+        {/* LEFT COLUMN: Stacked Header & Directory */}
+        <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-4 min-h-0 h-full">
             
-            {/* Flat Layout Filters (Match Masterlist Style) */}
-            <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-stone-50/50 p-2 rounded-xl border border-stone-100 min-w-0">
-                {/* Search */}
-                <div className="flex gap-2 w-full xl:w-[30%] min-w-0">
+            <Card className="p-4 rounded-2xl border-stone-200 shadow-sm shrink-0 flex flex-col gap-3">
+                <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-amber-50 text-amber-600 rounded-md">
+                            <BookOpen className="h-4 w-4"/>
+                        </div>
+                        <h2 className="text-[13px] font-black text-stone-800">
+                            Graduate Verification
+                        </h2>
+                    </div>
+                    <Badge variant="secondary" className={`text-[9px] px-2 py-0.5 whitespace-nowrap shadow-sm ${pendingCount === 0 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {pendingCount} Pending
+                    </Badge>
+                </div>
+                <p className="text-[9px] text-stone-500 leading-snug">
+                    Secure repository of verified graduates. Monitoring from Registration to Final Verification.
+                </p>
+                <div className="flex gap-2 mt-1">
                     <div className="relative flex-1 min-w-0">
-                        <Search className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
+                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-stone-400" />
                         <Input 
-                            placeholder="Search Name or ID..." 
-                            className="pl-10 h-11 bg-white border-stone-200 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm w-full" 
+                            placeholder="Search ID..." 
+                            className="pl-8 h-9 text-xs bg-stone-50 border-stone-200 focus:ring-amber-500/20" 
                             value={searchQuery} 
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={handleSearchKeyDown}
                         />
                     </div>
-                    <Button onClick={handleSearchClick} className="h-11 px-5 bg-stone-800 hover:bg-stone-900 shadow-sm shrink-0">Search</Button>
-                </div>
-
-                <div className="hidden xl:block text-stone-300 font-medium text-sm px-1 shrink-0">OR</div>
-
-                {/* Dropdown Filters */}
-                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-[65%] justify-end min-w-0">
-                    <div className="w-full sm:w-[150px] shrink-0">
-                        <Select value={activeStatusFilter} onValueChange={setActiveStatusFilter}>
-                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
-                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
-                                    <ListFilter size={16} className="shrink-0" />
-                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
-                                        <SelectValue placeholder="Status" />
-                                    </div>
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">All Statuses</SelectItem>
-                                {STATUS_STEPS.map(step => (
-                                    <SelectItem key={step.id} value={step.id}>
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-2 h-2 rounded-full ${step.color}`}></div>{step.label}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-full sm:flex-1 min-w-0">
-                        <Select value={activeDeptFilter} onValueChange={setActiveDeptFilter}>
-                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
-                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
-                                    <Filter size={16} className="shrink-0" />
-                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate pr-1">
-                                        <SelectValue placeholder="Department" />
-                                    </div>
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">All Departments</SelectItem>
-                                {DEPARTMENT_ORDER.map(dept => (<SelectItem key={dept} value={dept}>{dept}</SelectItem>))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-full sm:flex-1 min-w-0">
-                        <Select value={activeCourseFilter} onValueChange={setActiveCourseFilter} disabled={activeDeptFilter === "ALL"}>
-                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
-                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
-                                    <GraduationCap size={16} className="shrink-0" />
-                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate pr-1">
-                                        <SelectValue placeholder={activeDeptFilter === "ALL" ? "Select Dept First" : "Course"} />
-                                    </div>
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">All Courses</SelectItem>
-                                {availableCourses.map(course => (<SelectItem key={course} value={course}>{course}</SelectItem>))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Button onClick={handleLoadClick} className="h-11 px-5 bg-amber-600 hover:bg-amber-700 shadow-sm text-white font-bold tracking-wide w-full sm:w-auto shrink-0">
-                        <Download size={16} className="mr-2 shrink-0"/> LOAD
+                    <Button onClick={handleSearchClick} className="h-9 px-4 text-xs font-bold bg-stone-800 hover:bg-stone-900 shadow-sm shrink-0 rounded-lg">
+                        Search
                     </Button>
                 </div>
-            </div>
-        </div>
+            </Card>
 
-        {/* --- Main Content: Left side (List), Right side (Details) --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0 pb-6">
-            
-            {/* LEFT: Directory List (Now Flat!) */}
-            <Card className={`lg:col-span-4 xl:col-span-3 border-stone-200 shadow-sm flex flex-col overflow-hidden h-full rounded-2xl bg-white ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
-                <div className="p-4 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center flex-shrink-0">
+            <Card className="flex-1 rounded-2xl border-stone-200 shadow-sm flex flex-col min-h-0 overflow-hidden bg-white">
+                <div className="p-3 px-4 border-b border-stone-100 bg-stone-50/50 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4 text-stone-500"/>
-                        <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Directory</span>
+                        <FolderOpen className="w-3.5 h-3.5 text-stone-500"/>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Directory</span>
                     </div>
-                    <span className="text-[10px] font-mono text-stone-400">{totalResults} results</span>
+                    <span className="text-[9px] font-mono text-stone-400">{totalResults} results</span>
                 </div>
                 
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-stone-50/30">
-                    <div className="space-y-1.5 p-2 pr-3 pb-8">
-                        {students.length === 0 ? (
+                    <div className="space-y-1.5 p-2 pr-3 pb-4">
+                        {isLoading ? (
                             <div className="text-center py-10 text-stone-400 text-sm flex flex-col items-center">
-                                <Filter className="h-8 w-8 mb-2 opacity-20" /> No students found.
+                                <Loader2 className="h-6 w-6 mb-2 text-amber-500 animate-spin"/> Loading...
+                            </div>
+                        ) : students.length === 0 ? (
+                            <div className="text-center py-10 text-stone-400 text-sm flex flex-col items-center">
+                                <Search className="h-8 w-8 mb-2 opacity-20" /> No students found.
                             </div>
                         ) : (
                             students.map(student => (
                                 <button 
-                                    key={student.id} 
+                                    key={student.id || student.student_number} 
                                     onClick={() => { setSelectedStudent(student); setIsEditing(false); }} 
                                     className={`w-full text-left py-2 px-3 rounded-xl flex items-center gap-3 transition-all border 
-                                        ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-300 shadow-sm ring-1 ring-amber-100" : "bg-white border-stone-200 hover:ring-1 hover:ring-amber-300"}`}
+                                        ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-300 shadow-sm ring-1 ring-amber-400" : "bg-white border-stone-200 hover:ring-1 hover:ring-amber-300"}`}
                                 >
-                                    <Avatar className="h-9 w-9 shadow-sm">
+                                    <Avatar className="h-8 w-8 shadow-sm">
                                         <AvatarImage src={student.photo} />
-                                        <AvatarFallback className="text-[10px] bg-stone-100 text-stone-500">{student.fname?.charAt(0)}</AvatarFallback>
+                                        <AvatarFallback className="text-[10px] bg-stone-100 text-stone-500">
+                                            {(student.fname || student.first_name || "U").charAt(0)}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-bold truncate leading-snug ${selectedStudent?.id === student.id ? 'text-amber-900' : 'text-stone-800'}`}>
-                                            {student.lname}, {student.fname}
+                                        <p className={`text-xs font-bold truncate leading-snug ${selectedStudent?.id === student.id ? 'text-amber-900' : 'text-stone-800'}`}>
+                                            {student.lname || student.last_name}, {student.fname || student.first_name}
                                         </p>
-                                        <p className="text-[11px] text-stone-500 font-mono leading-none mt-0.5">{student.idNumber}</p>
+                                        <p className="text-[10px] text-stone-500 font-mono leading-none mt-0.5">{student.idNumber || student.student_number}</p>
                                     </div>
-                                    <ChevronRight size={16} className={`shrink-0 ${selectedStudent?.id === student.id ? "text-amber-500" : "text-stone-300"}`} />
+                                    <ChevronRight size={14} className={`shrink-0 ${selectedStudent?.id === student.id ? "text-amber-500" : "text-stone-300"}`} />
                                 </button>
                             ))
                         )}
                     </div>
                 </div>
 
-                {/* Left Panel Pagination */}
-                <div className="py-2 px-3 border-t bg-white relative z-10 flex items-center justify-between shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="flex gap-1">
-                        {getPageNumbers().map(pageNum => (
-                            <Button
-                                key={pageNum}
-                                variant={currentPage === pageNum ? "default" : "ghost"}
-                                className={`h-7 w-7 text-[11px] rounded-lg ${currentPage === pageNum ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
-                                onClick={() => setCurrentPage(pageNum)}
-                            >
-                                {pageNum}
-                            </Button>
-                        ))}
-                    </div>
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-            </Card>
-
-            {/* RIGHT: Details Panel */}
-            <div className={`lg:col-span-8 xl:col-span-9 h-full flex flex-col min-h-0 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
-                {selectedStudent ? (
-                    <div className="h-full flex flex-col animate-in fade-in zoom-in-95 duration-200">
-                        
-                        {/* Student details header to indicate if they are already verified or still pending */}
-                        <div className="bg-white border border-stone-200 rounded-t-2xl p-4 flex flex-col sm:flex-row justify-between items-center text-xs text-stone-500 shadow-sm z-10 flex-shrink-0">
-                            <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <Badge variant={selectedStudent.status === 'verified' ? 'default' : 'outline'} className={`px-3 py-1 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-600' : 'text-stone-500 border-stone-300'}`}>
-                                    {selectedStudent.status === 'verified' ? 'VERIFIED FINAL' : 'PENDING REVIEW'}
-                                </Badge>
-                                <span className="h-4 w-[1px] bg-stone-300 hidden sm:block"></span>
-                                <div className="flex items-center gap-1 font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded">
-                                    <span className="text-stone-400">ID:</span> {selectedStudent.idNumber}
-                                </div>
-                            </div>
-                            {selectedStudent.last_edited_by && (
-                                <div className="flex items-center gap-1.5 mt-2 sm:mt-0">
-                                    <Clock size={12} className="text-stone-400" />
-                                    <span>Updated by <strong>{selectedStudent.last_edited_by}</strong></span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Inside the card: Toggles between edit mode and view mode */}
-                        <Card className="rounded-t-none border-t-0 shadow-sm flex-1 flex flex-col bg-white relative overflow-hidden rounded-b-2xl border-stone-200 min-h-0">
-                            
-                            {isEditing ? (
-                                /* --- EDIT MODE (Triggered when the edit button is clicked) --- */
-                                <div className="flex-1 overflow-y-auto p-8 bg-stone-50/50">
-                                    <form id="edit-form" ref={formRef} onSubmit={onSaveInfoClick}>
-                                        <div className="flex items-center justify-between mb-8 sticky top-0 bg-stone-50/95 backdrop-blur z-20 py-4 border-b border-stone-200 -mx-8 px-8 -mt-8">
-                                            <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
-                                                <Edit3 size={18} className="text-amber-600"/> Edit Information
-                                            </h2>
-                                            <div className="flex gap-2">
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
-                                                <Button type="submit" size="sm" className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm">Save Changes</Button>
-                                            </div>
-                                        </div>
-                                        <Tabs defaultValue="personal" className="w-full">
-                                            <TabsList className="grid w-full grid-cols-4 mb-6 p-1 bg-stone-200/50 rounded-xl h-12">
-                                                <TabsTrigger value="personal" className="text-xs font-bold">Personal</TabsTrigger>
-                                                <TabsTrigger value="academic" className="text-xs font-bold">Academic</TabsTrigger>
-                                                <TabsTrigger value="contact" className="text-xs font-bold">Contact</TabsTrigger>
-                                                <TabsTrigger value="family" className="text-xs font-bold">Family</TabsTrigger>
-                                            </TabsList>
-                                            
-                                            <TabsContent value="personal" className="space-y-4 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
-                                                <div className="grid grid-cols-2 gap-6">
-                                                    <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">First Name</Label><Input name="fname" defaultValue={selectedStudent.fname} /></div>
-                                                    <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Last Name</Label><Input name="lname" defaultValue={selectedStudent.lname} /></div>
-                                                    <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Middle Name</Label><Input name="mname" defaultValue={selectedStudent.mname} /></div>
-                                                    <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Suffix</Label><Input name="suffix" defaultValue={selectedStudent.suffix} /></div>
-                                                </div>
-                                                <div className="space-y-1.5 pt-2"><Label className="text-stone-500 font-bold text-xs uppercase">Nickname</Label><Input name="nickname" defaultValue={selectedStudent.nickname} /></div>
-                                            </TabsContent>
-                                            <TabsContent value="academic" className="space-y-6 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
-                                               <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Course</Label><Input name="course" defaultValue={selectedStudent.course} /></div>
-                                               <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Major</Label><Input name="major" defaultValue={selectedStudent.major} /></div>
-                                            </TabsContent>
-                                            <TabsContent value="contact" className="space-y-6 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
-                                               <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Address</Label><Input name="address" defaultValue={selectedStudent.details?.address} /></div>
-                                               <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.details?.contactNum} /></div>
-                                               <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.details?.personalEmail} /></div>
-                                               {/* Note: I removed the School Email from the UI since we don't need it here */}
-                                            </TabsContent>
-                                            <TabsContent value="family" className="space-y-6 bg-white p-8 rounded-xl border border-stone-200 shadow-sm">
-                                               {/* Conditional rendering logic: If Guardian is filled, hide the Parents fields. */}
-                                               {(!selectedStudent.details?.guardian || selectedStudent.details?.guardian === "N/A") ? (
-                                                  <>
-                                                      <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Father</Label><Input name="father" defaultValue={selectedStudent.details?.father} /></div>
-                                                      <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Mother</Label><Input name="mother" defaultValue={selectedStudent.details?.mother} /></div>
-                                                  </>
-                                               ) : (
-                                                  <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-xs uppercase">Guardian</Label><Input name="guardian" defaultValue={selectedStudent.details?.guardian} /></div>
-                                               )}
-                                            </TabsContent>
-                                        </Tabs>
-                                    </form>
-                                </div>
-                            ) : (
-                                /* --- VIEW MODE (Read-only display) --- */
-                                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-                                    
-                                    {/* Styled picture and name section (Restored to normal size here) */}
-                                    <div className="w-full md:w-5/12 bg-stone-100 p-8 flex flex-col items-center justify-center border-r border-stone-200 relative">
-                                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                                        
-                                        <div className="relative mb-8 transform hover:scale-105 transition-transform duration-500 ease-out group">
-                                                <div className="w-48 h-48 bg-white p-2 shadow-xl rotate-2 border-2 border-stone-200 relative z-10 rounded-sm">
-                                                    <img src={selectedStudent.photo} className="w-full h-full object-cover bg-stone-200" alt="Student" />
-                                                    <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-amber-500 z-20"></div>
-                                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-amber-500 z-20"></div>
-                                                </div>
-                                        </div>
-
-                                        <div className="text-center space-y-3 max-w-sm relative z-10">
-                                            <div>
-                                                <h2 className="text-2xl font-serif font-bold text-stone-900 leading-tight uppercase tracking-wide">
-                                                    {selectedStudent.lname}, <br/> {selectedStudent.fname} {selectedStudent.mname} {selectedStudent.suffix}
-                                                </h2>
-                                                <p className="text-amber-600 font-serif italic text-lg mt-2 font-medium">"{selectedStudent.nickname}"</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Right side details container, scrollable if content overflows */}
-                                    <div className="flex-1 p-10 overflow-y-auto bg-white min-h-0">
-                                        <div className="space-y-10 pb-10">
-                                                
-                                                {/* Academic Details */}
-                                                <div>
-                                                    <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-[0.2em] mb-5">
-                                                        <GraduationCap size={16}/> Academic Profile
-                                                    </h3>
-                                                    <div className="grid grid-cols-1 gap-6 p-6 bg-stone-50 rounded-2xl border border-stone-100 relative overflow-hidden">
-                                                        <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-full opacity-50"></div>
-                                                        <div className="col-span-1">
-                                                            <InfoField label="Department / School" value={selectedStudent.department} icon={Building2} />
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">Course</span>
-                                                            <span className="font-bold text-stone-800 text-lg leading-snug">{selectedStudent.course}</span>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <div>
-                                                                <span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">Major</span>
-                                                                <span className="text-sm font-medium text-stone-700">{selectedStudent.major || "N/A"}</span>
-                                                            </div>
-                                                            <div>
-                                                                <span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">ID Number</span>
-                                                                <span className="text-sm font-mono text-stone-700 bg-white px-2 py-1 rounded border border-stone-200 inline-block">{selectedStudent.idNumber}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-[10px] uppercase text-stone-400 font-bold block mb-1">Thesis Title</span>
-                                                            <span className="text-sm italic text-stone-700 font-medium">"{selectedStudent.details?.thesis}"</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                                                    <div>
-                                                        <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-[0.2em] mb-5">
-                                                            <User size={16}/> Personal & Family
-                                                        </h3>
-                                                        <div className="space-y-4 p-6 rounded-2xl border border-stone-100 bg-stone-50/30">
-                                                            {/* Applied the date formatter here */}
-                                                            <InfoField label="Date of Birth" value={formatDate(selectedStudent.details?.birthdate)} />
-                                                            
-                                                            {/* View mode conditional logic: Hide parents if guardian info is present */}
-                                                            {(!selectedStudent.details?.guardian || selectedStudent.details?.guardian === "N/A") ? (
-                                                                <>
-                                                                    <InfoField label="Father's Name" value={selectedStudent.details?.father} />
-                                                                    <InfoField label="Mother's Name" value={selectedStudent.details?.mother} />
-                                                                </>
-                                                            ) : (
-                                                                <InfoField label="Guardian" value={selectedStudent.details?.guardian} />
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <h3 className="flex items-center gap-2 text-xs font-bold text-amber-600 uppercase tracking-[0.2em] mb-5">
-                                                            <MapPin size={16}/> Contact Info
-                                                        </h3>
-                                                        <div className="space-y-4 p-6 rounded-2xl border border-stone-100 bg-stone-50/30">
-                                                            <InfoField label="Address" value={selectedStudent.details?.address} icon={Home} />
-                                                            <InfoField label="Mobile Number" value={selectedStudent.details?.contactNum} icon={Phone} />
-                                                            <InfoField label="Personal Email" value={selectedStudent.details?.personalEmail} icon={Mail} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* FOOTER: Contains the action buttons */}
-                            <CardFooter className="border-t border-stone-200 bg-stone-50 p-5 flex justify-between items-center z-20 flex-shrink-0">
-                                <div className="flex gap-3">
-                                    <Button 
-                                    variant="outline" 
-                                    onClick={() => setIsEditing(true)} 
-                                    disabled={isEditing}
-                                    className="border-stone-300 text-stone-600 hover:bg-white hover:text-amber-700"
-                                    >
-                                    <Edit3 size={16} className="mr-2"/> Edit Information
-                                    </Button>
-
-                                    <Button 
-                                        variant="secondary"
-                                        onClick={() => setIsPhotoModalOpen(true)}
-                                        className="bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200"
-                                    >
-                                        <ImageIcon size={16} className="mr-2"/> Add/Edit Photos
-                                    </Button>
-                                </div>
-
-                                <Button 
-                                  onClick={handleFinalize} 
-                                  disabled={isEditing}
-                                  className={`min-w-[160px] shadow-lg shadow-amber-900/10 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-900 hover:bg-amber-800'}`}
+                {totalPages > 1 && (
+                    <div className="py-2 px-3 border-t bg-white relative z-10 flex items-center justify-between shrink-0 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                        <Button variant="outline" size="icon" className="h-6 w-6 rounded-md" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                            <ChevronLeft className="h-3 w-3" />
+                        </Button>
+                        <div className="flex gap-1">
+                            {getPageNumbers().map(pageNum => (
+                                <Button
+                                    key={pageNum}
+                                    variant={currentPage === pageNum ? "default" : "ghost"}
+                                    className={`h-6 w-6 text-[10px] rounded-md ${currentPage === pageNum ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
+                                    onClick={() => setCurrentPage(pageNum)}
                                 >
-                                  {selectedStudent.status === 'verified' ? (
-                                    <><CheckCircle2 size={18} className="mr-2"/> Verified</>
-                                  ) : (
-                                    <><Save size={18} className="mr-2"/> Final Submit</>
-                                  )}
+                                    {pageNum}
                                 </Button>
-                            </CardFooter>
-                        </Card>
-                    </div>
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-stone-400 border-2 border-dashed border-stone-200 rounded-2xl bg-white/50">
-                        <div className="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mb-4 border border-stone-200">
-                            <User size={48} className="opacity-20 text-stone-500" />
+                            ))}
                         </div>
-                        <p className="font-serif text-lg text-stone-500 font-medium">Select a graduate from the directory</p>
-                        <p className="text-sm text-stone-400 mt-1">Or use the search bar above to find by ID</p>
+                        <Button variant="outline" size="icon" className="h-6 w-6 rounded-md" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                            <ChevronRight className="h-3 w-3" />
+                        </Button>
                     </div>
                 )}
-            </div>
+            </Card>
         </div>
 
-        {/* --- CONFIRMATION DIALOGS TO PREVENT ACCIDENTAL CLICKS --- */}
+        {/* RIGHT COLUMN: MAIN DETAILS PANEL */}
+        <div className={`lg:col-span-8 xl:col-span-9 h-full min-h-0 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
+            {selectedStudent ? (
+                <Card className="h-full flex flex-col shadow-sm overflow-hidden rounded-2xl border border-stone-200 min-h-0 bg-white">
+                    
+                    {/* Top Thin Header Bar */}
+                    <div className="p-3 px-5 bg-white border-b border-stone-200 flex justify-between items-center text-xs shadow-sm z-10 shrink-0">
+                        <div className="flex items-center gap-4">
+                            <Badge variant={selectedStudent.status === 'verified' ? 'default' : 'outline'} className={`px-3 py-0.5 text-[9px] font-bold ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-600 text-white' : 'text-stone-500 border-stone-300'}`}>
+                                {selectedStudent.status === 'verified' ? 'VERIFIED FINAL' : 'PENDING REVIEW'}
+                            </Badge>
+                            <span className="h-3 w-[1px] bg-stone-300"></span>
+                            <div className="flex items-center gap-1 font-mono text-stone-500 text-[10px]">
+                                <span>ID:</span> <span className="font-bold text-stone-700">{selectedStudent.idNumber || selectedStudent.student_number}</span>
+                            </div>
+                        </div>
+                        {selectedStudent.last_edited_by && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-stone-500">
+                                <Clock size={10} className="text-stone-400" />
+                                <span>Updated by <strong>{selectedStudent.last_edited_by}</strong></span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex-1 flex flex-col min-h-0 bg-white">
+                        {isEditing ? (
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-stone-50/50">
+                                <form id="edit-form" ref={formRef} onSubmit={onSaveInfoClick}>
+                                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 sticky top-0 bg-stone-50/95 backdrop-blur z-20 py-4 border-b border-stone-200 -mx-4 sm:-mx-6 px-4 sm:px-6 -mt-4 sm:-mt-6">
+                                        <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2 shrink-0">
+                                            <Edit3 size={18} className="text-amber-600"/> Edit Information
+                                        </h2>
+                                        <div className="flex gap-2 w-full md:w-auto justify-end shrink-0">
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                                            <Button type="submit" size="sm" className="bg-amber-600 hover:bg-amber-700 text-white shadow-sm">Save Changes</Button>
+                                        </div>
+                                    </div>
+
+                                    <Tabs defaultValue="personal" className="w-full max-w-4xl mx-auto">
+                                        <TabsList className="flex flex-wrap md:grid md:grid-cols-4 mb-6 p-1 bg-stone-200/50 rounded-xl h-auto min-h-[44px]">
+                                            <TabsTrigger value="personal" className="flex-1 text-[10px] md:text-xs font-bold py-2 whitespace-normal h-auto">Personal</TabsTrigger>
+                                            <TabsTrigger value="academic" className="flex-1 text-[10px] md:text-xs font-bold py-2 whitespace-normal h-auto">Academic</TabsTrigger>
+                                            <TabsTrigger value="contact" className="flex-1 text-[10px] md:text-xs font-bold py-2 whitespace-normal h-auto">Contact</TabsTrigger>
+                                            <TabsTrigger value="family" className="flex-1 text-[10px] md:text-xs font-bold py-2 whitespace-normal h-auto">Family</TabsTrigger>
+                                        </TabsList>
+                                        
+                                        <TabsContent value="personal" className="space-y-4 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">First Name</Label><Input name="fname" defaultValue={selectedStudent.fname || selectedStudent.first_name} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Last Name</Label><Input name="lname" defaultValue={selectedStudent.lname || selectedStudent.last_name} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Middle Name</Label><Input name="mname" defaultValue={selectedStudent.mname || selectedStudent.mid_name} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Suffix</Label><Input name="suffix" defaultValue={selectedStudent.suffix} className="h-9 text-sm"/></div>
+                                            </div>
+                                            <div className="space-y-1.5 pt-2"><Label className="text-stone-500 font-bold text-[10px] uppercase">Nickname</Label><Input name="nickname" defaultValue={selectedStudent.nickname} className="h-9 text-sm"/></div>
+                                        </TabsContent>
+
+                                        <TabsContent value="academic" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Course</Label><Input name="course" defaultValue={selectedStudent.course} className="h-9 text-sm"/></div>
+                                            <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Major</Label><Input name="major" defaultValue={selectedStudent.major} className="h-9 text-sm"/></div>
+                                        </TabsContent>
+
+                                        <TabsContent value="contact" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Barangay</Label><Input name="barangay" defaultValue={selectedStudent.studentDetail?.barangay} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">City/Municipality</Label><Input name="city" defaultValue={selectedStudent.studentDetail?.city} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Province</Label><Input name="province" defaultValue={selectedStudent.studentDetail?.province} className="h-9 text-sm"/></div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.details?.contactNum || selectedStudent.studentDetail?.contact_num} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.details?.personalEmail || selectedStudent.studentDetail?.personal_email} className="h-9 text-sm"/></div>
+                                            </div>
+                                        </TabsContent>
+
+                                        <TabsContent value="family" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <div className="space-y-4">
+                                                {/* Parent Inputs with specific Prefix and Suffix boxes */}
+                                                <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
+                                                    <Label className="text-amber-700 font-bold text-[10px] uppercase tracking-wider">Father's Name</Label>
+                                                    <div className="flex gap-2">
+                                                        <Input name="fathers_prefix" placeholder="Prefix (Mr.)" defaultValue={selectedStudent.studentDetail?.fathers_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="father" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.father || selectedStudent.studentDetail?.fathers_name} className="flex-1 h-9 text-sm"/>
+                                                        <Input name="fathers_suffix" placeholder="Suffix (Jr.)" defaultValue={selectedStudent.studentDetail?.fathers_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
+                                                    <Label className="text-amber-700 font-bold text-[10px] uppercase tracking-wider">Mother's Full Maiden Name</Label>
+                                                    <div className="flex gap-2">
+                                                        <Input name="mothers_prefix" placeholder="Prefix (Mrs.)" defaultValue={selectedStudent.studentDetail?.mothers_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="mother" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.mother || selectedStudent.studentDetail?.mothers_name} className="flex-1 h-9 text-sm"/>
+                                                        <Input name="mothers_suffix" placeholder="Suffix" defaultValue={selectedStudent.studentDetail?.mothers_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
+                                                    <Label className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Guardian's Name (If Applicable)</Label>
+                                                    <div className="flex gap-2">
+                                                        <Input name="guardians_prefix" placeholder="Prefix" defaultValue={selectedStudent.studentDetail?.guardians_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="guardian" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.guardian || selectedStudent.studentDetail?.guardians_name} className="flex-1 h-9 text-sm"/>
+                                                        <Input name="guardians_suffix" placeholder="Suffix" defaultValue={selectedStudent.studentDetail?.guardians_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </TabsContent>
+                                    </Tabs>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-white">
+                                
+                                {/* Photo & Contact Overview - Fit strictly to avoid overflow */}
+                                <div className="w-full md:w-[42%] bg-[#fcfbfa] p-5 lg:p-6 flex flex-col items-center justify-between border-r border-stone-200 relative shrink-0 overflow-hidden">
+                                    
+                                    <div className="w-full flex flex-col items-center mt-1">
+                                        <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">
+                                            <div className="w-40 h-40 xl:w-56 xl:h-56 bg-white p-2.5 shadow-xl border border-stone-200 relative z-10 rounded-md">
+                                                <img src={selectedStudent.photo} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
+                                                <div className="absolute -left-3 top-5 bottom-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
+                                                <div className="absolute -right-3 bottom-5 top-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-center relative z-10 px-2 w-full mb-3">
+                                            <h2 className="text-xl xl:text-2xl font-black text-stone-900 uppercase leading-tight tracking-tight">
+                                                {selectedStudent.lname || selectedStudent.last_name},<br/> 
+                                                {selectedStudent.fname || selectedStudent.first_name} {selectedStudent.mname || selectedStudent.mid_name}
+                                                {selectedStudent.suffix && <span className="ml-1">{selectedStudent.suffix}</span>}
+                                            </h2>
+                                            <p className="text-amber-600 font-serif italic text-sm xl:text-base mt-1 font-medium">"{selectedStudent.nickname}"</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full space-y-2 mt-auto border-t border-stone-200/60 pt-3">
+                                        <h3 className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest pb-1 border-b border-stone-100">
+                                            <MapPin size={14}/> Contact Details
+                                        </h3>
+                                        <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
+                                            <InfoField label="Home Address" value={selectedStudent.details?.address || (selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <InfoField label="Mobile Number" value={selectedStudent.details?.contactNum || selectedStudent.studentDetail?.contact_num} icon={Phone} />
+                                                <InfoField label="Personal Email" value={selectedStudent.details?.personalEmail || selectedStudent.personal_email} icon={Mail} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Deep Academic & Personal Details */}
+                                <div className="flex-1 p-4 xl:p-6 bg-white flex flex-col justify-center overflow-hidden">
+                                    <div className="space-y-4 xl:space-y-6 max-w-2xl mx-auto w-full">
+                                        
+                                        <div className="space-y-3">
+                                            <h3 className="flex items-center gap-2 text-[11px] font-bold text-amber-600 uppercase tracking-widest pb-1.5 border-b border-stone-100">
+                                                <GraduationCap size={14}/> Academic Profile
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                                                <div className="col-span-2">
+                                                    <InfoField label="Department / School" value={selectedStudent.department} icon={Building2} fullWidth />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <InfoField label="Course" value={selectedStudent.course} fullWidth />
+                                                </div>
+                                                <InfoField label="Major" value={selectedStudent.major} />
+                                                <InfoField label="ID Number" value={selectedStudent.idNumber || selectedStudent.student_number} />
+                                                <div className="col-span-2 mt-1">
+                                                    <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.details?.thesis || selectedStudent.studentDetail?.thesis_title || ''}"`} icon={FileText} fullWidth />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <h3 className="flex items-center gap-2 text-[11px] font-bold text-amber-600 uppercase tracking-widest pb-1.5 border-b border-stone-100">
+                                                <User size={14}/> Personal & Family
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                                                <div className="col-span-2 md:col-span-1">
+                                                    <InfoField label="Date of Birth" value={formatDate(selectedStudent.details?.birthdate || selectedStudent.studentDetail?.birth_date)} />
+                                                </div>
+                                                <div className="hidden md:block"></div>
+
+                                                {/* Combining Prefix, Name, Suffix in UI */}
+                                                <InfoField 
+                                                    label="Father's Name" 
+                                                    value={formatParentName(selectedStudent.studentDetail?.fathers_prefix, selectedStudent.details?.father || selectedStudent.studentDetail?.fathers_name, selectedStudent.studentDetail?.fathers_suffix)} 
+                                                />
+                                                <InfoField 
+                                                    label="Mother's Name" 
+                                                    value={formatParentName(selectedStudent.studentDetail?.mothers_prefix, selectedStudent.details?.mother || selectedStudent.studentDetail?.mothers_name, selectedStudent.studentDetail?.mothers_suffix)} 
+                                                />
+                                                
+                                                {(selectedStudent.details?.guardian && selectedStudent.details?.guardian !== "N/A") || (selectedStudent.studentDetail?.guardians_name && selectedStudent.studentDetail?.guardians_name !== "N/A") ? (
+                                                    <div className="col-span-1 md:col-span-2 mt-1">
+                                                        <InfoField 
+                                                            label="Guardian's Name" 
+                                                            value={formatParentName(selectedStudent.studentDetail?.guardians_prefix, selectedStudent.details?.guardian || selectedStudent.studentDetail?.guardians_name, selectedStudent.studentDetail?.guardians_suffix)} 
+                                                            fullWidth 
+                                                        />
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <CardFooter className="p-4 border-t bg-stone-50 flex justify-between items-center z-20 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isEditing} className="h-9 px-4 text-xs border-stone-300 text-stone-600 hover:bg-white hover:text-amber-700 bg-white rounded-lg">
+                                <Edit3 size={14} className="mr-1.5"/> Edit Info
+                            </Button>
+                            <Button variant="secondary" onClick={() => setIsPhotoModalOpen(true)} className="h-9 px-4 text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200 shadow-sm rounded-lg">
+                                <ImageIcon size={14} className="mr-1.5"/> Manage Photos
+                            </Button>
+                        </div>
+
+                        <Button 
+                          onClick={handleFinalize} 
+                          disabled={isEditing}
+                          className={`h-10 px-8 text-sm font-bold shadow-md rounded-xl transition-all hover:scale-105 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-[#7a3b1a] hover:bg-[#5a2a12] shadow-[#7a3b1a]/20'}`}
+                        >
+                          {selectedStudent.status === 'verified' ? (
+                            <><CheckCircle2 size={16} className="mr-2"/> Verified Final</>
+                          ) : (
+                            <><Save size={16} className="mr-2"/> Final Submit</>
+                          )}
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ) : (
+                <div className="h-full flex flex-col items-center justify-center text-stone-400 border-2 border-dashed border-stone-200 rounded-2xl bg-white/50">
+                    <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-4 border border-stone-200 shadow-sm">
+                        <User size={36} className="opacity-20 text-stone-500" />
+                    </div>
+                    <p className="font-serif text-lg text-stone-600 font-medium">Select a graduate from the directory</p>
+                    <p className="text-xs text-stone-400 mt-1">Search by ID or Name to view details</p>
+                </div>
+            )}
+        </div>
+
+        {/* Global Action Modals */}
         <AlertDialog open={showInfoSaveConfirm} onOpenChange={setShowInfoSaveConfirm}>
             <AlertDialogContent>
                 <AlertDialogHeader>
@@ -533,94 +488,167 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
             </AlertDialogContent>
         </AlertDialog>
 
-        {/* --- Photo Manager Modal (Expanded to 85vw with proper aspect ratios) --- */}
+        {/* 100% PERFECT MATCH POLAROID PHOTO MANAGER MODAL (Preserved untouched) */}
         <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
-            {/* Increased width to 85vw for a wider view and set height to auto to prevent image stretching */}
-            <DialogContent className="max-w-[85vw] w-full p-0 overflow-hidden bg-stone-50 flex flex-col">
-                <div className="p-6 border-b border-stone-200 bg-white flex justify-between items-center shrink-0">
-                    <div>
-                        <DialogTitle className="text-2xl font-bold text-stone-800">Manage Graduate Photos</DialogTitle>
-                        <DialogDescription className="text-stone-500 text-base">Upload official Graduation and Creative photos using the pre-registration photo as reference.</DialogDescription>
+            <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 overflow-hidden bg-white border-0 shadow-2xl flex flex-col rounded-3xl">
+                
+                <div className="px-8 py-5 border-b border-stone-100 bg-white flex justify-center items-center shrink-0 z-20 relative">
+                    <div className="flex flex-col items-center text-center mt-2">
+                        <div className="flex items-center gap-2 text-stone-800 mb-1">
+                            <ImageIcon size={18} className="text-amber-500" />
+                            <DialogTitle className="text-xl font-black tracking-widest uppercase font-serif">Studio Photo Manager</DialogTitle>
+                        </div>
+                        <DialogDescription className="text-stone-500 font-medium text-xs">
+                            Verify the reference and upload the official high-resolution yearbook portraits.
+                        </DialogDescription>
                     </div>
+                    <Button variant="ghost" size="icon" onClick={() => setIsPhotoModalOpen(false)} className="absolute right-6 top-6 rounded-full h-10 w-10 bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors">
+                        <X size={20}/>
+                    </Button>
                 </div>
                 
-                {/* Set proper aspect ratios for the grid items so they look like actual photos */}
-                <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-10 overflow-y-auto">
-                    
-                    {/* BOX 1: Pre-reg photo (For reference only, cannot be edited) */}
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="outline" className="bg-stone-200 text-stone-600 border-stone-300 px-3 py-1">1. Reference</Badge>
-                            <span className="text-sm text-stone-500 font-bold uppercase">Pre-Reg Upload</span>
-                        </div>
-                        {/* Proper aspect ratio (3:4) for the picture frame with auto height */}
-                        <div className="w-full aspect-[3/4] bg-stone-100 border-2 border-stone-300 rounded-2xl overflow-hidden shadow-inner relative flex items-center justify-center p-4">
-                            <img src={selectedStudent?.photo} className="max-w-full max-h-full object-contain drop-shadow-md rounded-md" alt="Reference" />
-                        </div>
-                        <p className="text-sm text-stone-500 text-center mt-3 font-medium">Reference only.</p>
-                    </div>
-
-                    {/* BOX 2: Upload area for Graduation / Toga picture */}
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                             <Badge className="bg-amber-600 hover:bg-amber-700 px-3 py-1">2. Upload</Badge>
-                             <span className="text-sm text-stone-500 font-bold uppercase">Graduation Picture (Toga)</span>
-                        </div>
-                        <div 
-                            className="w-full aspect-[3/4] bg-white border-4 border-dashed border-amber-300 rounded-2xl overflow-hidden shadow-inner relative cursor-pointer hover:bg-amber-50 transition-colors flex flex-col items-center justify-center group p-4"
-                            onClick={() => gradPhotoRef.current?.click()}
-                        >
-                            {selectedStudent?.photo_grad ? (
-                                 <img src={selectedStudent.photo_grad} className="max-w-full max-h-full object-contain drop-shadow-md rounded-md" alt="Grad" />
-                            ) : (
-                                <div className="text-center p-6">
-                                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                        <Upload size={28} />
-                                    </div>
-                                    <span className="text-lg font-bold text-stone-600 block">Click to Upload Toga Pic</span>
-                                    <p className="text-sm text-stone-400 mt-2">High Resolution JPG or PNG</p>
+                <div className="flex-1 overflow-x-auto overflow-y-auto bg-[#f9f8f6] relative custom-scrollbar">
+                    <div className="flex items-center justify-center min-w-max min-h-full p-8 md:p-12 gap-8 md:gap-12">
+                        
+                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
+                            <div className="text-center mb-4 space-y-1">
+                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Reference</h4>
+                                <h3 className="text-[15px] font-black text-stone-800">Pre-Registration Photo</h3>
+                            </div>
+                            <div 
+                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
+                                onClick={() => {
+                                    const refUrl = selectedStudent?.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : selectedStudent?.photo;
+                                    if (refUrl) setEnlargedImage(refUrl);
+                                }}
+                            >
+                                <div className="w-full aspect-[4/5] bg-stone-100 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
+                                    {selectedStudent?.studentDetail?.photo_url || selectedStudent?.photo ? (
+                                        <>
+                                            <img src={selectedStudent?.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : selectedStudent?.photo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
+                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Search size={14}/> Enlarge</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-300">
+                                            <User size={64} className="mb-3 opacity-20"/>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                            <input type="file" ref={gradPhotoRef} className="hidden" accept="image/*" onChange={(e) => {
-                                if(e.target.files?.[0]) handlePhotoUpload('grad', e.target.files[0]);
-                            }}/>
-                        </div>
-                        <p className="text-sm text-amber-600 text-center mt-3 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Click image to change</p>
-                    </div>
-
-                    {/* BOX 3: Upload area for Creative / Theme picture */}
-                    <div className="flex flex-col">
-                         <div className="flex items-center gap-2 mb-3">
-                             <Badge className="bg-amber-600 hover:bg-amber-700 px-3 py-1">3. Upload</Badge>
-                             <span className="text-sm text-stone-500 font-bold uppercase">Creative / Theme Picture</span>
-                        </div>
-                        <div 
-                            className="w-full aspect-[3/4] bg-white border-4 border-dashed border-amber-300 rounded-2xl overflow-hidden shadow-inner relative cursor-pointer hover:bg-amber-50 transition-colors flex flex-col items-center justify-center group p-4"
-                            onClick={() => creativePhotoRef.current?.click()}
-                        >
-                             {selectedStudent?.photo_creative ? (
-                                 <img src={selectedStudent.photo_creative} className="max-w-full max-h-full object-contain drop-shadow-md rounded-md" alt="Creative" />
-                            ) : (
-                                <div className="text-center p-6">
-                                    <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                        <Upload size={28} />
-                                    </div>
-                                    <span className="text-lg font-bold text-stone-600 block">Click to Upload Creative</span>
-                                    <p className="text-sm text-stone-400 mt-2">High Resolution JPG or PNG</p>
+                                <div className="w-full mt-5 mb-2 px-2 text-center">
+                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'bg-green-500' : 'bg-stone-200'}`}></div>
+                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'text-green-600' : 'text-stone-400'}`}>
+                                        {selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'Uploaded ✓' : 'No Reference'}
+                                    </span>
                                 </div>
-                            )}
-                            <input type="file" ref={creativePhotoRef} className="hidden" accept="image/*" onChange={(e) => {
-                                 if(e.target.files?.[0]) handlePhotoUpload('creative', e.target.files[0]);
-                            }}/>
+                            </div>
                         </div>
-                        <p className="text-sm text-amber-600 text-center mt-3 font-medium opacity-0 group-hover:opacity-100 transition-opacity">Click image to change</p>
+
+                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
+                            <div className="text-center mb-4 space-y-1">
+                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Official</h4>
+                                <h3 className="text-[15px] font-black text-stone-800">Graduation (Toga) Photo</h3>
+                            </div>
+                            <div 
+                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
+                                onClick={() => gradPhotoRef.current?.click()}
+                            >
+                                <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
+                                    {selectedStudent?.photo_grad ? (
+                                        <>
+                                            <img src={selectedStudent.photo_grad} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Graduation" />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
+                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 hover:bg-stone-100 transition-colors border-2 border-dashed border-stone-300 rounded-[1.2rem] m-0 p-0 absolute inset-0">
+                                            <Upload size={36} className="mb-3 opacity-50"/>
+                                            <span className="text-sm font-bold">Click to Upload</span>
+                                        </div>
+                                    )}
+                                    <input type="file" ref={gradPhotoRef} className="hidden" accept="image/*" onChange={(e) => {
+                                        if(e.target.files?.[0]) handlePhotoUpload('grad', e.target.files[0]);
+                                    }}/>
+                                </div>
+                                <div className="w-full mt-5 mb-2 px-2 text-center">
+                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo_grad ? 'bg-green-500' : 'bg-stone-200'}`}></div>
+                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo_grad ? 'text-green-600' : 'text-stone-400'}`}>
+                                        {selectedStudent?.photo_grad ? 'Uploaded ✓' : 'Action Required'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
+                            <div className="text-center mb-4 space-y-1">
+                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Official</h4>
+                                <h3 className="text-[15px] font-black text-stone-800">Creative / Theme Photo</h3>
+                            </div>
+                            <div 
+                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
+                                onClick={() => creativePhotoRef.current?.click()}
+                            >
+                                <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
+                                    {selectedStudent?.photo_creative ? (
+                                        <>
+                                            <img src={selectedStudent.photo_creative} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Creative" />
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
+                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 hover:bg-stone-100 transition-colors border-2 border-dashed border-stone-300 rounded-[1.2rem] m-0 p-0 absolute inset-0">
+                                            <Upload size={36} className="mb-3 opacity-50"/>
+                                            <span className="text-sm font-bold">Click to Upload</span>
+                                        </div>
+                                    )}
+                                    <input type="file" ref={creativePhotoRef} className="hidden" accept="image/*" onChange={(e) => {
+                                         if(e.target.files?.[0]) handlePhotoUpload('creative', e.target.files[0]);
+                                    }}/>
+                                </div>
+                                <div className="w-full mt-5 mb-2 px-2 text-center">
+                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo_creative ? 'bg-green-500' : 'bg-stone-200'}`}></div>
+                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo_creative ? 'text-green-600' : 'text-stone-400'}`}>
+                                        {selectedStudent?.photo_creative ? 'Uploaded ✓' : 'Action Required'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 bg-white border-t border-stone-200 shrink-0">
-                    <Button variant="outline" size="lg" onClick={() => setIsPhotoModalOpen(false)}>Cancel & Close</Button>
-                    <Button size="lg" onClick={() => setShowPhotoSaveConfirm(true)} className="bg-green-600 hover:bg-green-700 text-base px-8">Save All Photos</Button>
+                <DialogFooter className="bg-white p-5 border-t border-stone-100 flex justify-center items-center shrink-0 z-20">
+                    <div className="flex items-center justify-center w-full gap-6">
+                        <Button variant="ghost" onClick={() => setIsPhotoModalOpen(false)} className="text-stone-500 font-bold hover:bg-stone-50 h-11 px-6">Discard Changes</Button>
+                        <Button onClick={() => setShowPhotoSaveConfirm(true)} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-10 shadow-lg shadow-green-600/20 rounded-xl h-11">
+                            <Save size={18} className="mr-2"/> Save Studio Photos
+                        </Button>
+                    </div>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* IMAGE LIGHTBOX MODAL */}
+        <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>
+            <DialogContent className="max-w-6xl p-1 bg-transparent border-0 shadow-none flex justify-center items-center [&>button]:hidden">
+                <div className="relative">
+                    <button 
+                        onClick={() => setEnlargedImage(null)} 
+                        className="absolute -top-4 -right-4 z-[100] p-2 bg-white hover:bg-stone-100 rounded-full text-stone-600 shadow-xl border border-stone-200 transition-all"
+                    >
+                        <X size={20}/>
+                    </button>
+                    {enlargedImage && (
+                        <img 
+                            src={enlargedImage} 
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl bg-black/10 backdrop-blur-md border border-white/20 relative z-50" 
+                            alt="Enlarged view" 
+                        />
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     </div>

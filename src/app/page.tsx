@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image"; 
 import { motion, useScroll, useTransform, easeOut, AnimatePresence } from "framer-motion";
@@ -25,31 +25,20 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Anchor // Added Anchor icon for "Layag" theme
+  Anchor, // Added Anchor icon for "Layag" theme
+  Facebook // ADDED FACEBOOK ICON HERE
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AuriumLandingPage() {
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const carouselRef = useRef(null);
   
+  // --- REF FOR EDITIONS CAROUSEL ---
   const editionsRef = useRef<HTMLDivElement>(null);
-
-  const getStatus = useCallback(async () => { 
-    try {
-      const res = await fetch('api/status');
-      const status = await res.json();
-      setIsLoggedIn(status.logged_in);
-    } catch (err) {
-      setIsLoggedIn(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    getStatus();
-  }, [getStatus]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -142,14 +131,15 @@ export default function AuriumLandingPage() {
   ];
 
   // --- DATA: STAFF / EDITORIAL BOARD ---
+  // UPDATED: "Board" changed to "Editorial Board", and year separated for linking
   const staff = [
-    { year: "2025 Board", image: "/images/staff/staff-2025.jpg", quote: "Stewards of Excellence." },
-    { year: "2024 Board", image: "/images/staff/staff-2024.jpg", quote: "Capturing the vintage charm of memories." },
-    { year: "2023 Board", image: "/images/staff/staff-2023.jpg", quote: "Golden standard of service." },
-    { year: "2022 Board", image: "/images/staff/staff-2022.jpg", quote: "Shining light on student achievements." },
-    { year: "2021 Board", image: "/images/staff/staff-2021.jpg", quote: "Laying the foundations of digital excellence." },
-    { year: "2020 Board", image: "/images/staff/staff-2020.jpg", quote: "Resilience in the face of changing times." },
-    { year: "2019 Board", image: "/images/staff/staff-2019.jpg", quote: "The pioneers of the modern era." }
+    { year: "2025", title: "2025 Editorial Board", image: "/images/staff/staff-2025.jpg", quote: "Stewards of Excellence." },
+    { year: "2024", title: "2024 Editorial Board", image: "/images/staff/staff-2024.jpg", quote: "Capturing the vintage charm of memories." },
+    { year: "2023", title: "2023 Editorial Board", image: "/images/staff/staff-2023.jpg", quote: "Golden standard of service." },
+    { year: "2022", title: "2022 Editorial Board", image: "/images/staff/staff-2022.jpg", quote: "Shining light on student achievements." },
+    { year: "2021", title: "2021 Editorial Board", image: "/images/staff/staff-2021.jpg", quote: "Laying the foundations of digital excellence." },
+    { year: "2020", title: "2020 Editorial Board", image: "/images/staff/staff-2020.jpg", quote: "Resilience in the face of changing times." },
+    { year: "2019", title: "2019 Editorial Board", image: "/images/staff/staff-2019.jpg", quote: "The pioneers of the modern era." }
   ];
 
   return (
@@ -170,7 +160,13 @@ export default function AuriumLandingPage() {
           <Link href="/" className="flex items-center gap-2 md:gap-4 group z-50 mx-auto lg:mx-0">
             <div className="flex items-center gap-2">
                 <div className="relative w-8 h-8 md:w-12 md:h-12 overflow-hidden hover:scale-105 transition-transform duration-300">
-                   <Image src="/images/umtc-logo.png" alt="UMTC Logo" fill className="object-contain" />
+                   <Image 
+                    src="/images/umtc-logo.png" 
+                    alt="UMTC Logo" 
+                    fill 
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-contain" 
+                   />
                 </div>
                 <div className="h-6 md:h-8 w-[1px] bg-stone-300"></div>
                 <div className="relative w-8 h-8 md:w-12 md:h-12 overflow-hidden hover:scale-105 transition-transform duration-300">
@@ -193,20 +189,17 @@ export default function AuriumLandingPage() {
 
           {/* Desktop Action Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link href={!isLoggedIn ? "/auth/login" : "/student/dashboard"}>
+            <Link href="/auth/login">
               <Button variant="ghost" className="text-amber-900 hover:bg-amber-50 gap-2 font-medium">
                 <UserCircle size={20} />
-                <span className="hidden sm:inline">{!isLoggedIn ? "Portal Login" : "Profile Dashboard"}</span>
+                <span className="hidden sm:inline">Portal Login</span>
               </Button>
             </Link>
-
-            {!isLoggedIn && (
-              <Link href="/auth/register">
-                <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
-                  Pre-Register
-                </Button>
-              </Link>
-            )}
+            <Link href="/auth/register">
+              <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
+                Pre-Register
+              </Button>
+            </Link>
           </div>
 
           {/* Placeholder to balance the flex layout on mobile (invisible) */}
@@ -229,22 +222,16 @@ export default function AuriumLandingPage() {
                 <Link href="#about" onClick={toggleMobileMenu} className="hover:text-amber-800 py-2 border-b border-stone-100">About</Link>
               </nav>
               <div className="flex flex-col gap-3 pt-2">
-
-                {!isLoggedIn && (
-                  <Link href="/auth/register" onClick={toggleMobileMenu} className="w-full">
-                    <Button className="w-full bg-amber-900 hover:bg-amber-800 text-white h-12 text-lg">
-                      Pre-Register Now
-                    </Button>
-                  </Link>
-                )}
-
-                <Link href={!isLoggedIn ? "/auth/login" : "/student/dashboard"}>
-                  <Button variant="outline" className="w-full border-amber-200 text-amber-900 h-12 text-lg">
-                    <UserCircle className="mr-2" size={20} /> 
-                    {!isLoggedIn ? "Portal Login" : "Profile Dashboard"}
+                <Link href="/auth/register" onClick={toggleMobileMenu} className="w-full">
+                  <Button className="w-full bg-amber-900 hover:bg-amber-800 text-white h-12 text-lg">
+                    Pre-Register Now
                   </Button>
                 </Link>
-
+                <Link href="/auth/login" onClick={toggleMobileMenu} className="w-full">
+                  <Button variant="outline" className="w-full border-amber-200 text-amber-900 h-12 text-lg">
+                    <UserCircle className="mr-2" size={20} /> Portal Login
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           )}
@@ -292,15 +279,12 @@ export default function AuriumLandingPage() {
             </motion.p>
             
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-
-              {!isLoggedIn && (
-                <Link href="/auth/register" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto bg-amber-900 hover:bg-amber-800 text-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full shadow-xl shadow-amber-900/20 transition-transform hover:-translate-y-1 font-bold">
-                    Start Registration
-                  </Button>
-                </Link>
-              )}
-
+              <Link href="/auth/register" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-amber-900 hover:bg-amber-800 text-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full shadow-xl shadow-amber-900/20 transition-transform hover:-translate-y-1 font-bold">
+                  Start Registration
+                </Button>
+              </Link>
+              
               <div className="w-full sm:w-auto">
                 <Link href="#editions" className="block w-full">
                     <Button size="lg" variant="outline" className="w-full border-amber-200 bg-white/50 backdrop-blur-sm text-amber-900 hover:bg-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full font-medium">
@@ -587,7 +571,8 @@ export default function AuriumLandingPage() {
              whileTap={{ cursor: "grabbing" }}
           >
              {staff.map((team, index) => (
-               <Link href="/team" key={index} className="snap-center shrink-0 min-w-[300px] md:min-w-[400px] block focus:outline-none">
+               // UPDATED: Linking with query parameter based on the year
+               <Link href={`/team?year=${team.year}`} key={index} className="snap-center shrink-0 min-w-[300px] md:min-w-[400px] block focus:outline-none">
                  <motion.div 
                    initial={{ opacity: 0, scale: 0.95 }}
                    whileInView={{ opacity: 1, scale: 1 }}
@@ -597,14 +582,14 @@ export default function AuriumLandingPage() {
                    <div className="relative aspect-video w-full overflow-hidden rounded-xl mb-4 shadow-2xl">
                       <Image 
                         src={team.image} 
-                        alt={team.year} 
+                        alt={team.title} 
                         fill 
                         className="object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                    </div>
                    
                    <div className="flex justify-between items-center mb-2">
-                     <h3 className="text-xl md:text-2xl font-serif font-bold text-amber-100 group-hover:text-white transition-colors">{team.year}</h3>
+                     <h3 className="text-xl md:text-2xl font-serif font-bold text-amber-100 group-hover:text-white transition-colors">{team.title}</h3>
                      
                      {/* Cool Arrow that slides in on hover para makita nga clickable */}
                      <ArrowRight size={20} className="text-amber-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
@@ -625,8 +610,8 @@ export default function AuriumLandingPage() {
           <div className="flex justify-center mt-8 md:mt-12 relative z-20">
             <Link href="/team">
               <Button size="lg" className="bg-transparent border-2 border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-stone-900 rounded-full px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold transition-all group">
-                  Explore Full Editorial Archives
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                 Explore Full Editorial Archives
+                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
@@ -703,6 +688,14 @@ export default function AuriumLandingPage() {
                 The official yearbook and alumni tracking system of UM Tagum College. <br/>
                 Ambitious. United. Responsive.
               </p>
+              
+              {/* UPDATED: Facebook Link added in Footer */}
+              <div className="mt-6">
+                <a href="https://www.facebook.com/AuriumYearbook" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors bg-stone-900 py-2 px-4 rounded-full border border-stone-800 hover:border-amber-500/50">
+                  <Facebook size={18} />
+                  <span className="text-sm font-medium">Follow us on Facebook</span>
+                </a>
+              </div>
             </div>
             
             <div>
@@ -731,6 +724,6 @@ export default function AuriumLandingPage() {
         </div>
       </footer>
 
-    </div>
+    </div>  
   );
 }

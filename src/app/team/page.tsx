@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+// FIX 14: Gi-import nato ang useEffect aron ma-basa ang URL parameter
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { ArrowLeft, Sparkles, Users, Award, Star } from "lucide-react";
+import { ArrowLeft, Sparkles, Users, Award, Star, X } from "lucide-react"; // FIX 15: Gi-add ang X icon para sa modal
 
-// DATA STRUCTURE BASE SA IMONG SCREENSHOTS
 const STAFF_ARCHIVES = {
   "2025": { count: 12, folder: "AURIUM Staff 2025", groupPic: "GROUP PHOTO.jpg" },
   "2024": { count: 11, folder: "AURIUM Staff 2024", groupPic: "GROUP PHOTO.jpg" },
@@ -20,11 +20,21 @@ const YEARS = Object.keys(STAFF_ARCHIVES).sort((a, b) => parseInt(b) - parseInt(
 
 export default function EditorialBoardPage() {
   const [activeYear, setActiveYear] = useState<YearKey>("2025");
+  // FIX 15: State para sa Lightbox / Modal image
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  // FIX 14: Mag-basa siya kung naay ?year=2024 sa URL, usbon dayon ang active tab
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const yearParam = searchParams.get("year");
+    if (yearParam && Object.keys(STAFF_ARCHIVES).includes(yearParam)) {
+      setActiveYear(yearParam as YearKey);
+    }
+  }, []);
 
   const currentData = STAFF_ARCHIVES[activeYear];
   const basePath = `/images/AURIUM Yearbook Staff Photos (2021-2025)/${currentData.folder}`;
 
-  // Animation variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -59,7 +69,6 @@ export default function EditorialBoardPage() {
 
       {/* --- HERO SECTION --- */}
       <div className="relative pt-36 pb-16 overflow-hidden">
-        {/* Cinematic Background Glow */}
         <div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] bg-amber-900/20 rounded-full blur-[120px] pointer-events-none"></div>
         
         <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
@@ -117,12 +126,17 @@ export default function EditorialBoardPage() {
             className="space-y-16"
           >
             
-            {/* 1. THE GROUP PHOTO (Fit to original ratio) */}
-            <motion.div variants={itemVariants} className="relative w-full rounded-3xl overflow-hidden border border-stone-800 shadow-2xl group bg-stone-900 flex justify-center items-center">
+            {/* 1. THE GROUP PHOTO */}
+            <motion.div 
+              variants={itemVariants} 
+              // FIX 15: Made group photo clickable
+              onClick={() => setSelectedImage(`${basePath}/${currentData.groupPic}`)}
+              className="relative w-full rounded-3xl overflow-hidden border border-stone-800 shadow-2xl group bg-stone-900 flex justify-center items-center cursor-zoom-in"
+            >
               <Image 
                 src={`${basePath}/${currentData.groupPic}`} 
                 alt={`Aurium Staff ${activeYear} Group Photo`}
-                width={1920} // placeholder para kabalo si NextJS sa ratio
+                width={1920}
                 height={1080}
                 className="w-full h-auto object-contain transition-transform duration-1000 group-hover:scale-105"
                 unoptimized 
@@ -137,7 +151,7 @@ export default function EditorialBoardPage() {
               </div>
             </motion.div>
 
-            {/* 2. INDIVIDUAL STAFF GRID (Fit to original ratio) */}
+            {/* 2. INDIVIDUAL STAFF GRID */}
             <div>
               <div className="flex items-center gap-4 mb-8">
                 <div className="h-px flex-1 bg-stone-800"></div>
@@ -147,24 +161,24 @@ export default function EditorialBoardPage() {
                 <div className="h-px flex-1 bg-stone-800"></div>
               </div>
 
-              {/* Grid Layout */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 items-start">
+              {/* FIX 18: grid-cols-1 sa mobile (so usaka dako nga picture taga row), dayon md:grid-cols-2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-6 items-start">
                 {Array.from({ length: currentData.count }).map((_, i) => (
                   <motion.div 
                     key={i} 
                     variants={itemVariants}
-                    // Gitangtang ang aspect-square, gibutangan ug h-auto ang image
-                    className="relative rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 group cursor-crosshair shadow-lg flex justify-center items-center"
+                    // FIX 15: onClick event para muabli ang lightbox modal
+                    onClick={() => setSelectedImage(`${basePath}/${i + 1}.jpg`)}
+                    className="relative rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 group cursor-zoom-in shadow-lg flex justify-center items-center"
                   >
                     <Image 
                       src={`${basePath}/${i + 1}.jpg`} 
                       alt={`Staff ${activeYear} member ${i + 1}`}
-                      width={800} // placeholder ratio
+                      width={800}
                       height={1000}
                       className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
                       unoptimized
                     />
-                    {/* Hover Effect Frame */}
                     <div className="absolute inset-0 border-2 border-transparent group-hover:border-amber-500/50 rounded-2xl transition-all duration-500 z-10 pointer-events-none"></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-amber-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                   </motion.div>
@@ -175,6 +189,42 @@ export default function EditorialBoardPage() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* FIX 15 & 18: LIGHTBOX MODAL PARA MUDako ANG PICTURE */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 cursor-zoom-out backdrop-blur-sm"
+          >
+            <button 
+              onClick={() => setSelectedImage(null)} 
+              className="absolute top-6 right-6 text-white/50 hover:text-amber-500 z-[101] bg-black/50 p-2 rounded-full transition-colors"
+            >
+              <X size={32}/>
+            </button>
+            
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-full max-h-full flex justify-center items-center"
+            >
+              <Image 
+                src={selectedImage} 
+                alt="Expanded View" 
+                width={1200} 
+                height={1600} 
+                className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl ring-1 ring-white/10" 
+                unoptimized 
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

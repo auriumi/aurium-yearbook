@@ -231,7 +231,7 @@ export default function StudentLoginPage() {
                                     <Image src="/images/aurium-logo.png" alt="Aurium" fill className="object-contain" />
                                 </div>
                             </div>
-                            <CardTitle className="text-2xl font-serif font-bold text-amber-950">Student Portal</CardTitle>
+                            <CardTitle className="text-2xl font-serif font-bold text-amber-950">AURIUM Portal</CardTitle>
                             <CardDescription className="text-stone-500">Sign in to access your yearbook profile</CardDescription>
                         </CardHeader>
 

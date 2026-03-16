@@ -135,7 +135,7 @@ export default function StudentDashboard() {
         {/* DASHBOARD TITLE */}
         <header className="md:flex justify-between items-end pb-6 border-b border-stone-200">
             <div>
-                <h1 className="text-3xl font-serif font-bold text-stone-800">Student Dashboard</h1>
+                <h1 className="text-3xl font-serif font-bold text-stone-800">Graduate Dashboard</h1>
                 <p className="text-stone-500 mt-2">Welcome to the official University of Mindanao Yearbook Portal.</p>
             </div>
             {user && user.studentAuth?.status === 'FULLY_VERIFIED' ? (

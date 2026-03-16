@@ -25,8 +25,8 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Anchor, // Added Anchor icon for "Layag" theme
-  Facebook // ADDED FACEBOOK ICON HERE
+  Anchor,
+  Facebook
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -131,7 +131,6 @@ export default function AuriumLandingPage() {
   ];
 
   // --- DATA: STAFF / EDITORIAL BOARD ---
-  // UPDATED: "Board" changed to "Editorial Board", and year separated for linking
   const staff = [
     { year: "2025", title: "2025 Editorial Board", image: "/images/staff/staff-2025.jpg", quote: "Stewards of Excellence." },
     { year: "2024", title: "2024 Editorial Board", image: "/images/staff/staff-2024.jpg", quote: "Capturing the vintage charm of memories." },
@@ -239,7 +238,6 @@ export default function AuriumLandingPage() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      {/* @Koi: Gi-iban-ibanan nako ang padding dire para mo-saka ang tanan ug makita dritso ang buttons sa desktop (pt-28 md:pt-32) */}
       <section className="relative pt-28 pb-12 md:pt-32 md:pb-16 flex items-center justify-center overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
            {/* Background Blobs */}
@@ -298,8 +296,7 @@ export default function AuriumLandingPage() {
         </div>
       </section>
 
-      {/* --- VISION STATEMENT (IMPROVED COOL UI) --- */}
-      {/* @Koi: Gi-pamub-an nako ang py (padding y-axis) para mopilit ni siya sa Hero */}
+      {/* --- VISION STATEMENT --- */}
       <section id="about" className="py-12 md:py-16 bg-white relative overflow-hidden">
         {/* Subtle Background Accent */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-amber-50/50 -skew-x-12 z-0 pointer-events-none" />
@@ -339,7 +336,7 @@ export default function AuriumLandingPage() {
               </div>
             </motion.div>
 
-            {/* Right Column: The "Cool" Card */}
+            {/* Right Column: The Main Card */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -347,7 +344,7 @@ export default function AuriumLandingPage() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="w-full md:w-1/2 relative"
             >
-                {/* Floating Elements for "Cool" factor */}
+                {/* Floating Elements */}
                 <motion.div 
                     animate={{ y: [0, -10, 0] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -356,10 +353,9 @@ export default function AuriumLandingPage() {
                     <Star className="text-yellow-400 fill-yellow-400 w-8 h-8" />
                 </motion.div>
 
-               {/* The Main Prestige Card (UPDATED WITH IMAGE) */}
                <div className="relative bg-stone-950 rounded-3xl overflow-hidden shadow-2xl border border-stone-800 group h-[350px] md:h-[400px] flex flex-col justify-center items-center">
                  
-                 {/* Background Image (Replaces Black Box) */}
+                 {/* Background Image */}
                  <div className="absolute inset-0 z-0">
                      <Image 
                        src="/images/gradpics/DSC_0963.jpg" 
@@ -367,11 +363,9 @@ export default function AuriumLandingPage() {
                        fill 
                        className="object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000"
                      />
-                     {/* Gradient Overlay for Text Readability */}
                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
                  </div>
 
-                 {/* Glowing Background Effect */}
                  <div className="absolute top-0 right-0 w-64 h-64 bg-amber-600/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-amber-500/30 transition-colors duration-1000 z-10 pointer-events-none"></div>
                  
                  {/* Content */}
@@ -405,10 +399,8 @@ export default function AuriumLandingPage() {
         </div>
       </section>
 
-      {/* --- EDITIONS GALLERY (UPDATED CAROUSEL WITH BOTTOM DEFINITION) --- */}
-      {/* @Koi: Gi-ilisan nakog py-12 md:py-16 para sikit lang siya sa babaw ug ubos */}
+      {/* --- EDITIONS GALLERY --- */}
       <section id="editions" className="py-12 md:py-16 bg-stone-50 overflow-hidden relative">
-        {/* Background Decors */}
         <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none opacity-40">
            <div className="absolute top-20 right-[-100px] w-96 h-96 bg-amber-100/50 rounded-full blur-3xl"></div>
            <div className="absolute bottom-20 left-[-100px] w-96 h-96 bg-stone-200/50 rounded-full blur-3xl"></div>
@@ -416,7 +408,6 @@ export default function AuriumLandingPage() {
 
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-end mb-8 md:mb-12 gap-6">
             <div className="max-w-xl">
                <span className="text-amber-700 font-bold uppercase tracking-widest text-xs mb-2 block">The Archives</span>
@@ -424,7 +415,6 @@ export default function AuriumLandingPage() {
                <p className="text-stone-500 text-base md:text-lg">A curated journey through the themes and stories that defined our history.</p>
             </div>
             
-            {/* Desktop Navigation Buttons */}
             <div className="hidden md:flex gap-3">
                <Button onClick={() => scrollEditions('left')} variant="outline" className="rounded-full w-12 h-12 p-0 border-stone-300 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 transition-all">
                   <ChevronLeft size={24} />
@@ -435,7 +425,6 @@ export default function AuriumLandingPage() {
             </div>
           </div>
 
-          {/* Carousel Container */}
           <div 
             ref={editionsRef}
             className="flex gap-6 overflow-x-auto pb-8 md:pb-12 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
@@ -450,7 +439,6 @@ export default function AuriumLandingPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative snap-center shrink-0 w-[85vw] md:w-[350px] flex flex-col h-full rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 bg-white"
               >
-                {/* Image / Cover Area (Top) */}
                 <div className="relative h-[280px] w-full overflow-hidden bg-stone-900">
                    <Image 
                      src={edition.image} 
@@ -459,13 +447,10 @@ export default function AuriumLandingPage() {
                      className="object-cover transition-transform duration-700 hover:scale-105"
                    />
                    
-                   {/* Gradient Overlay for Text Readability */}
                    <div className={`absolute inset-0 bg-gradient-to-t ${edition.overlay}`}></div>
                 </div>
 
-                {/* Definition/Description Area (Bottom Side - White Box) */}
                 <div className="p-6 flex-1 flex flex-col justify-between bg-white border-t border-stone-100">
-                   {/* Year and Theme */}
                    <div className="mb-4">
                       <div className="flex items-center gap-2 mb-1">
                           {edition.theme.includes("Layag") && <Anchor size={14} className="text-stone-800" />}
@@ -491,7 +476,6 @@ export default function AuriumLandingPage() {
             ))}
           </div>
           
-          {/* Mobile Swipe Indicator */}
           <div className="md:hidden flex justify-center gap-1 mt-2">
              {editions.map((_, i) => (
                 <div key={i} className="w-1.5 h-1.5 rounded-full bg-stone-300"></div>
@@ -501,13 +485,11 @@ export default function AuriumLandingPage() {
         </div>
       </section>
 
-      {/* --- MOMENTS OF TRIUMPH (INFINITE GALLERY) --- */}
+      {/* --- MOMENTS OF TRIUMPH --- */}
       <section className="py-0 overflow-hidden bg-stone-900 border-t-4 border-b-4 border-amber-900 relative">
-        {/* Cinematic Overlay */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-stone-900 via-transparent to-stone-900 z-20 pointer-events-none"></div>
 
-        {/* @Koi: Gitanggal nako ang dagkong margin. py-8 md:py-12 na lang. */}
         <div className="py-8 md:py-12">
             <div className="container mx-auto px-6 mb-6 md:mb-8 text-center relative z-20">
                 <div className="inline-flex items-center justify-center p-3 bg-amber-900/30 rounded-full border border-amber-800/50 backdrop-blur-sm mb-4">
@@ -517,7 +499,6 @@ export default function AuriumLandingPage() {
                 <p className="text-amber-200/60 mt-1 md:mt-2 text-sm md:text-base">Capturing the joy of achievement.</p>
             </div>
 
-            {/* Infinite Marquee Wrapper */}
             <div className="flex w-full overflow-hidden relative z-0">
                 <motion.div 
                     className="flex gap-4 md:gap-6 px-4 will-change-transform"
@@ -529,7 +510,6 @@ export default function AuriumLandingPage() {
                     }}
                     style={{ width: "fit-content" }}
                 >
-                    {/* Render images twice to create seamless loop */}
                     {[...galleryImages, ...galleryImages].map((src, index) => (
                         <div 
                             key={index} 
@@ -542,7 +522,6 @@ export default function AuriumLandingPage() {
                                 sizes="(max-width: 768px) 240px, 400px"
                                 className="object-cover transition-all duration-500" 
                             />
-                            {/* Film Grain/Vignette Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
                         </div>
                     ))}
@@ -552,7 +531,6 @@ export default function AuriumLandingPage() {
       </section>
 
       {/* --- STAFF / EDITORIAL BOARD SECTION --- */}
-      {/* @Koi: py-12 md:py-16 para sikit */}
       <section id="staff" className="py-12 md:py-16 bg-amber-900 text-white overflow-hidden relative">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-10"></div>
         <div className="container mx-auto px-4 md:px-6 relative z-10">
@@ -564,14 +542,12 @@ export default function AuriumLandingPage() {
             <p className="text-amber-200/80 text-base md:text-lg">The dedicated individuals who craft the AURIUM masterpiece.</p>
           </div>
 
-          {/* Draggable Carousel with Snap (NOW CLICKABLE CARDS) */}
           <motion.div 
              ref={carouselRef}
              className="flex gap-4 md:gap-8 overflow-x-auto pb-8 md:pb-10 px-4 md:px-0 snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing"
              whileTap={{ cursor: "grabbing" }}
           >
              {staff.map((team, index) => (
-               // UPDATED: Linking with query parameter based on the year
                <Link href={`/team?year=${team.year}`} key={index} className="snap-center shrink-0 min-w-[300px] md:min-w-[400px] block focus:outline-none">
                  <motion.div 
                    initial={{ opacity: 0, scale: 0.95 }}
@@ -591,7 +567,7 @@ export default function AuriumLandingPage() {
                    <div className="flex justify-between items-center mb-2">
                      <h3 className="text-xl md:text-2xl font-serif font-bold text-amber-100 group-hover:text-white transition-colors">{team.title}</h3>
                      
-                     {/* Cool Arrow that slides in on hover para makita nga clickable */}
+                     {/* Arrow icon animation on hover */}
                      <ArrowRight size={20} className="text-amber-500 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
                    </div>
                    
@@ -601,12 +577,10 @@ export default function AuriumLandingPage() {
              ))}
           </motion.div>
 
-          {/* Mobile Scroll Hint */}
           <div className="flex justify-center mt-2 text-amber-200/40 text-xs animate-pulse md:hidden">
              <span>&larr; Swipe to explore &rarr;</span>
           </div>
 
-          {/* LINK TO THE NEW DEDICATED TEAM PAGE */}
           <div className="flex justify-center mt-8 md:mt-12 relative z-20">
             <Link href="/team">
               <Button size="lg" className="bg-transparent border-2 border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-stone-900 rounded-full px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold transition-all group">
@@ -619,7 +593,6 @@ export default function AuriumLandingPage() {
       </section>
 
       {/* --- GRADUATE SERVICES GRID --- */}
-      {/* @Koi: py-12 md:py-16 para di sad siya lapad nga white space */}
       <section id="services" className="py-12 md:py-16 bg-white relative z-10">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-8 md:mb-12">
@@ -629,7 +602,6 @@ export default function AuriumLandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             
-            {/* Card 1: Pre-Registration */}
             <motion.div whileHover={{ y: -5 }} className="p-6 md:p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-900/5 transition-all group">
               <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 mb-6 group-hover:bg-amber-900 group-hover:text-white transition-colors">
                 <UserCircle size={28} />
@@ -641,7 +613,6 @@ export default function AuriumLandingPage() {
               </Link>
             </motion.div>
 
-            {/* Card 2: FAQ */}
             <motion.div id="faq" whileHover={{ y: -5 }} className="p-6 md:p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-900/5 transition-all group">
               <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 mb-6 group-hover:bg-amber-900 group-hover:text-white transition-colors">
                 <HelpCircle size={28} />
@@ -653,7 +624,6 @@ export default function AuriumLandingPage() {
               </Link>
             </motion.div>
 
-             {/* Card 3: Help & Support */}
              <Link href="/support" className="block h-full"> 
                <motion.div whileHover={{ y: -5 }} className="p-6 md:p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-900/5 transition-all group h-full">
                  <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 mb-6 group-hover:bg-amber-900 group-hover:text-white transition-colors">
@@ -677,9 +647,7 @@ export default function AuriumLandingPage() {
           <div className="grid md:grid-cols-4 gap-12 mb-12 md:mb-16">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-4 mb-6">
-                {/* Footer Logo Area */}
                 <div className="relative w-10 h-10 grayscale opacity-80">
-                   {/* Ensure filename is aurium-logo.png */}
                    <Image src="/images/aurium-logo.png" alt="Aurium" fill className="object-contain" />
                 </div>
                 <span className="text-2xl font-serif font-bold text-stone-200 tracking-wide">AURIUM</span>
@@ -689,7 +657,6 @@ export default function AuriumLandingPage() {
                 Ambitious. United. Responsive.
               </p>
               
-              {/* UPDATED: Facebook Link added in Footer */}
               <div className="mt-6">
                 <a href="https://www.facebook.com/AuriumYearbook" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors bg-stone-900 py-2 px-4 rounded-full border border-stone-800 hover:border-amber-500/50">
                   <Facebook size={18} />

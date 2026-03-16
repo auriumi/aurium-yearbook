@@ -1,11 +1,10 @@
 "use client";
 
-// FIX 14: Gi-import nato ang useEffect aron ma-basa ang URL parameter
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { ArrowLeft, Sparkles, Users, Award, Star, X } from "lucide-react"; // FIX 15: Gi-add ang X icon para sa modal
+import { ArrowLeft, Sparkles, Users, Award, Star, X } from "lucide-react";
 
 const STAFF_ARCHIVES = {
   "2025": { count: 12, folder: "AURIUM Staff 2025", groupPic: "GROUP PHOTO.jpg" },
@@ -20,10 +19,9 @@ const YEARS = Object.keys(STAFF_ARCHIVES).sort((a, b) => parseInt(b) - parseInt(
 
 export default function EditorialBoardPage() {
   const [activeYear, setActiveYear] = useState<YearKey>("2025");
-  // FIX 15: State para sa Lightbox / Modal image
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // FIX 14: Mag-basa siya kung naay ?year=2024 sa URL, usbon dayon ang active tab
+  // Read URL parameters to auto-select the active year tab
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const yearParam = searchParams.get("year");
@@ -129,7 +127,6 @@ export default function EditorialBoardPage() {
             {/* 1. THE GROUP PHOTO */}
             <motion.div 
               variants={itemVariants} 
-              // FIX 15: Made group photo clickable
               onClick={() => setSelectedImage(`${basePath}/${currentData.groupPic}`)}
               className="relative w-full rounded-3xl overflow-hidden border border-stone-800 shadow-2xl group bg-stone-900 flex justify-center items-center cursor-zoom-in"
             >
@@ -161,13 +158,11 @@ export default function EditorialBoardPage() {
                 <div className="h-px flex-1 bg-stone-800"></div>
               </div>
 
-              {/* FIX 18: grid-cols-1 sa mobile (so usaka dako nga picture taga row), dayon md:grid-cols-2 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-6 items-start">
                 {Array.from({ length: currentData.count }).map((_, i) => (
                   <motion.div 
                     key={i} 
                     variants={itemVariants}
-                    // FIX 15: onClick event para muabli ang lightbox modal
                     onClick={() => setSelectedImage(`${basePath}/${i + 1}.jpg`)}
                     className="relative rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 group cursor-zoom-in shadow-lg flex justify-center items-center"
                   >
@@ -190,7 +185,7 @@ export default function EditorialBoardPage() {
         </AnimatePresence>
       </div>
 
-      {/* FIX 15 & 18: LIGHTBOX MODAL PARA MUDako ANG PICTURE */}
+      {/* --- LIGHTBOX MODAL --- */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div

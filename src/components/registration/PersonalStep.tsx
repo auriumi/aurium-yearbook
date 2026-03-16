@@ -1,8 +1,8 @@
-// src/components/registration/PersonalStep.tsx
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toTitleCase } from "./RegistrationConstants";
 import { AlertCircle } from "lucide-react"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added missing Select imports
 
 export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, setFname, mname, setMname, suffix, setSuffix, nickname, setNickname, bdate, setBdate }: any) => {
 
@@ -15,6 +15,11 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
 
   // Helper function to check if nickname is just empty spaces
   const isNicknameInvalid = nickname !== undefined && nickname.length > 0 && nickname.trim() === "";
+
+  // Helper function to strip numbers and special characters (except ñ/Ñ, space, and dash)
+  const sanitizeName = (value: string) => {
+      return value.replace(/[^a-zA-ZñÑ\s-]/g, '');
+  };
 
   return (
     <div className="space-y-4">
@@ -35,21 +40,52 @@ export const PersonalStep = ({ idNumber, setIdNumber, lname, setLname, fname, se
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
               <Label htmlFor="lname">Last Name <span className="text-red-500">*</span></Label>
-              <Input id="lname" value={lname} onChange={e => setLname(toTitleCase(e.target.value))} placeholder="Dela Cruz" className="h-11" />
+              <Input 
+                  id="lname" 
+                  value={lname} 
+                  onChange={e => setLname(toTitleCase(sanitizeName(e.target.value)))} 
+                  placeholder="Dela Cruz" 
+                  className="h-11" 
+              />
           </div>
           <div className="space-y-2">
               <Label htmlFor="fname">First Name <span className="text-red-500">*</span></Label>
-              <Input id="fname" value={fname} onChange={e => setFname(toTitleCase(e.target.value))} placeholder="Juan" className="h-11" />
+              <Input 
+                  id="fname" 
+                  value={fname} 
+                  onChange={e => setFname(toTitleCase(sanitizeName(e.target.value)))} 
+                  placeholder="Juan" 
+                  className="h-11" 
+              />
           </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
               <Label htmlFor="mname">Middle Name</Label>
-              <Input id="mname" value={mname} onChange={e => setMname(toTitleCase(e.target.value))} placeholder="Santos" className="h-11" />
+              <Input 
+                  id="mname" 
+                  value={mname} 
+                  onChange={e => setMname(toTitleCase(sanitizeName(e.target.value)))} 
+                  placeholder="Santos" 
+                  className="h-11" 
+              />
           </div>
           <div className="space-y-2">
               <Label htmlFor="suffix">Suffix</Label>
-              <Input id="suffix" value={suffix} onChange={e => setSuffix(e.target.value)} placeholder="Jr., III (Optional)" className="h-11" />
+              <Select value={suffix} onValueChange={setSuffix}>
+                  <SelectTrigger id="suffix" className="h-11">
+                      <SelectValue placeholder="Select Suffix" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="N/A">N/A</SelectItem>
+                      <SelectItem value="Jr.">Jr.</SelectItem>
+                      <SelectItem value="Sr.">Sr.</SelectItem>
+                      <SelectItem value="II">II</SelectItem>
+                      <SelectItem value="III">III</SelectItem>
+                      <SelectItem value="IV">IV</SelectItem>
+                      <SelectItem value="V">V</SelectItem>
+                  </SelectContent>
+              </Select>
           </div>
       </div>
       <div className="space-y-2">

@@ -35,8 +35,7 @@ export default function AdminDashboard() {
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1); 
   const [totalUnverified, setTotalUnverified] = useState(0);
-  //TODO: make and use types.. zz
-  //const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
+  const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
 
   //Schedules 
   const { schedules, fetchSchedules } = useSchedules();  
@@ -75,15 +74,10 @@ export default function AdminDashboard() {
 
   const loadStudents = useCallback(async (page: number) => {
 
-    /*
-    using cache to avoid fetching again
-    (experimental for now, doesn't seem to work well with the current pagination feature)
-
     if (studentCache[page]) {
       setPendingStudents(studentCache[page]);
       return;
     }
-    */
 
     try {
         const students = await adminService.fetchStudents(page);
@@ -95,17 +89,15 @@ export default function AdminDashboard() {
         setPendingStudents(students.data.student_list);
         setTotalUnverified(students.data.total);
 
-        /*
         setStudentCache(prev => ({
           ...prev,
           [page]: students.data.student_list
         }));
-        */
 
     } catch (error) {
         console.error("Error loading students:", error);
     }
-  }, []);
+  }, [studentCache]);
 
   useEffect(() => {
     loadStudents(currentPage);
@@ -113,8 +105,16 @@ export default function AdminDashboard() {
 
   const updateOnVerify = async (studentId: number) => {
     const res = await adminService.handleVerify(studentId);
+
     if (res) {
-      setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
+
+      //invalidate cache and refetch
+      setStudentCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[currentPage];
+        return newCache;
+      });
+
       loadStudents(currentPage);
 
       toast.success("Student succesfully verified!");
@@ -126,7 +126,14 @@ export default function AdminDashboard() {
   const updateOnCancel = async (studentId: number) => {
     const res = await adminService.handleCancel(studentId);
     if (res) {
-      setPendingStudents(prev => prev.filter(s => s.student_number !== studentId))
+
+      //invalidate cache and refetch
+      setStudentCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[currentPage];
+        return newCache;
+      });
+
       loadStudents(currentPage);
 
       toast.success("Student succesfully rejected!")

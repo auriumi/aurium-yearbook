@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft, CheckCircle2 } from "lucide-react";
 
-// FIX #5: Gi-import ang AlertDialog para sa confirmation prompt
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,46 @@ type VerifacationProps = {
   onSearch: (student_id: number) => void;
   setCurrentPage: (page: number) => void;
 }
+
+/** * Helper functions for data formatting and sanitization 
+ */
+const fixEncoding = (text?: any) => {
+  if (!text) return "";
+  return String(text).replace(/Ã±/g, "ñ").replace(/Ã‘/g, "Ñ");
+};
+
+const isInvalidData = (str?: any) => {
+  if (str === null || str === undefined) return true;
+  const stringValue = String(str).trim();
+  if (stringValue === "") return true;
+  return /^(n\/?a|none)$/i.test(stringValue);
+};
+
+const cleanText = (text?: any) => {
+  if (isInvalidData(text)) return "";
+  const stringValue = String(text).trim();
+  return fixEncoding(stringValue);
+};
+
+const formatFullName = (first?: any, middle?: any, last?: any, suffix?: any) => {
+  const parts = [
+    cleanText(first),
+    cleanText(middle),
+    cleanText(last),
+    cleanText(suffix),
+  ];
+  return parts.filter(Boolean).join(" ");
+};
+
+const formatListFullName = (first?: any, middle?: any, last?: any) => {
+  const safeFirst = cleanText(first);
+  const safeMid = cleanText(middle);
+  const safeLast = cleanText(last);
+  const midInitial = safeMid ? `${safeMid.charAt(0)}.` : "";
+  
+  const parts = [safeFirst, midInitial, safeLast];
+  return parts.filter(Boolean).join(" ");
+};
 
 export function VerificationTab({ pendingStudents, currentPage, totalUnverified, setCurrentPage, onVerify, onCancel, onSearch }: VerifacationProps) {
   const [searchInput, setSearchInput] = useState(""); 
@@ -112,10 +152,10 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                     {pendingStudents.length > 0 ? (
                         pendingStudents.map(student => (
                             <button key={student.student_number} onClick={() => setSelectedStudent(student)} className={`w-full text-left py-2 px-3 rounded-xl flex items-center gap-3 transition-all ${selectedStudent?.id === student.id ? "bg-amber-50 ring-1 ring-amber-500 shadow-sm" : "bg-white border border-stone-200 hover:ring-1 hover:ring-amber-300"}`}>
-                                <Avatar className="h-9 w-9 shadow-sm"><AvatarImage src={student.photo} /><AvatarFallback className="text-xs">{student.first_name?.charAt(0)}</AvatarFallback></Avatar>
+                                <Avatar className="h-9 w-9 shadow-sm"><AvatarImage src={student.photo} /><AvatarFallback className="text-xs">{cleanText(student.first_name)?.charAt(0) || "U"}</AvatarFallback></Avatar>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-[13px] leading-snug truncate text-stone-800">
-                                        {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.last_name}
+                                        {formatListFullName(student.first_name, student.mid_name, student.last_name)}
                                     </p>
                                     <p className="text-[11px] text-stone-500 font-mono leading-none mt-0.5">{student.student_number || "No ID"}</p>
                                 </div>
@@ -172,10 +212,10 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                     <div className="p-8 bg-stone-50 border-b flex justify-between items-start shrink-0">
                         <div>
                             <h2 className="text-2xl md:text-3xl font-black font-serif text-stone-800 mb-1">
-                                {selectedStudent.first_name} {selectedStudent.mid_name} {selectedStudent.last_name} {selectedStudent.suffix}
+                                {formatFullName(selectedStudent.first_name, selectedStudent.mid_name, selectedStudent.last_name, selectedStudent.suffix)}
                             </h2>
                             <p className="text-sm md:text-base text-stone-500 font-medium tracking-wide">
-                                {selectedStudent.course}
+                                {cleanText(selectedStudent.course) || "N/A"}
                             </p>
                         </div>
                         <div className="text-right flex flex-col items-end gap-2">
@@ -184,7 +224,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                              </Badge>
                              {selectedStudent.last_edited_by && (
                                  <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium bg-amber-100/50 px-2 py-1 rounded-md">
-                                     <Clock size={12}/> Checked by {selectedStudent.last_edited_by}
+                                     <Clock size={12}/> Checked by {cleanText(selectedStudent.last_edited_by)}
                                  </div>
                              )}
                         </div>
@@ -201,11 +241,11 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div>
                                         <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Course Program</span>
-                                        <p className="text-lg font-bold text-stone-800">{selectedStudent.course}</p>
+                                        <p className="text-lg font-bold text-stone-800">{cleanText(selectedStudent.course) || "N/A"}</p>
                                     </div>
                                     <div>
                                         <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Major</span>
-                                        <p className="text-lg font-semibold text-stone-700">{selectedStudent.major || "N/A"}</p>
+                                        <p className="text-lg font-semibold text-stone-700">{cleanText(selectedStudent.major) || "N/A"}</p>
                                     </div>
                                 </div>
                             </div>
@@ -221,7 +261,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     <div className="space-y-5">
                                         <div>
                                             <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Email Address</span>
-                                            <p className="text-base font-medium text-stone-800">{selectedStudent.personal_email}</p>
+                                            <p className="text-base font-medium text-stone-800">{cleanText(selectedStudent.personal_email) || "N/A"}</p>
                                         </div>
                                         <div>
                                             <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Birthdate</span>
@@ -240,11 +280,13 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     <div className="space-y-5">
                                          <div>
                                             <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">City / Municipality</span>
-                                            <p className="text-base font-medium text-stone-800">{selectedStudent.studentDetail?.barangay}, {selectedStudent.studentDetail?.city}</p>
+                                            <p className="text-base font-medium text-stone-800">
+                                              {[cleanText(selectedStudent.studentDetail?.barangay), cleanText(selectedStudent.studentDetail?.city)].filter(Boolean).join(', ') || "N/A"}
+                                            </p>
                                          </div>
                                          <div>
                                             <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Province</span>
-                                            <p className="text-base font-medium text-stone-800">{selectedStudent.studentDetail?.province}</p>
+                                            <p className="text-base font-medium text-stone-800">{cleanText(selectedStudent.studentDetail?.province) || "N/A"}</p>
                                          </div>
                                     </div>
                                 </div>
@@ -275,7 +317,7 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                 <AlertDialogHeader>
                     <AlertDialogTitle>Approve Verification?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Are you sure you want to verify {selectedStudent?.first_name} {selectedStudent?.last_name}? 
+                        Are you sure you want to verify {formatFullName(selectedStudent?.first_name, "", selectedStudent?.last_name)}? 
                         This action will mark the student's pre-registration details as verified in the system.
                     </AlertDialogDescription>
                 </AlertDialogHeader>

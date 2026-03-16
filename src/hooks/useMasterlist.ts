@@ -131,6 +131,7 @@ export function useMasterlist() {
 
   // --- DATA STATES ---
   const [students, setStudents] = useState<any[]>([]);
+  const [studentCache, setStudentCache] = useState<{ [key: string]: { students: any[], total: number } }>({});
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -157,10 +158,24 @@ export function useMasterlist() {
       if (e.key === 'Enter') handleSearchClick();
   };
 
+  const invalidateCache = () => {
+    setStudentCache({});
+  };
+
   // --- FETCHING LOGIC ---
   useEffect(() => {
     const fetchFromAPI = async () => {
+      const cacheKey = `page=${currentPage}&dept=${appliedFilters.dept}&course=${appliedFilters.course}&status=${appliedFilters.status}&search=${appliedSearchQuery}`;
+
+      if (studentCache[cacheKey]) {
+        setStudents(studentCache[cacheKey].students);
+        setTotalResults(studentCache[cacheKey].total);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
+
       try {
         let query = new URLSearchParams();
 
@@ -179,15 +194,21 @@ export function useMasterlist() {
 
         if (res.ok) {
           const data = await res.json();
-          const normalizedStudents = normalizeStudents(data);
+          const studentList = normalizeStudents(data);
+          const total = normalizeTotalResults(data, studentList);
 
-          setStudents(normalizedStudents);
-          setTotalResults(normalizeTotalResults(data, normalizedStudents));
+          setStudents(studentList);
+          setTotalResults(total);
+
+          //store new data in cache
+          setStudentCache(prevCache => ({
+            ...prevCache,
+            [cacheKey]: { students: studentList, total: total }
+          }));
         } else {
           setStudents([]);
           setTotalResults(0);
         }
-
       } catch (error) {
         console.error("Failed to fetch students:", error);
         setStudents([]);
@@ -198,7 +219,7 @@ export function useMasterlist() {
     };
 
     fetchFromAPI();
-  }, [appliedFilters, appliedSearchQuery, currentPage]);
+  }, [appliedFilters, appliedSearchQuery, currentPage, studentCache]);
 
   return {
     searchQuery, setSearchQuery,
@@ -209,6 +230,7 @@ export function useMasterlist() {
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
+    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
+    invalidateCache
   };
 }

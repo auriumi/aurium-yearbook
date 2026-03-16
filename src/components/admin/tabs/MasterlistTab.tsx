@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMasterlist } from "@/hooks/useMasterlist";
 
-export function MasterlistTab() {
+type MasterlistTabProps = ReturnType<typeof useMasterlist>;
+
+export function MasterlistTab(props: MasterlistTabProps) {
   const {
     searchQuery, setSearchQuery, selectedStudent, setSelectedStudent,
     activeDeptFilter, setActiveDeptFilter, 
@@ -18,7 +20,7 @@ export function MasterlistTab() {
     currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
-  } = useMasterlist();
+  } = props;
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 

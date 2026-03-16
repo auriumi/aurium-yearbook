@@ -24,6 +24,7 @@ import * as adminService from "@/app/admin/adminService";
 
 //hooks
 import { useSchedules } from "@/hooks/useSchedules";
+import { useMasterlist } from "@/hooks/useMasterlist";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -35,7 +36,10 @@ export default function AdminDashboard() {
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1); 
   const [totalUnverified, setTotalUnverified] = useState(0);
+
+  //Cache
   const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
+  const masterlistProps = useMasterlist();
 
   //Schedules 
   const { schedules, fetchSchedules } = useSchedules();  
@@ -107,8 +111,9 @@ export default function AdminDashboard() {
     const res = await adminService.handleVerify(studentId);
 
     if (res) {
-
       //invalidate cache and refetch
+      masterlistProps.invalidateCache();
+
       setStudentCache(prev => {
         const newCache = { ...prev };
         delete newCache[currentPage];
@@ -126,8 +131,9 @@ export default function AdminDashboard() {
   const updateOnCancel = async (studentId: number) => {
     const res = await adminService.handleCancel(studentId);
     if (res) {
-
       //invalidate cache and refetch
+      masterlistProps.invalidateCache();
+
       setStudentCache(prev => {
         const newCache = { ...prev };
         delete newCache[currentPage];
@@ -245,7 +251,7 @@ export default function AdminDashboard() {
             {activeTab === 'notes' && <NotesTab />}
 
             {/* 4. OTHER ADMIN TABS */}
-            {activeTab === 'masterlist' && <MasterlistTab />}
+            {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps}/>}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} />}
         </div>

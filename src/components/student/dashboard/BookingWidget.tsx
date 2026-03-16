@@ -35,9 +35,9 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
     if (selectedDate && selectedSession) {
         setIsSubmitting(true);
         try {
-            await onBook(selectedBookingId, selectedSession);
-            setIsConfirmDialogOpen(false);
-            setIsBookingModalOpen(false);
+          await onBook(selectedBookingId, selectedSession);
+          setIsConfirmDialogOpen(false);
+          setIsBookingModalOpen(false);
         } catch (error) {
             console.error("Booking failed:", error);
         } finally {

@@ -18,6 +18,7 @@ export interface Student {
   photo_url: string | null;
   quote: string | null;
   created_at: string;
+  booking: Booking[];
 }
 
 export interface StduentDetail {

@@ -48,12 +48,27 @@ export async function addBook(booking_id: number, period: string) {
             }),
             credentials: 'include'
         });
+        return res.ok;
 
-        if (!res.ok) {
-            return false;
-        }
-        return true;
+    } catch(err) {
+        console.error(err);
+        return false;
+    }
+};
 
+export async function updateBook(booking_id: number, booking_day_id: number, period: string) {
+    try {
+        const res = await fetch(`${baseUrl}/api/student/book/update/${booking_id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                booking_day_id: booking_day_id,
+                period: period
+            }),
+            credentials: 'include'
+        });
+        return res.ok;
+        
     } catch(err) {
         console.error(err);
         return false;

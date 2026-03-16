@@ -13,17 +13,36 @@ interface YearbookPreviewProps {
 export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const stud_detail = user.studentDetail;
 
-  // HELPER FUNCTION: Safely combines the title (Mr/Mrs/Dr) with the name.
-  // It also prevents double titles just in case the student typed "Mr. John" in the name field.
+  const formatParentNameAsInitial = (nameStr?: string) => {
+    if (!nameStr || nameStr.trim() === "" || nameStr === "N/A") return "N/A";
+    
+    // Split the full name by space
+    const parts = nameStr.trim().split(/\s+/);
+    if (parts.length <= 2) return nameStr; 
+
+    // Extract First, Middle (as initial), and Last
+    const firstName = parts[0];
+    const lastName = parts[parts.length - 1];
+    
+    // Collect all middle parts and get the first letter of the first middle word
+    const middleParts = parts.slice(1, parts.length - 1);
+    const middleInitial = middleParts[0].charAt(0).toUpperCase() + ".";
+
+    return `${firstName} ${middleInitial} ${lastName}`;
+  };
+
+  // Safely combines the title (Mr/Mrs/Dr) with the formatted name.
   const formatNameWithTitle = (name?: string, title?: string, defaultTitle?: string) => {
-    if (!name || name.trim() === "") return null;
+    const formattedName = formatParentNameAsInitial(name);
+    if (!formattedName || formattedName === "N/A") return "N/A";
+    
     const finalTitle = title || defaultTitle || "";
     
     // Check if the name already starts with the title to avoid "Mr. Mr. John"
-    if (finalTitle && !name.toLowerCase().startsWith(finalTitle.toLowerCase().replace(".", ""))) {
-      return `${finalTitle} ${name}`;
+    if (finalTitle && !formattedName.toLowerCase().startsWith(finalTitle.toLowerCase().replace(".", ""))) {
+      return `${finalTitle} ${formattedName}`;
     }
-    return name;
+    return formattedName;
   };
 
   const guardian = stud_detail?.guardians_name && stud_detail.guardians_name.trim() !== "" 
@@ -33,9 +52,9 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const details = {
     personal: {
       fname: user?.first_name,
-      mname: user?.mid_name,
+      mname: user?.mid_name, 
       lname: user?.last_name,
-      suffix: user?.suffix,
+      suffix: user?.suffix, 
       nickname: user?.nickname, 
       birthdate: new Date(stud_detail.birth_date).toLocaleDateString('en-US', { 
         month: 'long', 
@@ -67,7 +86,7 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto min-h-screen bg-[#2a1a10] text-amber-50 font-sans selection:bg-amber-500/30">
       
-      {/* FLOATING BACK BUTTON - UPDATED CONTRAST */}
+      {/* FLOATING BACK BUTTON */}
       <div className="fixed top-4 left-4 z-50">
         <Button 
           onClick={onClose}
@@ -83,14 +102,11 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
       </div>
 
       {/* --- MAIN CONTENT CONTAINER --- */}
-      {/* Desktop: Grid with 2 Columns (40% / 60%). Mobile: Flex Column */}
       <div className="w-full min-h-screen lg:h-screen flex flex-col lg:flex-row">
         
-        {/* --- LEFT: PHOTO SECTION (40% width on Desktop) --- */}
+        {/* --- LEFT: PHOTO SECTION --- */}
         <div className="w-full lg:w-[40%] bg-stone-100 relative flex items-center justify-center p-8 lg:p-12 order-1 pt-24 lg:pt-12">
-            {/* White Frame Effect */}
             <div className="bg-white p-4 shadow-2xl rotate-1 w-full max-w-md mx-auto relative z-10">
-                {/* Image Container with fixed aspect ratio */}
                 <div className="aspect-[3/4] w-full bg-stone-200 relative overflow-hidden">
                    <img 
                      src={photoUrl} 
@@ -98,19 +114,15 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                      className="w-full h-full object-cover" 
                    />
                 </div>
-                {/* Name Tag on Photo */}
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-[#2a1a10] text-white px-6 py-2 shadow-lg w-max max-w-[90%] text-center">
                    <span className="text-xl font-serif font-bold tracking-widest truncate block">{details.personal.lname}</span>
                 </div>
             </div>
-
-            {/* Pattern Overlay on Left Side */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none mix-blend-multiply"></div>
         </div>
 
-        {/* --- RIGHT: DETAILS SECTION (60% width on Desktop) --- */}
+        {/* --- RIGHT: DETAILS SECTION --- */}
         <div className="w-full lg:w-[60%] bg-[#3f2e22] relative flex flex-col justify-center p-8 md:p-16 lg:p-20 order-2 pt-16 lg:pt-8">
-            {/* Texture */}
             <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/leather.png')" }}></div>
 
             <div className="relative z-10 max-w-3xl mx-auto w-full">
@@ -122,7 +134,12 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                    </h1>
                    <div className="flex flex-wrap items-baseline gap-3 text-2xl md:text-4xl text-amber-100/80 font-serif">
                      <span>{details.personal.fname}</span>
-                     <span>{details.personal.mname ? details.personal.mname.charAt(0) + "." : ""}</span>
+                     <span>{details.personal.mname ? details.personal.mname : ""}</span>
+                     
+                     {details.personal.suffix && details.personal.suffix !== "N/A" && (
+                         <span>{details.personal.suffix}</span>
+                     )}
+
                      <span className="italic text-amber-500">"{details.personal.nickname}"</span>
                    </div>
                    <div className="mt-6 flex items-center gap-3">
@@ -139,7 +156,6 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                 {/* CONTENT GRID */}
                 <div className="flex flex-col md:flex-row gap-10">
                     
-                    {/* THEME PHOTO BOX (Placeholder) */}
                     <div className="hidden md:block w-48 shrink-0">
                        <div className="aspect-[3/4] bg-white/5 border border-white/10 p-2 relative group cursor-not-allowed">
                           <div className="w-full h-full bg-[#2a1a10] flex flex-col items-center justify-center text-center p-4">
@@ -149,7 +165,6 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
                        </div>
                     </div>
 
-                    {/* DETAILS TEXT */}
                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8 text-sm font-light text-amber-100/80">
                        
                        <div className="space-y-6">

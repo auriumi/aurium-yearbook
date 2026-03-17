@@ -27,7 +27,7 @@ import {
   ChevronRight,
   Anchor,
   Facebook,
-  AlertTriangle // ADDED: Icon para sa maintenance banner
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -145,18 +145,17 @@ export default function AuriumLandingPage() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800 font-sans selection:bg-amber-200 selection:text-amber-900">
       
-      {/* --- BIG MAINTENANCE BANNER --- */}
+      {/* --- MAINTENANCE BANNER --- */}
       <div className="fixed top-0 left-0 w-full h-16 z-[100] bg-red-600 text-white px-4 flex items-center justify-center gap-3 shadow-xl border-b-4 border-red-800">
          <AlertTriangle size={28} className="animate-pulse shrink-0 text-yellow-300" />
          <div className="flex flex-col md:flex-row md:items-center md:gap-2 text-left md:text-center leading-tight">
            <span className="font-black text-sm md:text-lg tracking-widest uppercase">System Maintenance</span>
            <span className="hidden md:inline font-black text-lg text-red-400">|</span>
-           <span className="text-[10px] md:text-sm font-medium text-red-100">The AURIUM Portal is currently undergoing scheduled upgrades.</span>
+           <span className="text-[10px] md:text-sm font-medium text-red-100">The site is currently undergoing maintenance. All features may be unavailable during this period</span>
          </div>
       </div>
 
       {/* --- NAVIGATION BAR --- */}
-      {/* UPDATE: Adjusted top-16 so it sits right below the banner */}
       <nav className="fixed top-16 z-50 w-full bg-white/95 backdrop-blur-md border-b border-amber-100/50 shadow-sm transition-all duration-300">
         <div className="container mx-auto px-4 md:px-6 h-16 md:h-24 flex items-center justify-between relative">
           
@@ -250,7 +249,6 @@ export default function AuriumLandingPage() {
       </nav>
 
       {/* --- HERO SECTION --- */}
-      {/* UPDATE: Increased pt (padding-top) to ensure it's not hidden by the new banner + nav */}
       <section className="relative pt-36 pb-12 md:pt-48 md:pb-16 flex items-center justify-center overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
            {/* Background Blobs */}

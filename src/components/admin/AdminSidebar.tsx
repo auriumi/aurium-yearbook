@@ -11,13 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useSidebar } from "@/hooks/useSidebar";
+import { Admin } from "@/types";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isMobile: boolean;
   setIsOpen?: (open: boolean) => void;
-  user: any;
+  user: Admin | null;
   onLogout: () => void;
 }
 
@@ -94,11 +95,11 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
       <div className="p-6 border-t border-stone-800/50 bg-stone-950">
         <div className="flex items-center gap-3 mb-4">
             <Avatar className="border-2 border-stone-600 bg-stone-800">
-                <AvatarImage src={user.avatar} />
+                <AvatarImage src={user?.avatar || "nya"} />
                 <AvatarFallback className="text-xs font-bold text-stone-300 bg-stone-800">{userInitials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">{user.name}</p>
+                <p className="text-sm font-bold text-white truncate">{user ? `${user.first_name} ${user.last_name}` : "No information"}</p>
                 <p className="text-[10px] text-amber-500 truncate uppercase tracking-wider">{displayPosition}</p>
             </div>
         </div>

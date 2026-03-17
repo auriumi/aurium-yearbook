@@ -1,12 +1,27 @@
 //Admin Services Module - Do not modify <3
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
+export async function getStaffProfile() {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/profile`, {
+            credentials: 'include'
+        });
+
+        const data = await res.json();
+        if (!res.ok) return { success: false, reason: data.reason };
+
+        return { success: true, data };
+    } catch (err) {
+        console.error(err);
+        return { success: false };
+    }
+}
+
 export async function fetchStudents(page: number) {
     try {
-        const res = await fetch(
-            `${baseUrl}/api/admin/student/fetch?page=${page}`, 
-            { credentials: 'include' }
-        );
+        const res = await fetch(`${baseUrl}/api/admin/student/fetch?page=${page}`, {
+             credentials: 'include' 
+        });
 
         if (!res.ok) throw new Error("API Error");
 

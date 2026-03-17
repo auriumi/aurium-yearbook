@@ -25,6 +25,7 @@ import * as adminService from "@/app/admin/adminService";
 //hooks
 import { useSchedules } from "@/hooks/useSchedules";
 import { useMasterlist } from "@/hooks/useMasterlist";
+import { Admin } from "@/types";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -48,12 +49,26 @@ export default function AdminDashboard() {
   // This handles the "Select a student to view details" feature
   const [selectedReviewStudent, setSelectedReviewStudent] = useState<any>(null);
 
-  const [staffUser, setStaffUser] = useState({ 
-    name: "Admin User", 
-    role: "admin", 
-    email: "admin@aurium.edu.ph", 
-    avatar: "https://github.com/shadcn.png" 
-  });
+    const [staffUser, setStaffUser] = useState<Admin | null>(null);
+
+  const getStaffDetails = useCallback(async () => {
+    try {
+      const res = await adminService.getStaffProfile();
+      if (!res.success) {
+        toast.error(res.reason);
+        return;
+      }
+      
+      setStaffUser(res.data);
+
+    } catch (error) {
+      console.error("Error loading admin details:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    getStaffDetails();
+  }, [getStaffDetails]);
 
   const onPageChange = (page: number) => {
     setCurrentPage(page);

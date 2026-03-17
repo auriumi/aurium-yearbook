@@ -1,5 +1,14 @@
 // src/types/index.ts
 
+export interface Admin {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  avatar: string | null;
+}
+
 export interface Student {
   id: string; 
   student_number: string; 

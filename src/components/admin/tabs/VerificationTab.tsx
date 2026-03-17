@@ -260,9 +260,18 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     </h3>
                                     <div className="space-y-5">
                                         <div>
-                                            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Email Address</span>
+                                            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Personal Email Address</span>
                                             <p className="text-base font-medium text-stone-800">{cleanText(selectedStudent.personal_email) || "N/A"}</p>
                                         </div>
+
+                                        {/* Renders UM Student Email conditionally if the value exists */}
+                                        {cleanText(selectedStudent?.school_email) && (
+                                            <div>
+                                                <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">UM Student Email</span>
+                                                <p className="text-base font-medium text-stone-800">{cleanText(selectedStudent?.school_email)}</p>
+                                            </div>
+                                        )}
+
                                         <div>
                                             <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Birthdate</span>
                                             <p className="text-base font-medium text-stone-800">

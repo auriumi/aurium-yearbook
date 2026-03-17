@@ -77,10 +77,12 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         <div className="my-2 border-t border-stone-800/50"></div>
 
         {isAdmin && (
+          <>
             <NavItem id="slots" label="Schedules" icon={Calendar} />
+            <div className="mt-4 my-2 border-t border-stone-800/50"></div>
+          </>
         )}
         
-        <div className="mt-4 my-2 border-t border-stone-800/50"></div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Tools</p>
 
         <Link href="/admin/scanner">

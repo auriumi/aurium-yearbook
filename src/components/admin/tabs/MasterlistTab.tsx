@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMasterlist } from "@/hooks/useMasterlist";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist>;
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 export function MasterlistTab(props: MasterlistTabProps) {
   const {
@@ -141,22 +142,25 @@ export function MasterlistTab(props: MasterlistTabProps) {
       }
   };
 
-  // UX update: Confirms the action and explicitly shows the target email before firing the API
+  // Confirms the action and explicitly shows the target email before firing the API
   const confirmResendOtp = async () => {
       if (!selectedStudent || !otpConfirmTarget) return;
       
       setIsResendingOtp(true);
       try {
-          const res = await fetch(`/api/student/${selectedStudent.id}/resend-otp`, {
+          const res = await fetch(`${baseUrl}/api/admin/masterlist/reset/${selectedStudent.student_number}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ target: otpConfirmTarget })
+              body: JSON.stringify({ target: otpConfirmTarget }),
+              credentials: 'include'
           });
 
-          if (!res.ok) throw new Error("Failed to resend OTP");
+          if (!res.ok) {
+            const body = await res.json();
+            throw new Error(body.reason);
+          }
 
-          const targetEmail = otpConfirmTarget === 'personal' ? selectedStudent.personal_email : selectedStudent.school_email;
-          toast.success(`Verification code successfully sent to the ${otpConfirmTarget} email.`);
+          toast.success(`OTP has been successfully generated and sent to their ${otpConfirmTarget} email.`);
           
           // Close the confirmation dialog on success
           setOtpConfirmTarget(null);
@@ -654,11 +658,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
                 <div className="flex flex-col gap-3 mt-4">
                     <Button 
                         onClick={handleUpdateEmails} 
-                        disabled={isSaveDisabled} 
+                        disabled={true} //TODO: make it usable when ready
                         className="w-full bg-stone-800 hover:bg-stone-900 text-white shadow-sm disabled:opacity-50"
                     >
                         {isUpdatingEmails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                        Save Email Changes
+                        Save Email Changes (WIP)
                     </Button>
                     
                     <div className="relative w-full pt-4 border-t border-stone-100">

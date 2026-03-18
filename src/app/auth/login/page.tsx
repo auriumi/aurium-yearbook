@@ -301,11 +301,19 @@ export default function StudentLoginPage() {
                             </form>
                         </CardContent>
                         
-                        <CardFooter className="justify-center pb-8 border-t border-stone-100 pt-6">
+                        <CardFooter className="justify-center pb-2 border-t border-stone-100 pt-6">
                             <p className="text-sm text-stone-500">
                                 Don't have an account?{' '}
                                 <Link href="/auth/register" className="font-bold text-amber-700 hover:underline">
                                     Register here
+                                </Link>
+                            </p>
+                        </CardFooter>
+                        <CardFooter className="justify-center pb-4">
+                            <p className="text-sm text-stone-500">
+                                Forgot your passowrd?{' '} 
+                                <Link href="https://www.facebook.com/AuriumYearbook" className="font-bold text-amber-700 hover:underline"> 
+                                    Contact us here
                                 </Link>
                             </p>
                         </CardFooter>

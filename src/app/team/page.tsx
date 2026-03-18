@@ -10,7 +10,7 @@ const STAFF_ARCHIVES = {
   "2025": { count: 12, folder: "AURIUM Staff 2025", groupPic: "GROUP PHOTO.jpg" },
   "2024": { count: 11, folder: "AURIUM Staff 2024", groupPic: "GROUP PHOTO.jpg" },
   "2023": { count: 11, folder: "AURIUM Staff 2023", groupPic: "AURIUM 2023_GROUP PHOTO.jpg" },
-  "2022": { count: 12, folder: "AURIUM Staff 2022", groupPic: "Group Photo.jpg" },
+  "2022": { count: 11, folder: "AURIUM Staff 2022", groupPic: "Group Photo.jpg" },
   "2021": { count: 10, folder: "AURIUM Staff 2021", groupPic: "Group Photo.jpg" },
 };
 

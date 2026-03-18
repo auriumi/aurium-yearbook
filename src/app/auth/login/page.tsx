@@ -238,7 +238,6 @@ export default function StudentLoginPage() {
                         <CardContent>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="id">Student ID</Label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-3 h-5 w-5 text-stone-400" />
                                         <Input 
@@ -253,6 +252,8 @@ export default function StudentLoginPage() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    
+                                    {/* TODO: hide for now, this not functional as of yet..
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="password">Password</Label>
                                         <button 
@@ -263,6 +264,8 @@ export default function StudentLoginPage() {
                                             Forgot password?
                                         </button>
                                     </div>
+                                    */}
+
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-3 h-5 w-5 text-stone-400" />
                                         <Input 
@@ -282,13 +285,6 @@ export default function StudentLoginPage() {
                                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="remember" />
-                                    <Label htmlFor="remember" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-stone-600">
-                                        Remember me
-                                    </Label>
                                 </div>
 
                                 <Button 

@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wifi, WifiOff } from "lucide-react";
 
-// SOLID: Pag-import sa mga isolated Step Components ug Constants
+
+// SOLID: Importing isolated Step Components and Constants
 import { departmentOptions } from "@/components/registration/RegistrationConstants";
 import { PersonalStep } from "@/components/registration/PersonalStep";
 import { AddressStep } from "@/components/registration/AddressStep";
@@ -35,6 +36,7 @@ export default function RegistrationWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState(0); 
   const [isOnline, setIsOnline] = useState(true); 
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- STATE: Personal ---
   const [idNumber, setIdNumber] = useState(""); 
@@ -178,15 +180,15 @@ export default function RegistrationWizard() {
 
     switch (currentStep) {
       case 1: 
-        // FIXED: Gi-apil na nato ang nickname checking ug bdate range checking
+        // FIXED: Included nickname and birthdate range validation
         const year = bdate ? new Date(bdate).getFullYear() : 0;
         return (
             idNumber.trim() !== "" && 
             lname.trim() !== "" && 
             fname.trim() !== "" && 
-            nickname.trim() !== "" && // Dili pwede empty or spaces lang
+            nickname.trim() !== "" && // Must not be empty or whitespace only
             bdate !== "" && 
-            year >= 1950 && year <= 2012 // Dapat realistic year
+            year >= 1950 && year <= 2012 // Ensure a realistic birth year
         );
       case 2: return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
       case 3: 
@@ -210,6 +212,7 @@ export default function RegistrationWizard() {
   const jumpToStep = (stepId: number) => { if (stepId < currentStep) { setDirection(-1); setCurrentStep(stepId); } };
 
   const onSubmit = async () => {
+    setIsSubmitting(true);
     const relation: any = useGuardian ? { 
       guardian: { 
         guardians_name: `${guardianFname} ${guardianLname}`, 
@@ -256,6 +259,9 @@ export default function RegistrationWizard() {
 
     } catch (err) { 
       console.error("Something went wrong..", err); 
+      toast.error("Unable to connect to the server. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -317,7 +323,7 @@ export default function RegistrationWizard() {
                     {currentStep === 2 && <AddressStep isLoadingProvinces={isLoadingProvinces} provinceList={provinceList} selectedProvinceCode={selectedProvinceCode} handleProvinceChange={handleProvinceChange} isLoadingCities={isLoadingCities} cityList={cityList} selectedCityCode={selectedCityCode} handleCityChange={handleCityChange} isLoadingBarangays={isLoadingBarangays} barangayList={barangayList} selectedBarangayCode={selectedBarangayCode} setSelectedBarangayCode={setSelectedBarangayCode} />}
                     {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
                     
-                    {/* FIXED: Nabutang na ang FamilyStep (Step 4) */}
+                    {/* FIXED: Included FamilyStep (Step 4) */}
                     {currentStep === 4 && <FamilyStep useGuardian={useGuardian} setUseGuardian={setUseGuardian} guardianLname={guardianLname} setGuardianLname={setGuardianLname} guardianTitle={guardianTitle} setGuardianTitle={setGuardianTitle} guardianFname={guardianFname} setGuardianFname={setGuardianFname} guardianRel={guardianRel} setGuardianRel={setGuardianRel} fatherLname={fatherLname} setFatherLname={setFatherLname} fatherTitle={fatherTitle} setFatherTitle={setFatherTitle} fatherFname={fatherFname} setFatherFname={setFatherFname} fatherMname={fatherMname} setFatherMname={setFatherMname} fatherSuffix={fatherSuffix} setFatherSuffix={setFatherSuffix} motherLname={motherLname} setMotherLname={setMotherLname} motherTitle={motherTitle} setMotherTitle={setMotherTitle} motherFname={motherFname} setMotherFname={setMotherFname} motherMname={motherMname} setMotherMname={setMotherMname} />}
                     
                     {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
@@ -330,8 +336,8 @@ export default function RegistrationWizard() {
                     {currentStep > 1 ? (
                         <Button variant="ghost" onClick={handleBack} className="text-stone-500 hover:text-stone-800">Previous</Button>
                     ) : (<div className="w-20"></div>)}
-                    <Button className={`min-w-[140px] shadow-lg ${isStepValid() ? "bg-amber-900 hover:bg-amber-800 text-white shadow-amber-900/20" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} onClick={currentStep === 6 ? onSubmit : handleNext} disabled={!isStepValid()}>
-                    {currentStep === 6 ? "Submit Registration" : "Next Step"}
+                    <Button className={`min-w-[140px] shadow-lg ${isStepValid() && !isSubmitting ? "bg-amber-900 hover:bg-amber-800 text-white shadow-amber-900/20" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`} onClick={currentStep === 6 ? onSubmit : handleNext} disabled={!isStepValid() || isSubmitting}>
+                    {currentStep === 6 ? (isSubmitting ? "Submitting..." : "Submit Registration") : "Next Step"}
                     </Button>
                 </CardFooter>
             </Card>

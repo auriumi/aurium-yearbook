@@ -636,7 +636,8 @@ export default function AuriumLandingPage() {
               </Link>
             </motion.div>
 
-             <Link href="/support" className="block h-full"> 
+             {/* TODO */}
+             <Link href="#" className="block h-full"> 
                <motion.div whileHover={{ y: -5 }} className="p-6 md:p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:border-amber-200 hover:shadow-lg hover:shadow-amber-900/5 transition-all group h-full">
                  <div className="w-12 h-12 md:w-14 md:h-14 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 mb-6 group-hover:bg-amber-900 group-hover:text-white transition-colors">
                    <CheckCircle size={28} />
@@ -644,7 +645,7 @@ export default function AuriumLandingPage() {
                  <h3 className="text-xl font-bold text-stone-800 mb-3">Help & Support</h3>
                  <p className="text-stone-500 mb-6 text-sm leading-relaxed">Having trouble with your account? Contact our support team for assistance.</p>
                  <div className="text-amber-700 font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                   Get Help <ArrowRight size={16} />
+                   Work in progres {'<'}3
                  </div>
                </motion.div>
              </Link>
@@ -691,7 +692,7 @@ export default function AuriumLandingPage() {
               <ul className="space-y-4 text-stone-500 text-sm">
                 <li><Link href="#" className="hover:text-amber-500 transition-colors">Privacy Policy</Link></li>
                 <li><Link href="#" className="hover:text-amber-500 transition-colors">Terms of Service</Link></li>
-                <li><Link href="/support" className="hover:text-amber-500 transition-colors">Contact Support</Link></li>
+                <li><Link href="#" className="hover:text-amber-500 transition-colors">Contact Support</Link></li>
               </ul>
             </div>
           </div>

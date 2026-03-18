@@ -126,9 +126,6 @@ export default function AdminDashboard() {
     const res = await adminService.handleVerify(studentId);
 
     if (res) {
-      //invalidate cache and refetch
-      masterlistProps.invalidateCache();
-
       setStudentCache(prev => {
         const newCache = { ...prev };
         delete newCache[currentPage];
@@ -146,9 +143,6 @@ export default function AdminDashboard() {
   const updateOnCancel = async (studentId: number) => {
     const res = await adminService.handleCancel(studentId);
     if (res) {
-      //invalidate cache and refetch
-      masterlistProps.invalidateCache();
-
       setStudentCache(prev => {
         const newCache = { ...prev };
         delete newCache[currentPage];

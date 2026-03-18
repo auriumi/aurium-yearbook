@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download } from "lucide-react";
+import toast from "react-hot-toast";
+import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,27 @@ export function MasterlistTab(props: MasterlistTabProps) {
     activeStatusFilter, setActiveStatusFilter,  
     currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
-    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
-  } = props;
+    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
+    activeMajorFilter = "ALL", 
+    setActiveMajorFilter = () => {},
+  } = props as any; 
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  
+  // Deletion States
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Helper to extract the proper object key from AWS S3 URLs
+  // Email & OTP States
+  const [showEditEmailDialog, setShowEditEmailDialog] = useState(false);
+  const [editPersonalEmail, setEditPersonalEmail] = useState("");
+  const [editSchoolEmail, setEditSchoolEmail] = useState("");
+  const [isUpdatingEmails, setIsUpdatingEmails] = useState(false);
+  
+  // UX update: New states for the OTP Confirmation workflow
+  const [otpConfirmTarget, setOtpConfirmTarget] = useState<'personal' | 'school' | null>(null);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
       const findStr = `/aurium/`;
@@ -51,6 +67,107 @@ export function MasterlistTab(props: MasterlistTabProps) {
       return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
   };
 
+  const handleDeleteRecord = async () => {
+      if (!selectedStudent) return;
+      
+      setIsDeleting(true);
+      try {
+          const res = await fetch(`/api/student/${selectedStudent.id}`, {
+              method: 'DELETE',
+          });
+
+          if (!res.ok) throw new Error("Failed to delete record");
+
+          toast.success("Student record has been successfully deleted.");
+          setShowDeleteConfirm(false);
+          setSelectedStudent(null);
+          
+          handleLoadClick();
+      } catch (error) {
+          console.error("Deletion error:", error);
+          toast.error("Unable to delete the record at this time. Please try again.");
+      } finally {
+          setIsDeleting(false);
+      }
+  };
+
+  const openEmailManager = () => {
+      setEditPersonalEmail(selectedStudent?.personal_email || "");
+      setEditSchoolEmail(selectedStudent?.school_email || "");
+      setShowEditEmailDialog(true);
+  };
+
+  const isPersonalEmailChanged = selectedStudent && editPersonalEmail !== selectedStudent.personal_email;
+  const isSchoolEmailChanged = selectedStudent && editSchoolEmail !== selectedStudent.school_email;
+  const hasUnsavedEmailChanges = isPersonalEmailChanged || isSchoolEmailChanged;
+
+  const isValidEmailFormat = (emailStr: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  const isPersonalEmailValid = isValidEmailFormat(editPersonalEmail);
+  const isSchoolEmailValid = editSchoolEmail.trim() === "" || isValidEmailFormat(editSchoolEmail);
+
+  const isSaveDisabled = !hasUnsavedEmailChanges || isUpdatingEmails || !isPersonalEmailValid || !isSchoolEmailValid;
+
+  const handleUpdateEmails = async () => {
+      if (!selectedStudent || isSaveDisabled) return;
+      
+      setIsUpdatingEmails(true);
+      try {
+          const payload: any = {};
+          if (isPersonalEmailChanged) payload.personal_email = editPersonalEmail;
+          if (isSchoolEmailChanged) payload.school_email = editSchoolEmail;
+
+          const res = await fetch(`/api/student/${selectedStudent.id}/email`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) throw new Error("Failed to update emails");
+
+          toast.success("Email records updated successfully.");
+          
+          setSelectedStudent({
+              ...selectedStudent,
+              ...(isPersonalEmailChanged && { personal_email: editPersonalEmail }),
+              ...(isSchoolEmailChanged && { school_email: editSchoolEmail })
+          });
+          
+          handleLoadClick(); 
+      } catch (error) {
+          console.error("Email update error:", error);
+          toast.error("Unable to save email changes. Please check your connection.");
+      } finally {
+          setIsUpdatingEmails(false);
+      }
+  };
+
+  // UX update: Confirms the action and explicitly shows the target email before firing the API
+  const confirmResendOtp = async () => {
+      if (!selectedStudent || !otpConfirmTarget) return;
+      
+      setIsResendingOtp(true);
+      try {
+          const res = await fetch(`/api/student/${selectedStudent.id}/resend-otp`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ target: otpConfirmTarget })
+          });
+
+          if (!res.ok) throw new Error("Failed to resend OTP");
+
+          const targetEmail = otpConfirmTarget === 'personal' ? selectedStudent.personal_email : selectedStudent.school_email;
+          toast.success(`Verification code successfully sent to the ${otpConfirmTarget} email.`);
+          
+          // Close the confirmation dialog on success
+          setOtpConfirmTarget(null);
+      } catch (error) {
+          console.error("OTP resend error:", error);
+          toast.error("Failed to send the verification code. The mail server might be busy or down.");
+      } finally {
+          setIsResendingOtp(false);
+      }
+  };
+
   const InfoField = ({ label, value, icon: Icon, fullWidth = false }: any) => (
     <div className={`flex flex-col space-y-1 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -62,8 +179,12 @@ export function MasterlistTab(props: MasterlistTabProps) {
     </div>
   );
 
-  const selectedDeptConfig = ACADEMIC_CONFIG.find(d => d.name === activeDeptFilter);
-  const availableCourses = selectedDeptConfig ? selectedDeptConfig.courses.map(c => c.name) : [];
+  const selectedDeptConfig = ACADEMIC_CONFIG.find((d: any) => d.name === activeDeptFilter);
+  const availableCoursesConfig = selectedDeptConfig ? selectedDeptConfig.courses : [];
+  const availableCourses = availableCoursesConfig.map((c: any) => c.name);
+  
+  const selectedCourseConfig = availableCoursesConfig.find((c: any) => c.name === activeCourseFilter);
+  const availableMajors = selectedCourseConfig?.majors || [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 w-full overflow-x-hidden">
@@ -85,7 +206,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
             
             <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-stone-50/50 p-2 rounded-xl border border-stone-100 min-w-0">
                 
-                <div className="flex gap-2 w-full xl:w-[30%] min-w-0">
+                <div className="flex gap-2 w-full xl:w-[25%] min-w-0">
                     <div className="relative flex-1 min-w-0">
                         <Search className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
                         <Input 
@@ -103,9 +224,9 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
                 <div className="hidden xl:block text-stone-300 font-medium text-sm px-1 shrink-0">OR</div>
 
-                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-[65%] justify-end min-w-0">
+                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-[70%] justify-end min-w-0">
                     
-                    <div className="w-full sm:w-[150px] shrink-0">
+                    <div className="w-full sm:w-[130px] shrink-0">
                         <Select value={activeStatusFilter} onValueChange={setActiveStatusFilter}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
                                 <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
@@ -117,7 +238,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="ALL">All Statuses</SelectItem>
-                                {STATUS_STEPS.map(step => (
+                                {STATUS_STEPS.map((step: any) => (
                                     <SelectItem key={step.id} value={step.id.toString()}>
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${step.color}`}></div>
@@ -130,7 +251,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                     </div>
 
                     <div className="w-full sm:flex-1 min-w-0">
-                        <Select value={activeDeptFilter} onValueChange={setActiveDeptFilter}>
+                        <Select value={activeDeptFilter} onValueChange={(val) => { setActiveDeptFilter(val); setActiveCourseFilter("ALL"); setActiveMajorFilter("ALL"); }}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
                                 <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
                                     <Filter size={16} className="shrink-0" />
@@ -141,7 +262,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="ALL">All Departments</SelectItem>
-                                {DEPARTMENT_ORDER.map(dept => (
+                                {DEPARTMENT_ORDER.map((dept: any) => (
                                     <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -149,7 +270,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                     </div>
 
                     <div className="w-full sm:flex-1 min-w-0">
-                        <Select value={activeCourseFilter} onValueChange={setActiveCourseFilter} disabled={activeDeptFilter === "ALL"}>
+                        <Select value={activeCourseFilter} onValueChange={(val) => { setActiveCourseFilter(val); setActiveMajorFilter("ALL"); }} disabled={activeDeptFilter === "ALL"}>
                             <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
                                 <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
                                     <GraduationCap size={16} className="shrink-0" />
@@ -160,8 +281,27 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="ALL">All Courses</SelectItem>
-                                {availableCourses.map(course => (
+                                {availableCourses.map((course: string) => (
                                     <SelectItem key={course} value={course}>{course}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="w-full sm:flex-1 min-w-0">
+                        <Select value={activeMajorFilter} onValueChange={setActiveMajorFilter} disabled={activeCourseFilter === "ALL" || availableMajors.length === 0}>
+                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
+                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
+                                    <BookOpen size={16} className="shrink-0" />
+                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate pr-1">
+                                        <SelectValue placeholder={activeCourseFilter === "ALL" ? "Select Course First" : availableMajors.length === 0 ? "N/A" : "Major"} />
+                                    </div>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Majors</SelectItem>
+                                {availableMajors.map((major: string) => (
+                                    <SelectItem key={major} value={major}>{major}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -191,7 +331,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                 <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[300px] content-start">
                         {students.map((student: any) => {
-                            const statusInfo = STATUS_STEPS.find(s => s.label === student.studentAuth.status);
+                            const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth.status);
                             return (
                                 <div 
                                     key={student.id} 
@@ -352,6 +492,17 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="mt-auto pt-10 w-full">
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold transition-colors"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                >
+                                    <Trash2 size={16} className="mr-2" />
+                                    Remove Student Record
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="flex-1 bg-white p-8 md:p-10 overflow-y-auto">
@@ -397,6 +548,17 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
                                         <InfoField label="School Email" value={selectedStudent.school_email} icon={Mail} />
                                     </div>
+                                    
+                                    <div className="mt-4">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={openEmailManager} 
+                                            className="w-full text-stone-600 border-stone-200 hover:bg-stone-50 transition-colors"
+                                        >
+                                            <Mail className="w-4 h-4 mr-2" /> Manage Emails & OTP
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -409,8 +571,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             </div>
                             
                             <div className="space-y-0 relative pl-2">
-                                {STATUS_STEPS.map((step, index) => {
-                                    const studentStatusItem = STATUS_STEPS.find(s => s.label === selectedStudent.studentAuth?.status);
+                                {STATUS_STEPS.map((step: any, index: number) => {
+                                    const studentStatusItem = STATUS_STEPS.find((s: any) => s.label === selectedStudent.studentAuth?.status);
                                     const currentStatusId = studentStatusItem ? studentStatusItem.id : 1;
                                     const isDone = step.id <= currentStatusId;
                                     const isCurrent = step.id === currentStatusId;
@@ -447,6 +609,156 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         </div>
                     </>
                 )}
+            </DialogContent>
+        </Dialog>
+
+        {/* MANAGE EMAILS & OTP DIALOG */}
+        <Dialog open={showEditEmailDialog} onOpenChange={setShowEditEmailDialog}>
+            <DialogContent className="max-w-md p-6 bg-white rounded-xl shadow-2xl border-stone-100">
+                <DialogHeader className="mb-2">
+                    <DialogTitle className="text-xl font-bold text-stone-900">Manage Contact Emails</DialogTitle>
+                    <DialogDescription className="text-stone-500 text-sm">
+                        Update the student's email addresses or resend the verification OTP.
+                    </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Personal Email</label>
+                            {isPersonalEmailChanged && isPersonalEmailValid && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none"><CheckCircle2 className="w-3 h-3 mr-1" /> Valid Change</Badge>}
+                        </div>
+                        <Input 
+                            type="email"
+                            value={editPersonalEmail} 
+                            onChange={(e) => setEditPersonalEmail(e.target.value)}
+                            className={`transition-colors bg-stone-50 ${!isPersonalEmailValid && editPersonalEmail.length > 0 ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : isPersonalEmailChanged && isPersonalEmailValid ? 'border-green-400 focus:border-green-500 focus:ring-green-500/20' : 'border-stone-200 focus:border-amber-500 focus:ring-amber-500/20'}`}
+                        />
+                        {!isPersonalEmailValid && editPersonalEmail.length > 0 && <p className="text-[10px] text-red-500 font-medium">Please enter a valid email format.</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">School Email</label>
+                            {isSchoolEmailChanged && isSchoolEmailValid && editSchoolEmail !== "" && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none"><CheckCircle2 className="w-3 h-3 mr-1" /> Valid Change</Badge>}
+                        </div>
+                        <Input 
+                            type="email"
+                            value={editSchoolEmail} 
+                            onChange={(e) => setEditSchoolEmail(e.target.value)}
+                            className={`transition-colors bg-stone-50 ${!isSchoolEmailValid && editSchoolEmail.length > 0 ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : isSchoolEmailChanged && isSchoolEmailValid && editSchoolEmail !== "" ? 'border-green-400 focus:border-green-500 focus:ring-green-500/20' : 'border-stone-200 focus:border-amber-500 focus:ring-amber-500/20'}`}
+                        />
+                        {!isSchoolEmailValid && editSchoolEmail.length > 0 && <p className="text-[10px] text-red-500 font-medium">Please enter a valid email format or leave blank.</p>}
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-3 mt-4">
+                    <Button 
+                        onClick={handleUpdateEmails} 
+                        disabled={isSaveDisabled} 
+                        className="w-full bg-stone-800 hover:bg-stone-900 text-white shadow-sm disabled:opacity-50"
+                    >
+                        {isUpdatingEmails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Save Email Changes
+                    </Button>
+                    
+                    <div className="relative w-full pt-4 border-t border-stone-100">
+                        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">Resend Verification Code</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Button 
+                                onClick={() => setOtpConfirmTarget('personal')} 
+                                disabled={hasUnsavedEmailChanges || !isPersonalEmailValid} 
+                                variant="outline" 
+                                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                To Personal
+                            </Button>
+                            <Button 
+                                onClick={() => setOtpConfirmTarget('school')} 
+                                disabled={hasUnsavedEmailChanges || !editSchoolEmail || !isSchoolEmailValid} 
+                                variant="outline" 
+                                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                To School
+                            </Button>
+                        </div>
+                        {hasUnsavedEmailChanges && (
+                            <p className="text-[10px] text-red-500 text-center mt-2 absolute -bottom-5 w-full">
+                                *Please save your email changes before resending the OTP.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* OTP RESEND CONFIRMATION DIALOG */}
+        <Dialog open={!!otpConfirmTarget} onOpenChange={(open) => !open && setOtpConfirmTarget(null)}>
+            <DialogContent className="max-w-md p-6 bg-white rounded-xl shadow-2xl border-amber-100">
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-2">
+                        <Send size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-stone-900">Confirm OTP Resend</h3>
+                    <p className="text-sm text-stone-500 leading-relaxed">
+                        Are you sure you want to send a new verification code to the student's <strong className="text-stone-800">{otpConfirmTarget} email</strong>?
+                        <span className="text-amber-700 font-medium mt-2 block break-all">
+                            {otpConfirmTarget === 'personal' ? selectedStudent?.personal_email : selectedStudent?.school_email}
+                        </span>
+                    </p>
+                    <div className="flex gap-3 w-full mt-4">
+                        <Button 
+                            variant="outline" 
+                            className="flex-1 border-stone-200 text-stone-600 hover:bg-stone-50"
+                            onClick={() => setOtpConfirmTarget(null)}
+                            disabled={isResendingOtp}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                            onClick={confirmResendOtp}
+                            disabled={isResendingOtp}
+                        >
+                            {isResendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                            Yes, Send OTP
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* SECURE DELETION CONFIRMATION DIALOG */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            <DialogContent className="max-w-md p-6 bg-white rounded-xl shadow-2xl border-red-100">
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-2">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-stone-900">Delete Student Record?</h3>
+                    <p className="text-sm text-stone-500 leading-relaxed">
+                        This action cannot be undone. Removing this record will allow the student to register again using their correct email address and information.
+                    </p>
+                    <div className="flex gap-3 w-full mt-4">
+                        <Button 
+                            variant="outline" 
+                            className="flex-1 border-stone-200 text-stone-600 hover:bg-stone-50"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-sm"
+                            onClick={handleDeleteRecord}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                            Yes, Delete Record
+                        </Button>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
 

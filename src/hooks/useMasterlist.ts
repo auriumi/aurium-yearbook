@@ -1,83 +1,7 @@
 import { useState, useEffect } from "react";
-const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
+import { departmentOptions as ACADEMIC_CONFIG } from "@/components/registration/RegistrationConstants";
 
-// --- 1. CONFIGURATIONS ---
-export const ACADEMIC_CONFIG = [
-  {
-    name: "GRADUATE SCHOOL",
-    courses: [
-      { name: "MASTER OF ARTS IN EDUCATION (MAED)" },
-      { name: "MASTER IN BUSINESS ADMINISTRATION" },
-      { name: "MASTER IN MANAGEMENT" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF ENGINEERING EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN COMPUTER ENGINEERING" },
-      { name: "BACHELOR OF SCIENCE IN ELECTRICAL ENGINEERING" },
-      { name: "BACHELOR OF SCIENCE IN ELECTRONICS ENGINEERING" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF ART AND SCIENCES EDUCATION",
-    courses: [
-      { name: "BACHELOR OF ARTS IN ENGLISH" },
-      { name: "BACHELOR OF SCIENCE IN PSYCHOLOGY" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF ACCOUNTING EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN ACCOUNTANCY" },
-      { name: "BACHELOR OF SCIENCE IN ACCOUNTING TECHNOLOGY" },
-      { name: "BACHELOR OF SCIENCE IN MANAGEMENT ACCOUNTING" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF TEACHER EDUCATION",
-    courses: [
-      { name: "BACHELOR OF ELEMENTARY EDUCATION (GENERALIST)" },
-      { name: "BACHELOR OF PHYSICAL EDUCATION" },
-      { name: "BACHELOR OF SECONDARY EDUCATION" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF BUSINESS ADMINISTRATION EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN BUSINESS ADMINISTRATION" },
-      { name: "BACHELOR OF SCIENCE IN COMMERCE" }
-    ]
-  },
-  {
-    name: "HOSPITALITY AND TOURISM MANAGEMENT EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN HOSPITALITY MANAGEMENT" },
-      { name: "BACHELOR OF SCIENCE IN HOTEL AND RESTAURANT MANAGEMENT" },
-      { name: "BACHELOR OF SCIENCE IN TOURISM MANAGEMENT" },
-      { name: "BACHELOR OF ARTS IN ECONOMICS" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF CRIMINAL JUSTICE EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN CRIMINOLOGY" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF COMPUTING EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN COMPUTER SCIENCE" },
-      { name: "BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY" }
-    ]
-  },
-  {
-    name: "DEPARTMENT OF NURSING EDUCATION",
-    courses: [
-      { name: "BACHELOR OF SCIENCE IN NURSING" }
-    ]
-  }
-];
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 export const STATUS_STEPS = [
   { id: 1, label: "REGISTERED", color: "bg-stone-500" },      
@@ -117,12 +41,15 @@ export function useMasterlist() {
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
   const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL"); 
+  const [activeMajorFilter, setActiveMajorFilter] = useState<string>("ALL"); // added state for major filter
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
   
   // --- APPLIED FILTERS ---
+  // This holds the actual payload we send to the API when hitting LOAD
   const [appliedFilters, setAppliedFilters] = useState({
       dept: "ALL",
       course: "ALL",
+      major: "ALL", // included major in applied filters
       status: "ALL"
   });
   
@@ -131,15 +58,21 @@ export function useMasterlist() {
 
   // --- DATA STATES ---
   const [students, setStudents] = useState<any[]>([]);
-  const [studentCache, setStudentCache] = useState<{ [key: string]: { students: any[], total: number } }>({});
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   const ITEMS_PER_PAGE = 9; 
 
+  // Reset dependent filters when the department changes
   useEffect(() => {
       setActiveCourseFilter("ALL");
+      setActiveMajorFilter("ALL"); // reset major when dept changes
   }, [activeDeptFilter]);
+
+  // Make sure major resets if the course changes
+  useEffect(() => {
+      setActiveMajorFilter("ALL");
+  }, [activeCourseFilter]);
 
   // --- EXPLICIT ACTIONS ---
   const handleSearchClick = () => {
@@ -148,7 +81,13 @@ export function useMasterlist() {
   };
 
   const handleLoadClick = () => {
-      setAppliedFilters({dept: activeDeptFilter, course: activeCourseFilter, status: activeStatusFilter });
+      // update applied filters with the current major filter
+      setAppliedFilters({
+        dept: activeDeptFilter, 
+        course: activeCourseFilter, 
+        major: activeMajorFilter, 
+        status: activeStatusFilter 
+      });
       setAppliedSearchQuery("");
       setSearchQuery("");
       setCurrentPage(1);
@@ -158,24 +97,10 @@ export function useMasterlist() {
       if (e.key === 'Enter') handleSearchClick();
   };
 
-  const invalidateCache = () => {
-    setStudentCache({});
-  };
-
   // --- FETCHING LOGIC ---
   useEffect(() => {
     const fetchFromAPI = async () => {
-      const cacheKey = `page=${currentPage}&dept=${appliedFilters.dept}&course=${appliedFilters.course}&status=${appliedFilters.status}&search=${appliedSearchQuery}`;
-
-      if (studentCache[cacheKey]) {
-        setStudents(studentCache[cacheKey].students);
-        setTotalResults(studentCache[cacheKey].total);
-        setIsLoading(false);
-        return;
-      }
-
       setIsLoading(true);
-
       try {
         let query = new URLSearchParams();
 
@@ -185,6 +110,7 @@ export function useMasterlist() {
           query.append("page", currentPage.toString());
           query.append("dept", appliedFilters.dept);
           query.append("course", appliedFilters.course);
+          query.append("major", appliedFilters.major); // pass major query to backend
           query.append("status", appliedFilters.status);
         }
 
@@ -194,21 +120,15 @@ export function useMasterlist() {
 
         if (res.ok) {
           const data = await res.json();
-          const studentList = normalizeStudents(data);
-          const total = normalizeTotalResults(data, studentList);
+          const normalizedStudents = normalizeStudents(data);
 
-          setStudents(studentList);
-          setTotalResults(total);
-
-          //store new data in cache
-          setStudentCache(prevCache => ({
-            ...prevCache,
-            [cacheKey]: { students: studentList, total: total }
-          }));
+          setStudents(normalizedStudents);
+          setTotalResults(normalizeTotalResults(data, normalizedStudents));
         } else {
           setStudents([]);
           setTotalResults(0);
         }
+
       } catch (error) {
         console.error("Failed to fetch students:", error);
         setStudents([]);
@@ -219,18 +139,18 @@ export function useMasterlist() {
     };
 
     fetchFromAPI();
-  }, [appliedFilters, appliedSearchQuery, currentPage, studentCache]);
+  }, [appliedFilters, appliedSearchQuery, currentPage]);
 
   return {
     searchQuery, setSearchQuery,
     selectedStudent, setSelectedStudent,
     activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
+    activeMajorFilter, setActiveMajorFilter, // exported major states
     activeStatusFilter, setActiveStatusFilter,
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
-    invalidateCache
+    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
   };
 }

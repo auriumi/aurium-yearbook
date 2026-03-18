@@ -4,8 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
 import { departmentOptions } from "./RegistrationConstants";
-// Added AlertCircle for the phone validation warning
-import { MailWarning, AlertCircle } from "lucide-react"; 
+import { MailWarning, AlertCircle, CheckCircle2 } from "lucide-react"; 
 
 export const AcademicStep = ({ 
     selectedDepartment, handleDepartmentChange, 
@@ -15,11 +14,14 @@ export const AcademicStep = ({
     contactNum, setContactNum, 
     email, setEmail, 
     umEmail, setUmEmail,
-    hasUmEmailAccess, setHasUmEmailAccess // New props for email access
+    hasUmEmailAccess, setHasUmEmailAccess 
 }: any) => {
 
   // Simple Regex to check if email format is valid (has @ and domain)
   const isValidEmail = (emailStr: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+
+  // Strict Regex specifically for UM student emails
+  const isUmEmailValid = (emailStr: string) => /^[^\s@]+@umindanao\.edu\.ph$/i.test(emailStr.trim());
 
   // Simple Regex to ensure contact number starts with 09 and is exactly 11 digits long
   const isValidContact = (num: string) => /^09\d{9}$/.test(num);
@@ -57,16 +59,18 @@ export const AcademicStep = ({
 
       <div className="h-px bg-gray-200 my-2"></div>
 
-      {/* PRIMARY CONTACT NUMBER (Added strict 09 format validation) */}
       <div className="space-y-2">
-          <Label>Primary Contact Number <span className="text-red-500">*</span></Label>
+          <div className="flex justify-between items-center">
+              <Label>Primary Contact Number <span className="text-red-500">*</span></Label>
+              {contactNum.length > 0 && isValidContact(contactNum) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+          </div>
           <Input 
             value={contactNum} 
             onChange={e => setContactNum(e.target.value.replace(/\D/g, ''))} 
             placeholder="09XXXXXXXXX" 
             inputMode="numeric" 
             maxLength={11} 
-            className={`h-11 ${contactNum.length > 0 && !isValidContact(contactNum) ? "border-red-400 focus-visible:ring-red-400" : ""}`} 
+            className={`h-11 transition-colors ${contactNum.length > 0 ? (isValidContact(contactNum) ? "border-green-400 focus-visible:ring-green-500/20" : "border-red-400 focus-visible:ring-red-400") : ""}`} 
           />
           {contactNum.length > 0 && !isValidContact(contactNum) && (
               <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1">
@@ -75,16 +79,25 @@ export const AcademicStep = ({
           )}
       </div>
 
-      {/* PERSONAL EMAIL (With validation format) */}
       <div className="space-y-2">
-          <Label>Personal Email Address <span className="text-red-500">*</span></Label>
-          <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="juandelacruz@email.com" className={`h-11 ${email.length > 0 && !isValidEmail(email) ? "border-red-400 focus-visible:ring-red-400" : ""}`} />
+          <div className="flex justify-between items-center">
+              <Label>Personal Email Address <span className="text-red-500">*</span></Label>
+              {email.length > 0 && isValidEmail(email) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+          </div>
+          <Input 
+            type="email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            placeholder="juandelacruz@email.com" 
+            className={`h-11 transition-colors ${email.length > 0 ? (isValidEmail(email) ? "border-green-400 focus-visible:ring-green-500/20" : "border-red-400 focus-visible:ring-red-400") : ""}`} 
+          />
           {email.length > 0 && !isValidEmail(email) && (
-              <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1"><MailWarning size={12}/> Please enter a valid email format.</span>
+              <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1">
+                  <MailWarning size={12}/> Please enter a valid email format.
+              </span>
           )}
       </div>
 
-      {/* UM EMAIL ACCESS TOGGLE */}
       <div className="flex items-start space-x-3 p-4 border border-stone-200 bg-stone-50/50 rounded-lg mt-4">
           <Checkbox id="um-email-access" checked={hasUmEmailAccess} onCheckedChange={(checked) => setHasUmEmailAccess(checked as boolean)} className="mt-1"/>
           <div className="space-y-1 leading-none">
@@ -93,13 +106,23 @@ export const AcademicStep = ({
           </div>
       </div>
 
-      {/* UM EMAIL INPUT (Hidden if the toggle above is unchecked) */}
       {hasUmEmailAccess && (
           <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-              <Label>UM Student Email <span className="text-red-500">*</span></Label>
-              <Input type="email" value={umEmail} onChange={e => setUmEmail(e.target.value)} placeholder="j.delacruz.142458.tc@umindanao.edu.ph" className={`h-11 ${umEmail.length > 0 && !isValidEmail(umEmail) ? "border-red-400 focus-visible:ring-red-400" : ""}`} />
-              {umEmail.length > 0 && !isValidEmail(umEmail) && (
-                  <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1"><MailWarning size={12}/> Please enter a valid UM email format.</span>
+              <div className="flex justify-between items-center">
+                  <Label>UM Student Email <span className="text-red-500">*</span></Label>
+                  {umEmail.length > 0 && isUmEmailValid(umEmail) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+              </div>
+              <Input 
+                type="email" 
+                value={umEmail} 
+                onChange={e => setUmEmail(e.target.value)} 
+                placeholder="j.delacruz.142458.tc@umindanao.edu.ph" 
+                className={`h-11 transition-colors ${umEmail.length > 0 ? (isUmEmailValid(umEmail) ? "border-green-400 focus-visible:ring-green-500/20" : "border-red-400 focus-visible:ring-red-400") : ""}`} 
+              />
+              {umEmail.length > 0 && !isUmEmailValid(umEmail) && (
+                  <span className="flex items-center gap-1 text-[10px] text-red-500 font-medium mt-1">
+                      <MailWarning size={12}/> Must be a valid @umindanao.edu.ph address.
+                  </span>
               )}
           </div>
       )}

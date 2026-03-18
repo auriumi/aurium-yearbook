@@ -164,7 +164,8 @@ export default function FAQPage() {
             </motion.div>
           ))}
 
-          {/* --- STILL NEED HELP? --- */}
+          {/* TODO: Hide for now, this is not functional.. 
+          --- STILL NEED HELP? ---
           <div className="mt-12 text-center">
             <div className="inline-flex items-center justify-center p-4 bg-white rounded-full shadow-lg border border-stone-100 mb-6">
               <AlertCircle className="text-amber-600 mr-2" size={24} />
@@ -173,7 +174,7 @@ export default function FAQPage() {
             <h3 className="text-3xl font-serif font-bold text-stone-800 mb-4">We're here to help</h3>
             <p className="text-stone-500 mb-8">If you can't find the answer you're looking for, please contact our support team.</p>
             <div className="flex justify-center gap-4">
-               {/* UPDATED: Added Link wrapper to redirect to /support */}
+
                <Link href="/support">
                  <Button className="bg-stone-900 hover:bg-stone-800 text-white px-8 h-12 rounded-full text-lg">
                    Contact Support
@@ -186,6 +187,7 @@ export default function FAQPage() {
                </Link>
             </div>
           </div>
+          */}
 
         </div>
       </div>

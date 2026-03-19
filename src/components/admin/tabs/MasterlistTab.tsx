@@ -19,11 +19,10 @@ export function MasterlistTab(props: MasterlistTabProps) {
     activeDeptFilter, setActiveDeptFilter, 
     activeCourseFilter, setActiveCourseFilter,
     activeStatusFilter, setActiveStatusFilter,  
+    activeMajorFilter, setActiveMajorFilter,
     currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
-    activeMajorFilter = "ALL", 
-    setActiveMajorFilter = () => {},
   } = props as any; 
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);

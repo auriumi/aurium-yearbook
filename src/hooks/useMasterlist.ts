@@ -41,7 +41,7 @@ export function useMasterlist() {
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
   const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL"); 
-  const [activeMajorFilter, setActiveMajorFilter] = useState<string>("ALL"); // added state for major filter
+  const [activeMajorFilter, setActiveMajorFilter] = useState<string>("ALL");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
   
   // --- APPLIED FILTERS ---
@@ -49,7 +49,7 @@ export function useMasterlist() {
   const [appliedFilters, setAppliedFilters] = useState({
       dept: "ALL",
       course: "ALL",
-      major: "ALL", // included major in applied filters
+      major: "ALL",
       status: "ALL"
   });
   
@@ -66,7 +66,7 @@ export function useMasterlist() {
   // Reset dependent filters when the department changes
   useEffect(() => {
       setActiveCourseFilter("ALL");
-      setActiveMajorFilter("ALL"); // reset major when dept changes
+      setActiveMajorFilter("ALL");
   }, [activeDeptFilter]);
 
   // Make sure major resets if the course changes
@@ -81,7 +81,6 @@ export function useMasterlist() {
   };
 
   const handleLoadClick = () => {
-      // update applied filters with the current major filter
       setAppliedFilters({
         dept: activeDeptFilter, 
         course: activeCourseFilter, 
@@ -110,7 +109,7 @@ export function useMasterlist() {
           query.append("page", currentPage.toString());
           query.append("dept", appliedFilters.dept);
           query.append("course", appliedFilters.course);
-          query.append("major", appliedFilters.major); // pass major query to backend
+          query.append("major", appliedFilters.major);
           query.append("status", appliedFilters.status);
         }
 
@@ -146,7 +145,7 @@ export function useMasterlist() {
     selectedStudent, setSelectedStudent,
     activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
-    activeMajorFilter, setActiveMajorFilter, // exported major states
+    activeMajorFilter, setActiveMajorFilter,
     activeStatusFilter, setActiveStatusFilter,
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,

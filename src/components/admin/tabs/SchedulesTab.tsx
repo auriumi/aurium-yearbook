@@ -46,6 +46,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   // Schedule management states
   const [isCloseDateOpen, setIsCloseDateOpen] = useState(false);
   const [dateToClose, setDateToClose] = useState<string | null>(null);
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
 
   // Global loading state for network requests
   const [isProcessing, setIsProcessing] = useState(false);
@@ -119,6 +120,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   };
 
   // Processes the server request to update the schedule capacity
+  /*
   const executeCapacityUpdate = async () => {
     if (!editingCapacity) return;
     
@@ -145,8 +147,9 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         setIsProcessing(false);
     }
   };
+  */
 
-  // Processes the server request to manually assign a student to a schedule
+  /* Processes the server request to manually assign a student to a schedule
   const executeStudentOverride = async () => {
     if (!manualStudentId || !activeAddStudentSession) return;
 
@@ -174,20 +177,21 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         setIsProcessing(false);
     }
   };
+  */
 
   // Processes the server request to lock a specific schedule date
   const executeCloseSchedule = async () => {
-    if (!dateToClose) return;
+    if (!selectedBookingId) return;
 
     setIsProcessing(true);
     try {
-        const response = await adminService.closeSchedule(dateToClose);
+        const response = await adminService.toggleScheduleState(selectedBookingId);
 
         if (response.success) {
             alert("Schedule has been successfully closed.");
             await fetchSchedules();
             setIsCloseDateOpen(false);
-            setDateToClose(null);
+            setSelectedBookingId(null);
         } else {
             alert(response.reason || "Failed to close the schedule.");
         }
@@ -290,6 +294,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                         className="text-red-600 hover:bg-red-50 hover:text-red-700 h-8 px-3 font-medium"
                                         onClick={() => {
                                             setDateToClose(day.date);
+                                            setSelectedBookingId(day.id);
                                             setIsCloseDateOpen(true);
                                         }}
                                     >
@@ -483,7 +488,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsEditCapacityOpen(false)} disabled={isProcessing}>Cancel</Button>
                     <Button 
-                        onClick={executeCapacityUpdate} 
+                        onClick={() => {}} //TODO 
                         disabled={isProcessing}
                         className="bg-amber-600 hover:bg-amber-700"
                     >
@@ -517,7 +522,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsAddStudentOpen(false)} disabled={isProcessing}>Cancel</Button>
                     <Button 
-                        onClick={executeStudentOverride} 
+                        onClick={() => {}} //TODO: executeStudentOverride 
                         disabled={isProcessing}
                         className="bg-amber-600 hover:bg-amber-700"
                     >

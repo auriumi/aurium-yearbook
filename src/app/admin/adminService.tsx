@@ -137,3 +137,22 @@ export async function fetchSchedule() {
         return [];
     }
 };
+
+export async function toggleScheduleState(booking_id: number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/book/toggle?id=${booking_id}`, {
+            method: 'PATCH',
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            const body = await res.json();
+            return { success: false, reason: body.reason }; 
+        }
+
+        return { success: true };
+    } catch(err) {
+        console.error("Server error: ", err);
+        return { success: false };
+    }
+}

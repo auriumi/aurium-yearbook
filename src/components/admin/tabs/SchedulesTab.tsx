@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Schedule } from "@/types";
 import * as adminService from "@/app/admin/adminService"
+import toast from "react-hot-toast";
 
 interface ScheduleProp {
     schedules: Schedule[];
@@ -188,12 +189,12 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         const response = await adminService.toggleScheduleState(selectedBookingId);
 
         if (response.success) {
-            alert("Schedule has been successfully closed.");
+            toast.success("Schedule's availability has been successfully updated.");
             await fetchSchedules();
             setIsCloseDateOpen(false);
             setSelectedBookingId(null);
         } else {
-            alert(response.reason || "Failed to close the schedule.");
+            toast.error(response.reason || "Failed to close the schedule.");
         }
     } catch (error) {
         console.error("Close schedule error:", error);

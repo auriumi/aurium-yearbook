@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import * as adminService from "@/app/admin/adminService"; // Assuming this has your API calls
+import * as adminService from "@/app/admin/adminService"; 
 import toast from "react-hot-toast";
 
 // --- SOUND ASSETS ---
@@ -49,7 +49,7 @@ export function useScanner() {
                   const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
                   res.data.forEach((day: any) => {
                       // Only add options if the session has a capacity > 0
-                      if (day.max_morning_cap > 0) {
+                      if (day.max_morning_cap > 0) {    
                           options.push({ label: `${day.date.substring(0, 10)} - Morning (AM)`, date: day.date.substring(0, 10), session: "AM" });
                       }
                       if (day.max_afternoon_cap > 0) {

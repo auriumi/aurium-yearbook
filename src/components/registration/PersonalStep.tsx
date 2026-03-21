@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toTitleCase } from "./RegistrationConstants";
@@ -20,8 +20,10 @@ export const PersonalStep = ({
 
   const [isCheckingId, setIsCheckingId] = useState(false);
   const [idErrorMessage, setIdErrorMessage] = useState("");
-  // UX Update: State to control the hard-stop warning modal
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+
+  // Tracks the last checked ID to prevent redundant API network requests on blur
+  const lastCheckedId = useRef("");
 
   const isRealisticYear = (dateStr: string) => {
       if (!dateStr) return true; 
@@ -35,8 +37,28 @@ export const PersonalStep = ({
       return value.replace(/[^a-zA-ZñÑ\s-]/g, '');
   };
 
+  // Handles ID input formatting and resets duplicate validation states
+  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value.replace(/\D/g, '');
+      setIdNumber(val);
+      
+      if (val.length === 6 && Number(val) === 0) {
+          setIdErrorMessage("Invalid Student ID format.");
+          if (setHasDuplicateId) setHasDuplicateId(true);
+      } else {
+          if (hasDuplicateId && setHasDuplicateId) {
+              setHasDuplicateId(false);
+              setIdErrorMessage("");
+          }
+      }
+  };
+
+  // Verifies ID availability against the database
   const checkStudentId = async () => {
       if (!idNumber || idNumber.length < 5) return;
+      
+      // Abort verification if the ID hasn't changed since the last check
+      if (idNumber === lastCheckedId.current) return;
       
       if (Number(idNumber) === 0) {
           setIdErrorMessage("Invalid Student ID format.");
@@ -50,10 +72,11 @@ export const PersonalStep = ({
           
           if (res.ok) {
               const data = await res.json();
+              lastCheckedId.current = idNumber; // Cache the verified ID
+              
               if (data.exists) {
                   setIdErrorMessage("Account already exist");
                   if (setHasDuplicateId) setHasDuplicateId(true);
-                  // Fire the modal immediately
                   setShowDuplicateDialog(true);
               } else {
                   setIdErrorMessage("");
@@ -75,20 +98,7 @@ export const PersonalStep = ({
               <Input 
                   id="idNumber" 
                   value={idNumber} 
-                  onChange={e => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      setIdNumber(val);
-                      
-                      if (val.length === 6 && Number(val) === 0) {
-                          setIdErrorMessage("Invalid Student ID format.");
-                          if (setHasDuplicateId) setHasDuplicateId(true);
-                      } else {
-                          if (hasDuplicateId && setHasDuplicateId) {
-                              setHasDuplicateId(false);
-                              setIdErrorMessage("");
-                          }
-                      }
-                  }} 
+                  onChange={handleIdChange} 
                   onBlur={checkStudentId}
                   placeholder="e.g. 142478" 
                   maxLength={6} 
@@ -190,7 +200,7 @@ export const PersonalStep = ({
           )}
       </div>
 
-      {/* UX Update: Critical Warning Dialog for Duplicate IDs */}
+      {/* Hard-stop warning dialog for duplicate IDs */}
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
           <DialogContent className="max-w-sm p-6 bg-white rounded-xl shadow-2xl border-red-100 [&>button]:hidden">
               <div className="flex flex-col items-center text-center space-y-4">

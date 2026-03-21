@@ -48,6 +48,9 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   const [isCloseDateOpen, setIsCloseDateOpen] = useState(false);
   const [dateToClose, setDateToClose] = useState<string | null>(null);
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  
+  // Added state to determine if the admin is trying to Open or Close the schedule dynamically
+  const [isClosingAction, setIsClosingAction] = useState(true);
 
   // Global loading state for network requests
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,7 +90,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   const handleAddNewDate = async () => {
     if (!newDateInput) return;
     const exists = schedules.some(s => s.date === newDateInput);
-    if (exists) { alert("Date already exists!"); return; }
+    if (exists) { toast.error("Date already exists!"); return; }
 
     const amLimit = (sessionType === 'both' || sessionType === 'am') ? newAmCapacity : 0;
     const pmLimit = (sessionType === 'both' || sessionType === 'pm') ? newPmCapacity : 0;
@@ -95,7 +98,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
     try {
       const res = await adminService.addSchedule(newDateInput, amLimit, pmLimit);
       if (res.success) {
-        alert("New schedule has been added succesfully!");
+        toast.success("New schedule has been added successfully!");
         
         fetchSchedules();
 
@@ -105,11 +108,11 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         setNewPmCapacity(0);
         setIsAddDateOpen(false);
       } else {
-        alert(res.reason);
+        toast.error(res.reason || "Failed to add schedule");
       }
     } catch(err) {
       console.error("Error adding schedule", err);
-      alert("Error connecting to the server");
+      toast.error("Error connecting to the server");
     }
   };
 
@@ -189,16 +192,17 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         const response = await adminService.toggleScheduleState(selectedBookingId);
 
         if (response.success) {
-            toast.success("Schedule's availability has been successfully updated.");
+            // Provide dynamic toast feedback based on the action taken
+            toast.success(isClosingAction ? "Schedule closed successfully." : "Schedule opened successfully.");
             await fetchSchedules();
             setIsCloseDateOpen(false);
             setSelectedBookingId(null);
         } else {
-            toast.error(response.reason || "Failed to close the schedule.");
+            toast.error(response.reason || "Failed to update the schedule.");
         }
     } catch (error) {
         console.error("Close schedule error:", error);
-        alert("Unable to communicate with the server. Please check your connection.");
+        toast.error("Unable to communicate with the server. Please check your connection.");
     } finally {
         setIsProcessing(false);
     }
@@ -281,11 +285,12 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                 const isFull = totalBooked >= totalSlots;
 
                 return (
-                    <Card key={idx} className="overflow-hidden border-t-4 border-t-amber-600 shadow-md rounded-2xl border-stone-200">
+                    // Updated the Card styling to visually dim closed schedules
+                    <Card key={idx} className={`overflow-hidden border-t-4 shadow-md rounded-2xl border-stone-200 transition-opacity ${!day.is_open ? 'opacity-70 border-t-stone-400 grayscale-[20%]' : 'border-t-amber-600'}`}>
                         <CardHeader className="bg-stone-50/80 pb-4 border-b border-stone-100">
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-lg flex items-center gap-2 font-serif text-stone-800">
-                                    <Calendar className="text-amber-600 h-5 w-5" /> 
+                                    <Calendar className={`${day.is_open ? 'text-amber-600' : 'text-stone-500'} h-5 w-5`} /> 
                                     {new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                                 </CardTitle>
                                 {/* TODO: need some tweaking, should be a toggle now rather than closing it entirely.
@@ -294,30 +299,40 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                     Pressing "Open" actually closes the schedule and vice versa for "Close".
                                     (I have no idea on how did you pass the "not allowed" symbol into this button) */}
                                 <div className="flex items-center gap-3">
+                                    {/* UI/UX Fix: Transformed to a dynamic toggle button with clear open/close states */}
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="sm" 
                                         className={ 
                                             day.is_open 
-                                            ? "text-red-600 hover:bg-red-50 hover:text-red-700 h-8 px-3 font-medium" 
-                                            : "text-green-600 hover:bg-green-50 hover:text-green-700 h-8 px-3 font-medium"
+                                            ? "text-amber-700 border-amber-200 hover:bg-amber-50 h-8 px-3 font-medium bg-white" 
+                                            : "text-green-700 border-green-200 hover:bg-green-50 h-8 px-3 font-medium bg-white"
                                         }
                                         onClick={() => {
                                             setDateToClose(day.date);
                                             setSelectedBookingId(day.id);
+                                            setIsClosingAction(day.is_open); // Determine the intended action for the modal
                                             setIsCloseDateOpen(true);
                                         }}
                                     >
-                                        <Ban className="w-4 h-4 mr-1.5" /> {day.is_open ? "Close" : "Open"} 
+                                        {day.is_open ? <><Lock className="w-4 h-4 mr-1.5" /> Close Schedule</> : <><Unlock className="w-4 h-4 mr-1.5" /> Re-open</>} 
                                     </Button>
-                                    <Badge variant="outline" className={isFull ? "text-red-600 border-red-200 bg-red-50" : "text-green-600 border-green-200 bg-green-50"}>
-                                        {isFull ? "FULLY BOOKED" : "AVAILABLE"}
-                                    </Badge>
+
+                                    {/* Status Badge: Now clearly indicates if the day is manually CLOSED */}
+                                    {!day.is_open ? (
+                                        <Badge variant="outline" className="text-stone-500 border-stone-300 bg-stone-100 uppercase font-bold tracking-wider">
+                                            <Lock className="w-3 h-3 mr-1"/> CLOSED
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className={isFull ? "text-red-600 border-red-200 bg-red-50" : "text-green-600 border-green-200 bg-green-50"}>
+                                            {isFull ? "FULLY BOOKED" : "AVAILABLE"}
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>
 
-                        <CardContent className="pt-6 bg-white">
+                        <CardContent className="pt-6 bg-white pointer-events-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Process morning and afternoon sessions */}
                                 {['AM', 'PM'].map((session) => {
@@ -546,13 +561,25 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
         <Dialog open={isCloseDateOpen} onOpenChange={setIsCloseDateOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="text-red-600 flex items-center gap-2">
-                        <Ban className="w-5 h-5" /> Close Schedule Date
+                    {/* Dynamically adjust title color and icon based on action */}
+                    <DialogTitle className={`flex items-center gap-2 ${isClosingAction ? 'text-amber-600' : 'text-green-600'}`}>
+                        {isClosingAction ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />} 
+                        {isClosingAction ? "Close Schedule Date" : "Re-open Schedule Date"}
                     </DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to close the schedule for <strong>{formatModalDate(dateToClose || "")}</strong>? 
-                        <br /><br />
-                        This will prevent any further student registrations for this date, even if there are still available slots. Existing bookings will not be affected.
+                        {isClosingAction ? (
+                            <>
+                                Are you sure you want to close the schedule for <strong>{formatModalDate(dateToClose || "")}</strong>? 
+                                <br /><br />
+                                This will prevent any further student registrations for this date, even if there are still available slots. Existing bookings will not be affected.
+                            </>
+                        ) : (
+                            <>
+                                Are you sure you want to re-open the schedule for <strong>{formatModalDate(dateToClose || "")}</strong>? 
+                                <br /><br />
+                                Students will once again be able to view and book any remaining available slots for this date.
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -560,9 +587,9 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                     <Button 
                         onClick={executeCloseSchedule} 
                         disabled={isProcessing}
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className={isClosingAction ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}
                     >
-                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Processing...</> : "Confirm Close"}
+                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Processing...</> : (isClosingAction ? "Confirm Close" : "Confirm Open")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

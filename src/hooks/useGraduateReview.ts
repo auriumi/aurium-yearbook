@@ -77,46 +77,103 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       if (e.key === 'Enter') handleSearchClick();
   };
 
-  const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const timestamp = new Date().toLocaleString();
+  const handleSaveEdit = async (formElement: HTMLFormElement) => {
+    const formData = new FormData(formElement);
+    const dataByCategory: { [category: string]: { [key: string]: any } } = {};
 
-    const updates = {
-        first_name: (formData.get("fname") as string) || selectedStudent.first_name,
-        last_name: (formData.get("lname") as string) || selectedStudent.last_name,
-        mid_name: (formData.get("mname") as string) || selectedStudent.mid_name,
-        suffix: (formData.get("suffix") as string) || "", 
-        nickname: (formData.get("nickname") as string) || "",
-        course: (formData.get("course") as string) || selectedStudent.course,
-        major: (formData.get("major") as string) || selectedStudent.major,
-        studentDetail: {
-            ...selectedStudent.studentDetail,
-            barangay: (formData.get("barangay") as string) || selectedStudent.studentDetail?.barangay,
-            city: (formData.get("city") as string) || selectedStudent.studentDetail?.city,
-            province: (formData.get("province") as string) || selectedStudent.studentDetail?.province,
-            contact_num: (formData.get("contactNum") as string) || selectedStudent.studentDetail?.contact_num,
-            personal_email: (formData.get("personalEmail") as string) || selectedStudent.studentDetail?.personal_email,
-            fathers_name: (formData.get("father") as string) || selectedStudent.studentDetail?.fathers_name,
-            mothers_name: (formData.get("mother") as string) || selectedStudent.studentDetail?.mothers_name,
-            guardians_name: (formData.get("guardian") as string) || selectedStudent.studentDetail?.guardians_name,
-        },
-        last_edited_by: staffUser?.name || "Admin",
-        last_edited_at: timestamp,
+    const fieldCategories: { [key: string]: string } = {
+        first_name: "personal", last_name: "personal", mid_name: "personal", suffix: "personal", nickname: "personal",
+        course: "academic", major: "academic", thesis: "academic",
+        barangay: "contact", city: "contact", province: "contact",
+      contact_num: "contact",
+        fathers_name: "family", mothers_name: "family", guardians_name: "family",
     };
 
-    try {
-      //TODO: api endpoint
+    const formMapping: { [key: string]: string } = {
+        fname: "first_name", lname: "last_name", mname: "mid_name", suffix: "suffix", nickname: "nickname",
+        course: "course", major: "major", thesis: "thesis",
+        barangay: "barangay", city: "city", province: "province",
+      contactNum: "contact_num",
+        father: "fathers_name", mother: "mothers_name", guardian: "guardians_name",
+    };
 
-      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, ...updates } : g));
-      setSelectedStudent((prev: any) => ({ ...prev, ...updates }));
-      setIsEditing(false);
+    const normalizeValue = (value: unknown) => String(value ?? "").trim();
 
-      toast.success("Student details updated successfully.");
-    } catch (error) {
-      console.error("Save Edit Error:", error);
-      toast.error("Failed to save changes. The server might be down or unreachable.");
+    const getCurrentValue = (dataKey: string) => {
+      if (selectedStudent && dataKey in selectedStudent) {
+        return selectedStudent[dataKey];
+      }
+
+      if (selectedStudent?.studentDetail && dataKey in selectedStudent.studentDetail) {
+        return selectedStudent.studentDetail[dataKey];
+      }
+
+      return "";
+    };
+
+    for (const [formKey, dataKey] of Object.entries(formMapping)) {
+      const formControl = formElement.elements.namedItem(formKey);
+      if (!formControl) {
+        continue;
+      }
+
+      const submittedValue = normalizeValue(formData.get(formKey));
+      const currentValue = normalizeValue(getCurrentValue(dataKey));
+      const category = fieldCategories[dataKey];
+
+      if (!category || submittedValue === currentValue) {
+        continue;
+      }
+
+      if (!dataByCategory[category]) {
+        dataByCategory[category] = {};
+      }
+
+      dataByCategory[category][dataKey] = submittedValue;
     }
+
+    if (Object.keys(dataByCategory).length === 0) {
+        toast.error("No changes detected.");
+        setIsEditing(false);
+        return;
+    }
+
+    const categories = Object.keys(dataByCategory);
+    if (categories.length > 1) {
+      toast.error("Please save one section at a time.");
+      return;
+    }
+
+    const category = categories[0];
+    const payload = dataByCategory[category];
+
+    try {
+      const res = await adminService.fv_updateStudent(selectedStudent.student_number, category, payload);
+
+      if (!res?.success) {
+        toast.error(`Failed to update ${category} details: ${res?.reason || "Unknown server response"}`);
+        return;
+      }
+
+      const updatedStudent = {
+        ...selectedStudent,
+        ...payload,
+        studentDetail: {
+            ...selectedStudent.studentDetail,
+            ...payload
+        }
+      };
+
+      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? updatedStudent : g));
+      setSelectedStudent(updatedStudent);
+      toast.success(`Updated: ${category}`);
+    } catch (error) {
+      console.error(`Save Edit Error for ${category}:`, error);
+      toast.error(`An error occurred while updating ${category} details.`);
+      return;
+    }
+    
+    setIsEditing(false);
   };
 
   const handlePhotoUpload = async (type: 'grad' | 'creative', file: File) => {

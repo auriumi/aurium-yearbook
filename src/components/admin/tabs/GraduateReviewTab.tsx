@@ -99,18 +99,16 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
   const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
-  const [pendingFormEvent, setPendingFormEvent] = useState<React.FormEvent<HTMLFormElement> | null>(null);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const onSaveInfoClick = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setPendingFormEvent(e);
     setShowInfoSaveConfirm(true);
   };
 
   const confirmSaveInfo = () => {
     if (formRef.current) {
-        handleSaveEdit(pendingFormEvent as any);
+                handleSaveEdit(formRef.current);
     }
     setShowInfoSaveConfirm(false);
   };
@@ -297,7 +295,6 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.studentDetail?.contact_num} className="h-9 text-sm"/></div>
-                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.personal_email} className="h-9 text-sm"/></div>
                                             </div>
                                         </TabsContent>
 

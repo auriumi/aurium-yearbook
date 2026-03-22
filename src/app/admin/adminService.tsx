@@ -156,3 +156,20 @@ export async function toggleScheduleState(booking_id: number) {
         return { success: false };
     }
 }
+
+export const fv_getPaginatedStudents = async (page: number) => {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/finalize/fetch?page=${page}`, {
+             credentials: 'include' 
+        });
+
+        if (!res.ok) throw new Error("API Error");
+
+        const data = await res.json();
+
+        return { success: true, data };
+    } catch (err) {
+        console.error(err);
+        return { success: false };
+    }
+};

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { Student } from "@/types";
+
+import * as adminService from "../app/admin/adminService";
 
 export const ACADEMIC_CONFIG = [
   { name: "GRADUATE SCHOOL", courses: [{ name: "MASTER OF ARTS IN EDUCATION (MAED)" }, { name: "MASTER IN BUSINESS ADMINISTRATION" }, { name: "MASTER IN MANAGEMENT" }] },
@@ -24,36 +27,41 @@ export const STATUS_STEPS = [
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
-export function useGraduateReview(staffUser: any, selectedStudent: any, setSelectedStudent: any, studentsData: any[] = []) {
+export function useGraduateReview(staffUser: any, selectedStudent: any, setSelectedStudent: any) {
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // FIX #1: Replaced 'appliedFilters' object with a simple string to match backend's "simple search" requirement
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
-  
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8; 
 
-  // FIX #2: Renamed 'graduates' to 'allStudents' to prevent Koi's confusion.
-  // 'allStudents' is the master copy, 'students' is the paginated chunk shown on UI.
-  const [allStudents, setAllStudents] = useState(studentsData); 
-  const [students, setStudents] = useState<any[]>([]); 
-  
-  // FIX #3: Kept ONLY 'totalResults'. Removed 'pendingCount' entirely.
+  const [students, setStudents] = useState<Student[]>([]); 
   const [totalResults, setTotalResults] = useState(0);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Synchronize local state with external database props to ensure real-time updates
   useEffect(() => {
-    if (studentsData && studentsData.length > 0) {
-        const currentData = JSON.stringify(allStudents);
-        const newData = JSON.stringify(studentsData);
-        if (currentData !== newData) {
-            setAllStudents(studentsData);
+    const fetchStudents = async () => {
+      setIsLoading(true);
+      try {
+        const res = await adminService.fv_getPaginatedStudents(currentPage);
+        if (!res.success) {
+          setStudents([]);
+          return;
         }
-    }
-  }, [studentsData, allStudents]);
+
+        setStudents(res.data.students);
+        setTotalResults(res.data.total_students);
+
+      } catch (error) {
+        console.error("Failed to fetch students:", error);
+        toast.error("Could not load students.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [currentPage, appliedSearchQuery]);
 
   const handleSearchClick = () => {
       setAppliedSearchQuery(searchQuery.trim());
@@ -63,34 +71,6 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
   const handleSearchKeyDown = (e: any) => {
       if (e.key === 'Enter') handleSearchClick();
   };
-
-  // Process search queries and pagination locally to prevent excessive API calls
-  useEffect(() => {
-      setIsLoading(true);
-
-      setTimeout(() => {
-          let filteredData = [...allStudents];
-
-          if (appliedSearchQuery !== "") {
-              const query = appliedSearchQuery.toLowerCase();
-              filteredData = filteredData.filter(s => 
-                  (s.last_name || "").toLowerCase().includes(query) || 
-                  (s.first_name || "").toLowerCase().includes(query) || 
-                  (s.student_number || "").includes(query)
-              );
-          }
-
-          // Single counter logic applied here
-          setTotalResults(filteredData.length);
-
-          const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-          const paginatedData = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-          setStudents(paginatedData);
-          setIsLoading(false);
-      }, 300); 
-
-  }, [allStudents, appliedSearchQuery, currentPage]);
 
   const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,62 +101,49 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     };
 
     try {
-        // Optimistic UI Update
-        setAllStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, ...updates } : g));
-        setSelectedStudent((prev: any) => ({ ...prev, ...updates }));
-        setIsEditing(false);
-        
-        // Defensive Error Feedback added!
-        // TODO: Await actual backend API call here (e.g., adminService.updateStudent)
-        toast.success("Student details updated successfully.");
+      //TODO: api endpoint
+
+      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, ...updates } : g));
+      setSelectedStudent((prev: any) => ({ ...prev, ...updates }));
+      setIsEditing(false);
+
+      toast.success("Student details updated successfully.");
     } catch (error) {
-        console.error("Save Edit Error:", error);
-        toast.error("Failed to save changes. The server might be down or unreachable.");
+      console.error("Save Edit Error:", error);
+      toast.error("Failed to save changes. The server might be down or unreachable.");
     }
   };
 
   const handlePhotoUpload = async (type: 'grad' | 'creative', file: File) => {
     try {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-           const result = reader.result as string;
-           const updateKey = type === 'grad' ? 'photo_grad' : 'photo_creative';
-           
-           // Optimistic Update
-           setAllStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, [updateKey]: result } : g));
-           setSelectedStudent((prev: any) => ({ ...prev, [updateKey]: result }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        const updateKey = type === 'grad' ? 'photo_grad' : 'photo_creative';
 
-           // Defensive Error Feedback added!
-           // TODO: Await actual backend API call here
-           toast.success("Photo uploaded successfully.");
-        };
-        reader.readAsDataURL(file);
+        //TODO: api endpoint
+
+        setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, [updateKey]: result } : g));
+        setSelectedStudent((prev: any) => ({ ...prev, [updateKey]: result }));
+
+        toast.success("Photo uploaded successfully.");
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
-        console.error("Photo Upload Error:", error);
-        toast.error("Failed to upload photo. Please check your connection.");
+      console.error("Photo Upload Error:", error);
+      toast.error("Failed to upload photo. Please check your connection.");
     }
   };
 
   const handleFinalize = async () => {
-    const timestamp = new Date().toLocaleString();
-    const update = { 
-        status: "verified", 
-        statusStep: 5, 
-        last_edited_by: staffUser?.name || "Admin", 
-        last_edited_at: timestamp 
-    };
-    
     try {
-        // Optimistic Update
-        setAllStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, ...update } : g));
-        setSelectedStudent((prev: any) => ({ ...prev, ...update }));
+      //const res = await adminService.finalizeStudent(selectedStudent.id);
+      // fetchStudents(); 
 
-        // Defensive Error Feedback added!
-        // TODO: Await actual backend API call here
-        toast.success("Student successfully verified and finalized.");
+      toast.success("Student successfully verified and finalized.");
     } catch (error) {
-        console.error("Finalize Error:", error);
-        toast.error("Failed to verify student. Server is currently unavailable.");
+      console.error("Finalize Error:", error);
+      toast.error("Failed to verify student. Server is currently unavailable.");
     }
   };
 

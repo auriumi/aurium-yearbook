@@ -29,9 +29,16 @@ interface VerificationTabProps {
   setSelectedStudent: (student: any) => void;
 }
 
+const getObjectKey = (url: string): string => {
+    if (typeof url !== 'string') return "";
+    const findStr = `/aurium/`;
+    const idx = url.indexOf(findStr);
+    if (idx === -1) return "";
+    return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
+}
+
 export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStudent }: VerificationTabProps) {
-  
-  // FIX: Removed 'pendingCount' to match the updated hook and backend requirement of using a single counter.
+
   const {
     searchQuery, setSearchQuery,
     currentPage, setCurrentPage,
@@ -177,16 +184,16 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         ${selectedStudent?.id === student.id ? "bg-amber-50 border-amber-300 shadow-sm ring-1 ring-amber-400" : "bg-white border-stone-200 hover:ring-1 hover:ring-amber-300"}`}
                                 >
                                     <Avatar className="h-8 w-8 shadow-sm">
-                                        <AvatarImage src={student.photo} />
+                                        <AvatarImage src={getObjectKey(student.studentDetail.photo_url) || "https://github.com/shadcn.png"} />
                                         <AvatarFallback className="text-[10px] bg-stone-100 text-stone-500">
-                                            {(student.fname || student.first_name || "U").charAt(0)}
+                                            {(student.first_name).charAt(0)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-xs font-bold truncate leading-snug ${selectedStudent?.id === student.id ? 'text-amber-900' : 'text-stone-800'}`}>
-                                            {student.lname || student.last_name}, {student.fname || student.first_name}
+                                            {student.last_name}, {student.first_name}
                                         </p>
-                                        <p className="text-[10px] text-stone-500 font-mono leading-none mt-0.5">{student.idNumber || student.student_number}</p>
+                                        <p className="text-[10px] text-stone-500 font-mono leading-none mt-0.5">{student.student_number}</p>
                                     </div>
                                     <ChevronRight size={14} className={`shrink-0 ${selectedStudent?.id === student.id ? "text-amber-500" : "text-stone-300"}`} />
                                 </button>
@@ -334,7 +341,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                     <div className="w-full flex flex-col items-center mt-1">
                                         <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">
                                             <div className="w-40 h-40 xl:w-56 xl:h-56 bg-white p-2.5 shadow-xl border border-stone-200 relative z-10 rounded-md">
-                                                <img src={selectedStudent.photo} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
+                                                <img src={getObjectKey(selectedStudent.studentDetail.photo_url) || "https://github.com/shadcn.png"} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
                                                 <div className="absolute -left-3 top-5 bottom-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
                                                 <div className="absolute -right-3 bottom-5 top-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
                                             </div>
@@ -342,8 +349,8 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
 
                                         <div className="text-center relative z-10 px-2 w-full mb-3">
                                             <h2 className="text-xl xl:text-2xl font-black text-stone-900 uppercase leading-tight tracking-tight">
-                                                {selectedStudent.lname || selectedStudent.last_name},<br/> 
-                                                {selectedStudent.fname || selectedStudent.first_name} {selectedStudent.mname || selectedStudent.mid_name}
+                                                {selectedStudent.last_name},<br/> 
+                                                {selectedStudent.first_name} {selectedStudent.mname || selectedStudent.mid_name}
                                                 {selectedStudent.suffix && <span className="ml-1">{selectedStudent.suffix}</span>}
                                             </h2>
                                             <p className="text-amber-600 font-serif italic text-sm xl:text-base mt-1 font-medium">"{selectedStudent.nickname}"</p>
@@ -355,7 +362,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                             <MapPin size={14}/> Contact Details
                                         </h3>
                                         <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
-                                            <InfoField label="Home Address" value={selectedStudent.details?.address || (selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
+                                            <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
                                             <div className="grid grid-cols-2 gap-2">
                                                 <InfoField label="Mobile Number" value={selectedStudent.details?.contactNum || selectedStudent.studentDetail?.contact_num} icon={Phone} />
                                                 <InfoField label="Personal Email" value={selectedStudent.details?.personalEmail || selectedStudent.personal_email} icon={Mail} />
@@ -520,14 +527,14 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             <div 
                                 className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
                                 onClick={() => {
-                                    const refUrl = selectedStudent?.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : selectedStudent?.photo;
+                                    const refUrl = getObjectKey(selectedStudent.studentDetail.photo_url) || "https://github.com/shadcn.png";
                                     if (refUrl) setEnlargedImage(refUrl);
                                 }}
                             >
                                 <div className="w-full aspect-[4/5] bg-stone-100 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
-                                    {selectedStudent?.studentDetail?.photo_url || selectedStudent?.photo ? (
+                                    {selectedStudent?.studentDetail?.photo_url ? (
                                         <>
-                                            <img src={selectedStudent?.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : selectedStudent?.photo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
+                                            <img src={getObjectKey(selectedStudent.studentDetail.photo_url) || "https://github.com/shadcn.png"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
                                                 <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Search size={14}/> Enlarge</div>
                                             </div>
@@ -539,9 +546,9 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                     )}
                                 </div>
                                 <div className="w-full mt-5 mb-2 px-2 text-center">
-                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'bg-green-500' : 'bg-stone-200'}`}></div>
-                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'text-green-600' : 'text-stone-400'}`}>
-                                        {selectedStudent?.photo || selectedStudent?.studentDetail?.photo_url ? 'Uploaded ✓' : 'No Reference'}
+                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.studentDetail?.photo_url ? 'bg-green-500' : 'bg-stone-200'}`}></div>
+                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.studentDetail?.photo_url ? 'text-green-600' : 'text-stone-400'}`}>
+                                        {selectedStudent?.studentDetail?.photo_url ? 'Uploaded ✓' : 'No Reference'}
                                     </span>
                                 </div>
                             </div>

@@ -19,6 +19,32 @@ export interface StudentRecord {
   };
 }
 
+interface ScheduleBooking {
+    id: number;
+    student_number: number;
+    booking_day_id: number;
+    period: "AM" | "PM";
+    created_at: string;
+    student?: {
+        first_name?: string;
+        last_name?: string;
+        photo_url?: string;
+        photoUrl?: string;
+        studentAuth?: {
+            status?: string;
+        };
+    };
+}
+
+interface ScheduleDay {
+    id: number;
+    date: string;
+    is_open: boolean;
+    max_morning_cap: number;
+    max_afternoon_cap: number;
+    bookings?: ScheduleBooking[];
+}
+
 export function useScanner() {
   const [scanInput, setScanInput] = useState("");
   const [scanResult, setScanResult] = useState<"idle" | "success" | "error">("idle");
@@ -29,6 +55,7 @@ export function useScanner() {
   // --- REAL DATA STATES ---
   const [sessionOptions, setSessionOptions] = useState<{label: string, date: string, session: "AM"|"PM"}[]>([]);
   const [currentSessionKey, setCurrentSessionKey] = useState<string>(""); 
+    const [schedules, setSchedules] = useState<ScheduleDay[]>([]);
   const [localStudentDB, setLocalStudentDB] = useState<StudentRecord[]>([]);
   const [isLoadingDB, setIsLoadingDB] = useState(false);
   
@@ -38,81 +65,77 @@ export function useScanner() {
   const selectedDate = currentSessionKey ? currentSessionKey.substring(0, 10) : "";
   const selectedSession = currentSessionKey ? currentSessionKey.substring(11) as "AM" | "PM" : "AM";
 
+  const loadSchedules = useCallback(async () => {
+      try {
+          setIsLoadingDB(true);
+          const data = await adminService.fetchSchedule();
+
+          if (!Array.isArray(data)) {
+              setSchedules([]);
+              setSessionOptions([]);
+              return;
+          }
+
+          const mappedSchedules = data as ScheduleDay[];
+          setSchedules(mappedSchedules);
+
+          const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
+          mappedSchedules.forEach((day) => {
+              const dayDate = day.date?.substring(0, 10);
+              if (!dayDate) return;
+
+              if (day.max_morning_cap > 0) {
+                  options.push({ label: `${dayDate} - Morning (AM)`, date: dayDate, session: "AM" });
+              }
+              if (day.max_afternoon_cap > 0) {
+                  options.push({ label: `${dayDate} - Afternoon (PM)`, date: dayDate, session: "PM" });
+              }
+          });
+
+          setSessionOptions(options);
+          if (options.length > 0 && !currentSessionKey) {
+              setCurrentSessionKey(`${options[0].date}-${options[0].session}`);
+          }
+      } catch (error) {
+          console.error("Failed to load schedules for scanner", error);
+          toast.error("Could not load session options.");
+      } finally {
+          setIsLoadingDB(false);
+      }
+  }, [currentSessionKey]);
+
   // --- INITIALIZATION: FETCH AVAILABLE SCHEDULES ---
   useEffect(() => {
-      const loadSchedules = async () => {
-          try {
-              // TODO: Ensure adminService.getAllSchedules() returns the array of schedules
-              const res = await adminService.getAllSchedules(); 
-              if (res.success && res.data) {
-                  // Transform API data into dropdown options
-                  const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
-                  res.data.forEach((day: any) => {
-                      // Only add options if the session has a capacity > 0
-                      if (day.max_morning_cap > 0) {    
-                          options.push({ label: `${day.date.substring(0, 10)} - Morning (AM)`, date: day.date.substring(0, 10), session: "AM" });
-                      }
-                      if (day.max_afternoon_cap > 0) {
-                          options.push({ label: `${day.date.substring(0, 10)} - Afternoon (PM)`, date: day.date.substring(0, 10), session: "PM" });
-                      }
-                  });
-                  setSessionOptions(options);
-                  
-                  // Auto-select the first available session if none is selected
-                  if (options.length > 0 && !currentSessionKey) {
-                      setCurrentSessionKey(`${options[0].date}-${options[0].session}`);
-                  }
-              }
-          } catch (error) {
-              console.error("Failed to load schedules for scanner", error);
-              toast.error("Could not load session options.");
-          }
-      };
       loadSchedules();
-  }, []);
+  }, [loadSchedules]);
 
-  // --- FETCH ROSTER WHEN SESSION CHANGES ---
+  // --- BUILD ROSTER FROM FETCHED SCHEDULE BOOKINGS ---
   useEffect(() => {
       if (!selectedDate || !selectedSession) return;
 
-      const fetchRoster = async () => {
-          setIsLoadingDB(true);
-          try {
-              // TODO: You might need an endpoint to get specific bookings, or filter from getAllSchedules
-              const res = await adminService.getAllSchedules();
-              if (res.success && res.data) {
-                  const targetDay = res.data.find((d: any) => d.date.startsWith(selectedDate));
-                  
-                  if (targetDay && targetDay.bookings) {
-                      // Filter bookings by AM/PM
-                      const sessionBookings = targetDay.bookings.filter((b: any) => b.period === selectedSession);
-                      
-                      // Map backend data to our StudentRecord format
-                      const formattedRoster: StudentRecord[] = sessionBookings.map((b: any) => ({
-                          id: b.student_number,
-                          name: `${b.student.first_name} ${b.student.last_name}`,
-                          photo: b.student.photoUrl || "https://github.com/shadcn.png",
-                          // Normalize API status to our UI status
-                          status: b.student.studentAuth.status === "ATTENDED" ? "attended" : "pending",
-                          timeIn: b.student.studentAuth.status === "ATTENDED" ? "Logged In" : undefined,
-                          schedule: { date: selectedDate, session: selectedSession }
-                      }));
-                      
-                      setLocalStudentDB(formattedRoster);
-                  } else {
-                      setLocalStudentDB([]); // No bookings found
-                  }
-              }
-          } catch (error) {
-              console.error("Failed to load roster", error);
-              toast.error("Failed to load student roster for this session.");
-          } finally {
-              setIsLoadingDB(false);
-          }
-      };
+      const targetDay = schedules.find((day) => day.date?.startsWith(selectedDate));
+      const bookings = targetDay?.bookings ?? [];
+      const sessionBookings = bookings.filter((booking) => booking.period === selectedSession);
 
-      fetchRoster();
-  }, [currentSessionKey, selectedDate, selectedSession]);
+      const formattedRoster: StudentRecord[] = sessionBookings.map((booking) => {
+          const firstName = booking.student?.first_name ?? "";
+          const lastName = booking.student?.last_name ?? "";
+          const fullName = `${firstName} ${lastName}`.trim() || "Unknown Student";
+          const rawStatus = booking.student?.studentAuth?.status;
+          const status: StudentRecord["status"] = rawStatus === "ATTENDED" ? "attended" : "pending";
+
+          return {
+              id: String(booking.student_number),
+              name: fullName,
+              photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
+              status,
+              timeIn: status === "attended" ? "Logged In" : undefined,
+              schedule: { date: selectedDate, session: selectedSession }
+          };
+      });
+
+      setLocalStudentDB(formattedRoster);
+  }, [schedules, selectedDate, selectedSession]);
 
   // --- AUDIO PLAYER HELPER ---
   const playAudio = useCallback((type: "success" | "error") => {
@@ -134,7 +157,8 @@ export function useScanner() {
 
   // --- CORE SCAN LOGIC (Live Backend Interaction) ---
   const processScan = async (idToScan: string) => {
-    if (!idToScan || !currentSessionKey) return;
+        const normalizedId = idToScan?.trim();
+        if (!normalizedId || !currentSessionKey) return;
 
     // UI Reset Helper
     const triggerReset = () => {
@@ -145,13 +169,13 @@ export function useScanner() {
         }, 3000);
     };
 
-    const studentRecord = localStudentDB.find(s => s.id === idToScan);
+    const studentRecord = localStudentDB.find(s => s.id === normalizedId);
 
     // ERROR 1: ID not found in the current roster
     if (!studentRecord) {
         setScanResult("error");
         setErrorMessage("ID not registered for this specific session.");
-        setScannedStudent({ id: idToScan, name: "Unknown ID", status: "pending", schedule: { date: selectedDate, session: selectedSession }});
+        setScannedStudent({ id: normalizedId, name: "Unknown ID", status: "pending", schedule: { date: selectedDate, session: selectedSession }});
         playAudio("error"); 
         triggerReset(); 
         return;
@@ -172,9 +196,8 @@ export function useScanner() {
         // We pause the camera briefly while processing
         setIsCameraActive(false);
         
-        // TODO: Ensure this endpoint exists in adminService to mark attendance
-        const response = await adminService.overrideStudentSchedule(selectedDate, selectedSession, idToScan);
-        
+        const response = await adminService.overrideStudentScheduleByNumber(normalizedId);
+
         if (response.success) {
             // SUCCESS
             setScanResult("success");

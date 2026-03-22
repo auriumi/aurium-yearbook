@@ -157,6 +157,37 @@ export async function toggleScheduleState(booking_id: number) {
     }
 }
 
+export async function overrideStudentScheduleByNumber(studentNumber: string | number) {
+    try {
+        const res = await fetch(
+            `${baseUrl}/api/admin/scan/override?id=${encodeURIComponent(String(studentNumber))}`,
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        let data: any = null;
+        try {
+            data = await res.json();
+        } catch {
+            data = null;
+        }
+
+        if (!res.ok) {
+            return {
+                success: false,
+                reason: data?.reason || "Server rejected scan."
+            };
+        }
+
+        return { success: true, data };
+    } catch (err) {
+        console.error("Server error: ", err);
+        return { success: false, reason: "Cannot connect to the server at the moment" };
+    }
+}
+
 export const fv_getPaginatedStudents = async (page: number) => {
     try {
         const res = await fetch(`${baseUrl}/api/admin/finalize/fetch?page=${page}`, {

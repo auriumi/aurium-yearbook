@@ -31,11 +31,12 @@ interface VerificationTabProps {
 
 export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStudent }: VerificationTabProps) {
   
+  // FIX: Removed 'pendingCount' to match the updated hook and backend requirement of using a single counter.
   const {
     searchQuery, setSearchQuery,
     currentPage, setCurrentPage,
     handleSearchClick, handleSearchKeyDown,
-    students, totalResults, pendingCount, isLoading, ITEMS_PER_PAGE,
+    students, totalResults, isLoading, ITEMS_PER_PAGE,
     isEditing, setIsEditing,
     handleSaveEdit, handlePhotoUpload, handleFinalize,
   } = useGraduateReview(staffUser, selectedStudent, setSelectedStudent);
@@ -123,8 +124,9 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             Graduate Verification
                         </h2>
                     </div>
-                    <Badge variant="secondary" className={`text-[9px] px-2 py-0.5 whitespace-nowrap shadow-sm ${pendingCount === 0 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                        {pendingCount} Pending
+                    {/* FIX: Now uses totalResults to adhere to the single counter policy */}
+                    <Badge variant="secondary" className="text-[9px] px-2 py-0.5 whitespace-nowrap shadow-sm bg-amber-100 text-amber-800">
+                        {totalResults} Records
                     </Badge>
                 </div>
                 <p className="text-[9px] text-stone-500 leading-snug">

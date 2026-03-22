@@ -295,8 +295,8 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Province</Label><Input name="province" defaultValue={selectedStudent.studentDetail?.province} className="h-9 text-sm"/></div>
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.details?.contactNum || selectedStudent.studentDetail?.contact_num} className="h-9 text-sm"/></div>
-                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.details?.personalEmail || selectedStudent.studentDetail?.personal_email} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.studentDetail?.contact_num} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.personal_email} className="h-9 text-sm"/></div>
                                             </div>
                                         </TabsContent>
 
@@ -362,10 +362,10 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                             <MapPin size={14}/> Contact Details
                                         </h3>
                                         <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
-                                            <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
+                                            <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
                                             <div className="grid grid-cols-2 gap-2">
-                                                <InfoField label="Mobile Number" value={selectedStudent.details?.contactNum || selectedStudent.studentDetail?.contact_num} icon={Phone} />
-                                                <InfoField label="Personal Email" value={selectedStudent.details?.personalEmail || selectedStudent.personal_email} icon={Mail} />
+                                                <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} />
+                                                <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
                                             </div>
                                         </div>
                                     </div>

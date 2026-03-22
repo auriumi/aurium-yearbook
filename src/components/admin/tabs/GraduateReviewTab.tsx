@@ -286,6 +286,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         <TabsContent value="academic" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Course</Label><Input name="course" defaultValue={selectedStudent.course} className="h-9 text-sm"/></div>
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Major</Label><Input name="major" defaultValue={selectedStudent.major} className="h-9 text-sm"/></div>
+                                            <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Thesis Title</Label><Input name="thesis" defaultValue={selectedStudent.thesis_title} className="h-9 text-sm"/></div>
                                         </TabsContent>
 
                                         <TabsContent value="contact" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
@@ -389,7 +390,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 <InfoField label="Major" value={selectedStudent.major} />
                                                 <InfoField label="ID Number" value={selectedStudent.idNumber || selectedStudent.student_number} />
                                                 <div className="col-span-2 mt-1">
-                                                    <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.details?.thesis || selectedStudent.studentDetail?.thesis_title || ''}"`} icon={FileText} fullWidth />
+                                                    <InfoField label="Thesis / Capstone Title" value={`${selectedStudent.thesis_title || ''}`} icon={FileText} fullWidth />
                                                 </div>
                                             </div>
                                         </div>

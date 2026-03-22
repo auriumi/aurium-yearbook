@@ -86,7 +86,9 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         course: "academic", major: "academic", thesis: "academic",
         barangay: "contact", city: "contact", province: "contact",
       contact_num: "contact",
-        fathers_name: "family", mothers_name: "family", guardians_name: "family",
+        fathers_title: "family", fathers_name: "family",
+        mothers_title: "family", mothers_name: "family",
+        guardians_title: "family", guardians_name: "family",
     };
 
     const formMapping: { [key: string]: string } = {
@@ -94,7 +96,9 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         course: "course", major: "major", thesis: "thesis",
         barangay: "barangay", city: "city", province: "province",
       contactNum: "contact_num",
-        father: "fathers_name", mother: "mothers_name", guardian: "guardians_name",
+        fathers_title: "fathers_title", father: "fathers_name",
+        mothers_title: "mothers_title", mother: "mothers_name",
+        guardians_title: "guardians_title", guardian: "guardians_name",
     };
 
     const normalizeValue = (value: unknown) => String(value ?? "").trim();

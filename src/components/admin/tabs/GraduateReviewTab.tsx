@@ -304,25 +304,22 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
                                                     <Label className="text-amber-700 font-bold text-[10px] uppercase tracking-wider">Father's Name</Label>
                                                     <div className="flex gap-2">
-                                                        <Input name="fathers_prefix" placeholder="Prefix (Mr.)" defaultValue={selectedStudent.studentDetail?.fathers_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="fathers_title" placeholder="Title (Mr.)" defaultValue={selectedStudent.studentDetail?.fathers_title} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                         <Input name="father" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.father || selectedStudent.studentDetail?.fathers_name} className="flex-1 h-9 text-sm"/>
-                                                        <Input name="fathers_suffix" placeholder="Suffix (Jr.)" defaultValue={selectedStudent.studentDetail?.fathers_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                     </div>
                                                 </div>
                                                 <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
                                                     <Label className="text-amber-700 font-bold text-[10px] uppercase tracking-wider">Mother's Full Maiden Name</Label>
                                                     <div className="flex gap-2">
-                                                        <Input name="mothers_prefix" placeholder="Prefix (Mrs.)" defaultValue={selectedStudent.studentDetail?.mothers_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="mothers_title" placeholder="Title (Mrs.)" defaultValue={selectedStudent.studentDetail?.mothers_title} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                         <Input name="mother" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.mother || selectedStudent.studentDetail?.mothers_name} className="flex-1 h-9 text-sm"/>
-                                                        <Input name="mothers_suffix" placeholder="Suffix" defaultValue={selectedStudent.studentDetail?.mothers_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                     </div>
                                                 </div>
                                                 <div className="p-4 bg-stone-50 rounded-xl border border-stone-200 space-y-2">
                                                     <Label className="text-stone-500 font-bold text-[10px] uppercase tracking-wider">Guardian's Name (If Applicable)</Label>
                                                     <div className="flex gap-2">
-                                                        <Input name="guardians_prefix" placeholder="Prefix" defaultValue={selectedStudent.studentDetail?.guardians_prefix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
+                                                        <Input name="guardians_title" placeholder="Title" defaultValue={selectedStudent.studentDetail?.guardians_title} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                         <Input name="guardian" placeholder="First Name, M.I., Last Name" defaultValue={selectedStudent.details?.guardian || selectedStudent.studentDetail?.guardians_name} className="flex-1 h-9 text-sm"/>
-                                                        <Input name="guardians_suffix" placeholder="Suffix" defaultValue={selectedStudent.studentDetail?.guardians_suffix} className="w-[20%] md:w-24 h-9 text-sm text-center"/>
                                                     </div>
                                                 </div>
                                             </div>
@@ -405,18 +402,18 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 {/* Combining Prefix, Name, Suffix in UI */}
                                                 <InfoField 
                                                     label="Father's Name" 
-                                                    value={formatParentName(selectedStudent.studentDetail?.fathers_prefix, selectedStudent.details?.father || selectedStudent.studentDetail?.fathers_name, selectedStudent.studentDetail?.fathers_suffix)} 
+                                                    value={formatParentName(selectedStudent.studentDetail?.fathers_title, selectedStudent.details?.father || selectedStudent.studentDetail?.fathers_name)} 
                                                 />
                                                 <InfoField 
                                                     label="Mother's Name" 
-                                                    value={formatParentName(selectedStudent.studentDetail?.mothers_prefix, selectedStudent.details?.mother || selectedStudent.studentDetail?.mothers_name, selectedStudent.studentDetail?.mothers_suffix)} 
+                                                    value={formatParentName(selectedStudent.studentDetail?.mothers_title, selectedStudent.details?.mother || selectedStudent.studentDetail?.mothers_name)} 
                                                 />
                                                 
                                                 {(selectedStudent.details?.guardian && selectedStudent.details?.guardian !== "N/A") || (selectedStudent.studentDetail?.guardians_name && selectedStudent.studentDetail?.guardians_name !== "N/A") ? (
                                                     <div className="col-span-1 md:col-span-2 mt-1">
                                                         <InfoField 
                                                             label="Guardian's Name" 
-                                                            value={formatParentName(selectedStudent.studentDetail?.guardians_prefix, selectedStudent.details?.guardian || selectedStudent.studentDetail?.guardians_name, selectedStudent.studentDetail?.guardians_suffix)} 
+                                                            value={formatParentName(selectedStudent.studentDetail?.guardians_title, selectedStudent.details?.guardian || selectedStudent.studentDetail?.guardians_name)} 
                                                             fullWidth 
                                                         />
                                                     </div>
@@ -435,9 +432,12 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isEditing} className="h-9 px-4 text-xs border-stone-300 text-stone-600 hover:bg-white hover:text-amber-700 bg-white rounded-lg">
                                 <Edit3 size={14} className="mr-1.5"/> Edit Info
                             </Button>
+                            {/*
                             <Button variant="secondary" onClick={() => setIsPhotoModalOpen(true)} className="h-9 px-4 text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200 shadow-sm rounded-lg">
                                 <ImageIcon size={14} className="mr-1.5"/> Manage Photos
                             </Button>
+                            */
+                            }
                         </div>
 
                         <Button 

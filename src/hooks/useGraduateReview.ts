@@ -49,6 +49,11 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
           return;
         }
 
+        if (res.data.students.length === 0) {
+          setStudents([]);
+          return;
+        }
+
         setStudents(res.data.students);
         setTotalResults(res.data.total_students);
 

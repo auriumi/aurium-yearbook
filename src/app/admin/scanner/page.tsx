@@ -36,10 +36,10 @@ export default function ScannerPage() {
   } = useScanner();
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col lg:flex-row font-sans overflow-hidden">
+    <div className="h-screen bg-stone-950 text-stone-100 flex flex-col lg:flex-row font-sans overflow-hidden">
       
       {/* LEFT: SCANNER AREA (60%) */}
-      <div className="flex-1 flex flex-col relative border-r border-stone-800">
+      <div className="flex-1 flex flex-col relative border-r border-stone-800 min-h-0 overflow-hidden">
         
         {/* Header Overlay */}
         <div className="absolute top-0 left-0 w-full p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center z-20 gap-4 pointer-events-none">
@@ -57,12 +57,18 @@ export default function ScannerPage() {
                         <SelectValue placeholder="Select Session" />
                     </SelectTrigger>
                     <SelectContent className="bg-stone-900 border-stone-700 text-stone-200">
-                        {SESSION_OPTIONS.map(opt => (
+                    {SESSION_OPTIONS.length > 0 ? (
+                        SESSION_OPTIONS.map(opt => (
                             <SelectItem key={`${opt.date}-${opt.session}`} value={`${opt.date}-${opt.session}`}>
                                 {opt.label}
                             </SelectItem>
-                        ))}
-                    </SelectContent>
+                        ))
+                    ) : (
+                        <SelectItem value="loading" disabled>
+                            Loading sessions...
+                        </SelectItem>
+                    )}
+                </SelectContent>
                 </Select>
             </div>
         </div>
@@ -177,10 +183,11 @@ export default function ScannerPage() {
       </div>
 
       {/* RIGHT: ATTENDANCE LIST (40%) */}
-      <div className="w-full lg:w-[450px] bg-stone-900 flex flex-col border-l border-stone-800 shadow-2xl z-20">
+      {/* Container constrained to enforce internal scrolling for large lists */}
+      <div className="w-full lg:w-[450px] flex-1 lg:flex-none bg-stone-900 flex flex-col border-l border-stone-800 shadow-2xl z-20 min-h-0 overflow-hidden">
         
         {/* Stats Header */}
-        <div className="p-6 bg-stone-900 border-b border-stone-800">
+        <div className="p-6 bg-stone-900 border-b border-stone-800 shrink-0">
             <h3 className="font-bold text-white mb-4 flex items-center gap-2">
                 <ListFilter className="w-5 h-5 text-amber-500"/> Attendance: {selectedSession} Session
             </h3>
@@ -200,8 +207,8 @@ export default function ScannerPage() {
             </div>
         </div>
 
-        {/* Filter Tabs - Updated to match the status variables */}
-        <div className="px-6 pt-4">
+        {/* Filter Tabs */}
+        <div className="px-6 pt-4 shrink-0">
             <Tabs defaultValue="all" className="w-full" onValueChange={(val) => setFilter(val as any)}>
                 <TabsList className="w-full bg-stone-800">
                     <TabsTrigger value="all" className="flex-1 text-xs">All</TabsTrigger>
@@ -211,9 +218,9 @@ export default function ScannerPage() {
             </Tabs>
         </div>
 
-        {/* Scrollable List */}
-        <ScrollArea className="flex-1 p-6">
-            <div className="space-y-2">
+        {/* Scrollable List container configured to force content to remain within the visible window */}
+        <ScrollArea className="flex-1 h-0 w-full">
+            <div className="space-y-2 p-6">
                 {displayedList.map((student) => (
                     <div 
                         key={student.id} 
@@ -263,7 +270,7 @@ export default function ScannerPage() {
         </ScrollArea>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-stone-900 border-t border-stone-800 text-center">
+        <div className="p-4 bg-stone-900 border-t border-stone-800 text-center shrink-0">
             <Button variant="ghost" className="w-full text-stone-500 hover:text-white hover:bg-stone-800 text-xs">
                 Export Attendance Report
             </Button>
@@ -280,7 +287,7 @@ export default function ScannerPage() {
           100% { top: 100%; opacity: 0; }
         }
       `}</style>
-
+    
     </div>
   );
 }

@@ -8,7 +8,7 @@ export const STATUS_STEPS = [
   { id: 2, label: "APPROVED", color: "bg-blue-500" },        
   { id: 3, label: "BOOKED", color: "bg-orange-500" },        
   { id: 4, label: "ATTENDED", color: "bg-purple-500" },      
-  { id: 5, label: "FULLY VERIFIED", color: "bg-green-600" }, 
+  { id: 5, label: "FULLY_VERIFIED", color: "bg-green-600" }, 
 ];
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);

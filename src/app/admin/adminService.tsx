@@ -194,3 +194,31 @@ export async function fv_updateStudent(studentId: number, type: string, data: an
         return { success: false, reason: "Cannot connect to the server at the moment" };
     }
 }
+
+export async function fv_finalizeStudent(studentId: string | number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/finalize/verify?id=${encodeURIComponent(String(studentId))}`, {
+            method: "PATCH",
+            credentials: 'include'
+        });
+
+        let responseData: any = null;
+        try {
+            responseData = await res.json();
+        } catch {
+            responseData = null;
+        }
+
+        if (!res.ok) {
+            return {
+                success: false,
+                reason: responseData?.reason || "Failed to finalize student"
+            };
+        }
+
+        return { success: true, data: responseData };
+    } catch (err) {
+        console.error(err);
+        return { success: false, reason: "Cannot connect to the server at the moment" };
+    }
+}

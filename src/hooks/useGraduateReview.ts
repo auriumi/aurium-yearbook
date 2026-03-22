@@ -203,8 +203,27 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
 
   const handleFinalize = async () => {
     try {
-      //const res = await adminService.finalizeStudent(selectedStudent.id);
-      // fetchStudents(); 
+      const finalizeId = selectedStudent?.student_number;
+
+      if (!finalizeId) {
+        toast.error("Cannot finalize: student ID is missing.");
+        return;
+      }
+
+      const res = await adminService.fv_finalizeStudent(finalizeId);
+
+      if (!res?.success) {
+        toast.error(res?.reason || "Failed to verify student.");
+        return;
+      }
+
+      const updatedStudent = {
+        ...selectedStudent,
+        status: "verified"
+      };
+
+      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, status: "verified" } : g));
+      setSelectedStudent(updatedStudent);
 
       toast.success("Student successfully verified and finalized.");
     } catch (error) {

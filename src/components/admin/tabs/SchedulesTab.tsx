@@ -36,7 +36,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
 
   // Capacity override states
   const [isEditCapacityOpen, setIsEditCapacityOpen] = useState(false);
-  const [editingCapacity, setEditingCapacity] = useState<{date: string, session: 'am'|'pm', value: number} | null>(null);
+  const [editingCapacity, setEditingCapacity] = useState<{date: string, session: 'AM'|'PM', value: number, limit: number, id: number } | null>(null);
   const [isSessionClosed, setIsSessionClosed] = useState(false);
   const [previousCapacity, setPreviousCapacity] = useState(50);
 
@@ -55,6 +55,11 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   // Global loading state for network requests
   const [isProcessing, setIsProcessing] = useState(false);
 
+    const hasInvalidCapacity =
+        !editingCapacity ||
+        !Number.isFinite(editingCapacity.value) ||
+        editingCapacity.value < editingCapacity.limit;
+
   // Formats a raw date string into "Month DD" (e.g., "March 03")
   const formatModalDate = (dateString: string | undefined) => {
       if (!dateString) return "";
@@ -62,14 +67,14 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   };
 
   // Opens the capacity modal and determines initial lock state
-  const openCapacityDialog = (date: string, session: 'am'|'pm', currentSlots: number) => {
-    setEditingCapacity({ date, session, value: currentSlots });
+  const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
+    setEditingCapacity({ date, session, value: currentSlots, limit: limit, id: id });
     setIsSessionClosed(currentSlots === 0);
     setPreviousCapacity(currentSlots > 0 ? currentSlots : 50); // Remember the last valid capacity
     setIsEditCapacityOpen(true);
   };
 
-  // Toggles the session between open and closed (0 capacity) UNSAFE! (This shouldn't set the capacity to zero as it contains data within it)
+  /* Toggles the session between open and closed (0 capacity) UNSAFE! (This shouldn't set the capacity to zero as it contains data within it)
   const toggleSessionStatus = () => {
       if (isSessionClosed) {
           setIsSessionClosed(false);
@@ -80,6 +85,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
           setEditingCapacity(prev => prev ? { ...prev, value: 0 } : null);
       }
   };
+  */
 
   const openRosterDialog = (date: string, session: 'morning' | 'afternoon', students: any[]) => {
     setActiveRoster({ date, session, students });
@@ -124,34 +130,39 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
   };
 
   // Processes the server request to update the schedule capacity
-  /*
   const executeCapacityUpdate = async () => {
-    if (!editingCapacity) return;
+        if (!editingCapacity) return;
+
+        if (!Number.isFinite(editingCapacity.value) || editingCapacity.value < editingCapacity.limit) {
+                toast.error(`Capacity must be at least ${editingCapacity.limit}.`);
+                return;
+        }
+
+        const nextCapacity = Math.trunc(editingCapacity.value);
     
     setIsProcessing(true);
     try {
         const response = await adminService.updateScheduleCapacity(
-            editingCapacity.date, 
+            editingCapacity.id, 
             editingCapacity.session, 
-            editingCapacity.value
+            nextCapacity
         );
         
         if (response.success) {
-            alert("Capacity limit updated successfully.");
+            toast.success("Capacity limit updated successfully.");
             await fetchSchedules();
             setIsEditCapacityOpen(false);
             setEditingCapacity(null);
         } else {
-            alert(response.reason || "Failed to update capacity limit.");
+            toast.error(response.reason || "Failed to update capacity limit.");
         }
     } catch (error) {
         console.error("Capacity update error:", error);
-        alert("Unable to communicate with the server. Please check your connection.");
+        toast.error("Unable to communicate with the server. Please check your connection.");
     } finally {
         setIsProcessing(false);
     }
   };
-  */
 
   /* Processes the server request to manually assign a student to a schedule
   const executeStudentOverride = async () => {
@@ -368,7 +379,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                                     size="sm" 
                                                     className="h-8 w-8 p-0 text-stone-400 hover:text-amber-700" 
                                                     title="Edit Capacity"
-                                                    onClick={() => openCapacityDialog(day.date, session.toLowerCase() as 'am'|'pm', slots)}
+                                                    onClick={() => openCapacityDialog(day.date, session.toUpperCase() as 'AM'|'PM', slots, bookedCount, day.id)}
                                                 >
                                                     <Edit3 className="h-4 w-4" />
                                                 </Button>
@@ -491,7 +502,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                 <DialogHeader>
                     <DialogTitle>Modify Session Capacity</DialogTitle>
                     <DialogDescription>
-                        Updating the limit for {editingCapacity?.session === 'am' ? 'Morning' : 'Afternoon'} session on {formatModalDate(editingCapacity?.date)}.
+                        Updating the limit for {editingCapacity?.session === 'AM' ? 'Morning' : 'Afternoon'} session on {formatModalDate(editingCapacity?.date)}.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -501,33 +512,26 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                          <div className="flex gap-3">
                              <Input 
                                 type="number" 
-                                value={editingCapacity.value} 
+                                value={Number.isFinite(editingCapacity.value) ? editingCapacity.value : ""} 
                                 onChange={(e) => setEditingCapacity({
                                     ...editingCapacity, 
-                                    value: parseInt(e.target.value) || 0
+                                    value: e.target.value === "" ? Number.NaN : Number(e.target.value)
                                 })} 
-                                disabled={isSessionClosed}
                                 className="flex-1"
                             />
-                             <Button 
-                                 variant="outline" 
-                                 className={`w-[100px] gap-2 ${isSessionClosed ? 'text-amber-600 border-amber-600 hover:bg-amber-50' : 'text-stone-600 border-stone-300 hover:bg-stone-50'}`}
-                                 onClick={toggleSessionStatus}
-                             >
-                                 {isSessionClosed ? <><Unlock className="w-4 h-4"/> Open</> : <><Lock className="w-4 h-4"/> Close</>}
-                             </Button>
                          </div>
-                         <p className="text-xs text-stone-500">
-                            Current Limit: <strong>{editingCapacity.value}</strong>
-                         </p>
+                          <p className="text-sm text-stone-500">
+                              Cannot be lower than the number of booked students:{" "}  
+                              <span className="font-bold">{editingCapacity?.limit}</span>
+                          </p>
                     </div>
                 )}
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsEditCapacityOpen(false)} disabled={isProcessing}>Cancel</Button>
                     <Button 
-                        onClick={() => {}} //TODO 
-                        disabled={isProcessing}
+                        onClick={() => executeCapacityUpdate()} 
+                        disabled={isProcessing || hasInvalidCapacity}
                         className="bg-amber-600 hover:bg-amber-700"
                     >
                         {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Updating...</> : "Confirm Update"}

@@ -157,6 +157,27 @@ export async function toggleScheduleState(booking_id: number) {
     }
 }
 
+export async function updateScheduleCapacity(booking_id: number, session: string, new_cap: number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/book/update?id=${booking_id}`, {
+            method: 'PATCH',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session, new_cap }),
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            const body = await res.json();
+            return { success: false, reason: body.reason }; 
+        }
+
+        return { success: true };
+    } catch(err) {
+        console.error("Server error: ", err);
+        return { success: false };
+    }
+}
+
 export async function overrideStudentScheduleByNumber(studentNumber: string | number) {
     try {
         const res = await fetch(

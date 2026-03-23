@@ -295,6 +295,10 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Mobile</Label><Input name="contactNum" defaultValue={selectedStudent.studentDetail?.contact_num} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Student Email</Label><Input name="schoolEmail" defaultValue={selectedStudent.school_email} className="h-9 text-sm"/></div>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Personal Email</Label><Input name="personalEmail" defaultValue={selectedStudent.personal_email} className="h-9 text-sm"/></div>
                                             </div>
                                         </TabsContent>
 

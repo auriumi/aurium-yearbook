@@ -39,32 +39,32 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      setIsLoading(true);
-      try {
-        const res = await adminService.fv_getPaginatedStudents(currentPage);
-        if (!res.success) {
-          setStudents([]);
-          return;
-        }
-
-        if (res.data.students.length === 0) {
-          setStudents([]);
-          return;
-        }
-
-        setStudents(res.data.students);
-        setTotalResults(res.data.total_students);
-
-      } catch (error) {
-        console.error("Failed to fetch students:", error);
-        toast.error("Could not load students.");
-      } finally {
-        setIsLoading(false);
+  const fetchStudents = async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.fv_getPaginatedStudents(currentPage);
+      if (!res.success) {
+        setStudents([]);
+        return;
       }
-    };
 
+      if (res.data.students.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      setStudents(res.data.students);
+      setTotalResults(res.data.total_students);
+
+    } catch (error) {
+      console.error("Failed to fetch students:", error);
+      toast.error("Could not load students.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStudents();
   }, [currentPage, appliedSearchQuery]);
 
@@ -85,7 +85,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         first_name: "personal", last_name: "personal", mid_name: "personal", suffix: "personal", nickname: "personal",
         course: "academic", major: "academic", thesis: "academic",
         barangay: "contact", city: "contact", province: "contact",
-      contact_num: "contact",
+      contact_num: "contact", school_email: "contact", personal_email: "contact",
         fathers_title: "family", fathers_name: "family",
         mothers_title: "family", mothers_name: "family",
         guardians_title: "family", guardians_name: "family",
@@ -95,7 +95,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         fname: "first_name", lname: "last_name", mname: "mid_name", suffix: "suffix", nickname: "nickname",
         course: "course", major: "major", thesis: "thesis",
         barangay: "barangay", city: "city", province: "province",
-      contactNum: "contact_num",
+      contactNum: "contact_num", schoolEmail: "school_email", personalEmail: "personal_email",
         fathers_title: "fathers_title", father: "fathers_name",
         mothers_title: "mothers_title", mother: "mothers_name",
         guardians_title: "guardians_title", guardian: "guardians_name",
@@ -216,7 +216,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         toast.error(res?.reason || "Failed to verify student.");
         return;
       }
-
+      
       const updatedStudent = {
         ...selectedStudent,
         status: "verified"
@@ -224,6 +224,8 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
 
       setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, status: "verified" } : g));
       setSelectedStudent(updatedStudent);
+      await fetchStudents();
+      setSelectedStudent(null);
 
       toast.success("Student successfully verified and finalized.");
     } catch (error) {

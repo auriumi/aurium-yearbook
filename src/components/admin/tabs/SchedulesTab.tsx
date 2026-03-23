@@ -439,8 +439,20 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                         {/* Render student list based on selected filter */}
                         {[
                             { value: 'all', filterFn: () => true },
-                            { value: 'attended', filterFn: (s: any) => s.status === 'ATTENDED' },
-                            { value: 'pending', filterFn: (s: any) => s.status !== 'ATTENDED' },
+                            {
+                                value: 'attended',
+                                filterFn: (s: any) => {
+                                    const status = s?.student?.studentAuth?.status ?? s?.status;
+                                    return status === 'ATTENDED' || status === 'FULLY_VERIFIED';
+                                },
+                            },
+                            {
+                                value: 'pending',
+                                filterFn: (s: any) => {
+                                    const status = s?.student?.studentAuth?.status ?? s?.status;
+                                    return status !== 'ATTENDED' && status !== 'FULLY_VERIFIED';
+                                },
+                            },
                         ].map(tab => (
                             <TabsContent key={tab.value} value={tab.value} className="mt-0">
                                 <ScrollArea className="h-[400px] pr-4">
@@ -453,6 +465,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                                 </div>
                                                 
                                                 {/* Status Badges */}
+                                                {student.student.studentAuth.status === 'FULLY_VERIFIED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
                                                 {student.student.studentAuth.status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
                                                 {student.student.studentAuth.status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
                                             </div>

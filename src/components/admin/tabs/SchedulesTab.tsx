@@ -407,6 +407,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                                     <Users className="mr-1.5 h-3.5 w-3.5" /> View Roster
                                                 </Button>
 
+                                                {/* TODO: hidden for now, make it functional
                                                 <Button 
                                                     variant="outline" 
                                                     size="sm" 
@@ -415,6 +416,7 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                                                 >
                                                     <UserPlus className="mr-1.5 h-3.5 w-3.5" /> Override
                                                 </Button>
+                                                */}
                                             </div>
                                         </div>
                                     )

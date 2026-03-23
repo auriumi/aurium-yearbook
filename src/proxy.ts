@@ -14,10 +14,15 @@ function getSauceKey() {
 export async function proxy(req: NextRequest) {
     const session_token = req.cookies.get('token')?.value;
     const { pathname } = req.nextUrl;
+    const isQueuePath = pathname === '/queue' || pathname.startsWith('/queue/');
 
     if (!session_token) {
         if (pathname.startsWith('/admin/') && pathname !== '/admin') {
             return NextResponse.redirect(new URL('/admin', req.url));
+        }
+
+        if (isQueuePath) {
+            return NextResponse.redirect(new URL('/', req.url));
         }
 
         if (pathname.startsWith('/student')) {
@@ -52,11 +57,16 @@ export async function proxy(req: NextRequest) {
                 return NextResponse.redirect(new URL('/', req.url));
             }
         }
+
+        //queue validator (admin only)
+        if (isQueuePath && !payload.is_admin) {
+            return NextResponse.redirect(new URL('/', req.url));
+        }
         return NextResponse.next();
 
     } catch (err) {
         console.error("Sauce is a bit saucy: ", err);
-        const login_url = pathname.startsWith('/admin') ? '/admin' : '/auth/login';
+        const login_url = isQueuePath ? '/' : pathname.startsWith('/admin') ? '/admin' : '/auth/login';
         
         //clear invalid cookie to be safe
         const res = NextResponse.redirect(new URL(login_url, req.url));
@@ -71,6 +81,8 @@ export const config = {
     '/admin/:path*',
     '/staff/:path*',
     '/student/:path*',
+        '/queue',
+        '/queue/:path*',
     '/auth/login'
   ],
 }

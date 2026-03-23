@@ -334,42 +334,41 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                         ) : (
                             <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-white">
                                 
-                                {/* Photo & Contact Overview - Fit strictly to avoid overflow */}
-                                <div className="w-full md:w-[42%] bg-[#fcfbfa] p-5 lg:p-6 flex flex-col items-center justify-between border-r border-stone-200 relative shrink-0 overflow-hidden">
-                                    
-                                    <div className="w-full flex flex-col items-center mt-1">
-                                        <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">
-                                            <div className="w-40 h-40 xl:w-56 xl:h-56 bg-white p-2.5 shadow-xl border border-stone-200 relative z-10 rounded-md">
-                                                <img src={getObjectKey(selectedStudent.studentDetail.photo_url) || "https://github.com/shadcn.png"} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
-                                                <div className="absolute -left-3 top-5 bottom-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
-                                                <div className="absolute -right-3 bottom-5 top-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
+                                {/* Photo & Contact Overview - Optimized spacing to prevent scroll when possible */}
+                                    <div className="w-full md:w-[42%] bg-[#fcfbfa] p-4 lg:p-5 flex flex-col items-center justify-between border-r border-stone-200 relative shrink-0 overflow-y-auto custom-scrollbar">
+                                        
+                                        <div className="w-full flex flex-col items-center mt-1">
+                                            <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">
+                                                <div className="w-40 h-40 xl:w-56 xl:h-56 bg-white p-2.5 shadow-xl border border-stone-200 relative z-10 rounded-md">
+                                                    <img src={getObjectKey(selectedStudent.studentDetail?.photo_url) || "https://github.com/shadcn.png"} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
+                                                    <div className="absolute -left-3 top-5 bottom-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
+                                                    <div className="absolute -right-3 bottom-5 top-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-center relative z-10 px-2 w-full mb-3">
+                                                <h2 className="text-xl xl:text-2xl font-black text-stone-900 uppercase leading-tight tracking-tight">
+                                                    {selectedStudent.last_name},<br/> 
+                                                    {selectedStudent.first_name} {selectedStudent.mname || selectedStudent.mid_name}
+                                                    {selectedStudent.suffix && <span className="ml-1">{selectedStudent.suffix}</span>}
+                                                </h2>
+                                                <p className="text-amber-600 font-serif italic text-sm xl:text-base mt-1 font-medium">"{selectedStudent.nickname}"</p>
                                             </div>
                                         </div>
 
-                                        <div className="text-center relative z-10 px-2 w-full mb-3">
-                                            <h2 className="text-xl xl:text-2xl font-black text-stone-900 uppercase leading-tight tracking-tight">
-                                                {selectedStudent.last_name},<br/> 
-                                                {selectedStudent.first_name} {selectedStudent.mname || selectedStudent.mid_name}
-                                                {selectedStudent.suffix && <span className="ml-1">{selectedStudent.suffix}</span>}
-                                            </h2>
-                                            <p className="text-amber-600 font-serif italic text-sm xl:text-base mt-1 font-medium">"{selectedStudent.nickname}"</p>
+                                       <div className="w-full space-y-1.5 mt-auto border-t border-stone-200/60 pt-2">
+                                            <h3 className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest pb-1 border-b border-stone-100">
+                                                <MapPin size={14}/> Contact Details
+                                            </h3>
+                                            <div className="bg-white p-2.5 rounded-xl border border-stone-100 shadow-sm space-y-1.5">
+                                                <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
+                                                <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} fullWidth />
+                                                <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} fullWidth />
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div className="w-full space-y-2 mt-auto border-t border-stone-200/60 pt-3">
-                                        <h3 className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest pb-1 border-b border-stone-100">
-                                            <MapPin size={14}/> Contact Details
-                                        </h3>
-                                            <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
-                                            <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
-                                            <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} fullWidth />
-                                            <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} fullWidth />
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {/* Deep Academic & Personal Details */}
-                                <div className="flex-1 p-4 xl:p-6 bg-white flex flex-col justify-center overflow-hidden">
+                               <div className="flex-1 p-4 xl:p-6 bg-white flex flex-col justify-start overflow-y-auto custom-scrollbar">
                                     <div className="space-y-4 xl:space-y-6 max-w-2xl mx-auto w-full">
                                         
                                         <div className="space-y-3">
@@ -429,7 +428,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                         )}
                     </div>
                     
-                    <CardFooter className="p-4 border-t bg-stone-50 flex justify-between items-center z-20 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+                    <CardFooter className="py-2 px-5 h-[56px] border-t bg-stone-50 flex justify-between items-center z-20 flex-shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isEditing} className="h-9 px-4 text-xs border-stone-300 text-stone-600 hover:bg-white hover:text-amber-700 bg-white rounded-lg">
                                 <Edit3 size={14} className="mr-1.5"/> Edit Info

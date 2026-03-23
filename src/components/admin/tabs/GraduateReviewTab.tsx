@@ -340,8 +340,8 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                         ) : (
                             <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-white">
                                 
-                                {/* Photo & Contact Overview - Fit strictly to avoid overflow */}
-                                <div className="w-full md:w-[42%] bg-[#fcfbfa] p-5 lg:p-6 flex flex-col items-center justify-between border-r border-stone-200 relative shrink-0 overflow-hidden">
+                               {/* Photo & Contact Overview - Scrollable to prevent hidden content */}
+                                <div className="w-full md:w-[42%] bg-[#fcfbfa] p-5 lg:p-6 flex flex-col items-center justify-between border-r border-stone-200 relative shrink-0 overflow-y-auto custom-scrollbar">
                                     
                                     <div className="w-full flex flex-col items-center mt-1">
                                         <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">

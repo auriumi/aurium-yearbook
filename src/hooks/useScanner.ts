@@ -117,21 +117,30 @@ export function useScanner() {
       const bookings = targetDay?.bookings ?? [];
       const sessionBookings = bookings.filter((booking) => booking.period === selectedSession);
 
-      const formattedRoster: StudentRecord[] = sessionBookings.map((booking) => {
-          const firstName = booking.student?.first_name ?? "";
-          const lastName = booking.student?.last_name ?? "";
-          const fullName = `${firstName} ${lastName}`.trim() || "Unknown Student";
-          const rawStatus = booking.student?.studentAuth?.status;
-          const status: StudentRecord["status"] = (rawStatus === "ATTENDED" || rawStatus === "FULLY_VERIFIED") ? "attended" : "pending";
+      const seenStudentIds = new Set<string>();
+      const formattedRoster: StudentRecord[] = [];
 
-          return {
-              id: String(booking.student_number),
-              name: fullName,
-              photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
-              status,
-              timeIn: status === "attended" ? "Logged In" : undefined,
-              schedule: { date: selectedDate, session: selectedSession }
-          };
+      sessionBookings.forEach((booking) => {
+          const studentIdStr = String(booking.student_number);
+          
+          if (!seenStudentIds.has(studentIdStr)) {
+              seenStudentIds.add(studentIdStr);
+              
+              const firstName = booking.student?.first_name ?? "";
+              const lastName = booking.student?.last_name ?? "";
+              const fullName = `${firstName} ${lastName}`.trim() || "Unknown Student";
+              const rawStatus = booking.student?.studentAuth?.status;
+              const status: StudentRecord["status"] = (rawStatus === "ATTENDED" || rawStatus === "FULLY_VERIFIED") ? "attended" : "pending";
+
+              formattedRoster.push({
+                  id: studentIdStr,
+                  name: fullName,
+                  photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
+                  status,
+                  timeIn: status === "attended" ? "Logged In" : undefined,
+                  schedule: { date: selectedDate, session: selectedSession }
+              });
+          }
       });
 
       setLocalStudentDB(formattedRoster);

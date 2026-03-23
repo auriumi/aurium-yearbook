@@ -108,7 +108,13 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
 
   const confirmSaveInfo = () => {
     if (formRef.current) {
-        handleSaveEdit(formRef.current);
+        const syntheticEvent = {
+            preventDefault: () => {},
+            currentTarget: formRef.current,
+            target: formRef.current
+        } as unknown as React.FormEvent<HTMLFormElement>;
+
+        handleSaveEdit(syntheticEvent);
     }
     setShowInfoSaveConfirm(false);
   };
@@ -361,10 +367,10 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                             <MapPin size={14}/> Contact Details
                                         </h3>
                                             <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
-                                            <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
-                                            <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} fullWidth />
-                                            <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} fullWidth />
-                                        </div>
+                                                <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
+                                                <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} fullWidth />
+                                                <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} fullWidth />
+                                            </div>
                                     </div>
                                 </div>
 

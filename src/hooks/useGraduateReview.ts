@@ -45,20 +45,22 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       const res = await adminService.fv_getPaginatedStudents(currentPage);
       if (!res.success) {
         setStudents([]);
-        return;
+        return [] as Student[];
       }
 
       if (res.data.students.length === 0) {
         setStudents([]);
-        return;
+        return [] as Student[];
       }
 
       setStudents(res.data.students);
       setTotalResults(res.data.total_students);
+      return res.data.students as Student[];
 
     } catch (error) {
       console.error("Failed to fetch students:", error);
       toast.error("Could not load students.");
+      return [] as Student[];
     } finally {
       setIsLoading(false);
     }
@@ -168,8 +170,9 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         }
       };
 
-      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? updatedStudent : g));
-      setSelectedStudent(updatedStudent);
+      const refreshedStudents = await fetchStudents();
+      const refreshedSelectedStudent = refreshedStudents.find((g: any) => g.id === selectedStudent.id);
+      setSelectedStudent(refreshedSelectedStudent ?? updatedStudent);
       toast.success(`Updated: ${category}`);
     } catch (error) {
       console.error(`Save Edit Error for ${category}:`, error);

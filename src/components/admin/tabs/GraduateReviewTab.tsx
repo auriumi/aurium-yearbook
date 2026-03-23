@@ -108,7 +108,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
 
   const confirmSaveInfo = () => {
     if (formRef.current) {
-                handleSaveEdit(formRef.current);
+        handleSaveEdit(formRef.current);
     }
     setShowInfoSaveConfirm(false);
   };

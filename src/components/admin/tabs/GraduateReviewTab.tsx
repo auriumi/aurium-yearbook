@@ -360,12 +360,10 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         <h3 className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest pb-1 border-b border-stone-100">
                                             <MapPin size={14}/> Contact Details
                                         </h3>
-                                        <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
+                                            <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm space-y-2.5">
                                             <InfoField label="Home Address" value={(selectedStudent.studentDetail?.barangay ? `${selectedStudent.studentDetail.barangay}, ${selectedStudent.studentDetail.city.trim()}, ${selectedStudent.studentDetail.province}` : "")} icon={Home} fullWidth />
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} />
-                                                <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
-                                            </div>
+                                            <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} fullWidth />
+                                            <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} fullWidth />
                                         </div>
                                     </div>
                                 </div>

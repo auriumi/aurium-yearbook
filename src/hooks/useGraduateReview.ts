@@ -173,7 +173,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       const refreshedStudents = await fetchStudents();
       const refreshedSelectedStudent = refreshedStudents.find((g: any) => g.id === selectedStudent.id);
       setSelectedStudent(refreshedSelectedStudent ?? updatedStudent);
-      toast.success(`Updated: ${category}`);
+      toast.success(`Updated ${category.toWellFormed()} details`);
     } catch (error) {
       console.error(`Save Edit Error for ${category}:`, error);
       toast.error(`An error occurred while updating ${category} details.`);

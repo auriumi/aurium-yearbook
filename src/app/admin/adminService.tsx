@@ -253,3 +253,19 @@ export async function fv_finalizeStudent(studentId: string | number) {
         return { success: false, reason: "Cannot connect to the server at the moment" };
     }
 }
+
+export async function getLiveQueue(period: string) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/queue/list?period=${period}`, {
+            credentials: 'include'
+        });
+
+        const data = await res.json();
+        if (!res.ok) return { success: false, reason: "Failed to fetch queue" };
+
+        return { success: true, data };
+    } catch(err) {
+        console.error("Server error: ", err);
+        return { success: false };
+    }
+}

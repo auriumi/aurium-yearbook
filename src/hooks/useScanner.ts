@@ -122,7 +122,7 @@ export function useScanner() {
           const lastName = booking.student?.last_name ?? "";
           const fullName = `${firstName} ${lastName}`.trim() || "Unknown Student";
           const rawStatus = booking.student?.studentAuth?.status;
-          const status: StudentRecord["status"] = rawStatus === "ATTENDED" ? "attended" : "pending";
+          const status: StudentRecord["status"] = (rawStatus === "ATTENDED" || rawStatus === "FULLY_VERIFIED") ? "attended" : "pending";
 
           return {
               id: String(booking.student_number),

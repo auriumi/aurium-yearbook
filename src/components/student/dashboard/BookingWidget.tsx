@@ -85,12 +85,13 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
               </p>
               <p className="text-xs text-stone-400 italic mt-2 mb-4 md:mb-0">Present this QR to the attendance officer.</p>
               
-              {/* CHANGE SCHEDULE BUTTON */}
+              {/* CHANGE SCHEDULE BUTTON -- TODO: Closed for now to avoid any potential issues, refine for the upcoming year end session <3
               <div className="pt-2">
                   <Button variant="outline" size="sm" onClick={handleRebookClick} className="text-amber-700 border-amber-300 hover:bg-amber-50">
                       <Edit className="w-3.5 h-3.5 mr-2" /> Change Schedule
                   </Button>
               </div>
+              */}
             </div>
 
             <div className="flex flex-col items-center gap-2 bg-white p-4 rounded-lg border border-stone-200 shadow-sm shrink-0">

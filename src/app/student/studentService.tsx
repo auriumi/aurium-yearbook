@@ -75,6 +75,32 @@ export async function updateBook(booking_id: number, booking_day_id: number, per
     }
 };
 
+export async function saveSolicitations(
+    sponsors: Array<{ type: "PERSON" | "COMPANY"; name: string; title: string }>
+) {
+    try {
+        const res = await fetch(`${baseUrl}/api/student/solicitation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sponsors }),
+            credentials: "include"
+        });
+
+        if (!res.ok) {
+            return {
+                success: false,
+                reason: "Something went wrong!"
+            };
+        }
+
+        return { success: true };
+
+    } catch (err) {
+        console.error(err);
+        return { success: false, reason: "Network error while saving solicitations." };
+    }
+};
+
 //request uplaod url from backend
 export async function getUploadUrl(file: File) {
     const ext = file.name.split(".").pop();

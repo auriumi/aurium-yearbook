@@ -9,8 +9,7 @@ import { ProfileCard } from "@/components/student/dashboard/ProfileCard";
 import { BookingWidget } from "@/components/student/dashboard/BookingWidget";
 import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";
 import { YearbookPreview } from "@/components/student/dashboard/YearbookPreview";
-// BAG-O: I-import ang bag-ong component
-import { SolicitationWidget } from "@/components/student/dashboard/SolicitationWidget"; 
+import { SolicitationWidget, SolicitationSponsorPayload } from "@/components/student/dashboard/SolicitationWidget"; 
 import { useRouter } from "next/navigation"; 
 import toast from "react-hot-toast";
 
@@ -79,8 +78,7 @@ export default function StudentDashboard() {
       fetchSchedules();
     }
   };
-
-  // BINALIK: Ang original nga onLogout function para safe sa backend ni Koi
+  
   const onLogout = async () => {
     const res = await fetch(`${baseUrl}/api/auth/logout`, {
       credentials: 'include'
@@ -102,17 +100,16 @@ export default function StudentDashboard() {
     }
   };
 
-  // BAG-O: Function para sa pag-save sa Sponsors
-  const handleSaveSponsors = async (newSponsors: string[]) => {
-    return new Promise<void>((resolve) => {
-      // Simulate API call delay
-      setTimeout(async () => {
-        
-        //TODO: save sponsorship
-        toast.success("Solicitation sponsors saved successfully!");
-        resolve();
-      }, 1000);
-    });
+  const handleSaveSponsors = async (sponsors: SolicitationSponsorPayload[]) => {
+    const result = await studentService.saveSolicitations(sponsors);
+
+    if (!result.success) {
+      toast.error(result.reason || "Failed to save sponsors.");
+      return;
+    }
+
+    toast.success("Solicitations saved successfully.");
+    await fetchStudent();
   };
 
   if (!user) {
@@ -158,7 +155,6 @@ export default function StudentDashboard() {
         {/*  2-Column Layout Setup */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* LEFT COLUMN: Profile ra ang ibilin diri */}
           <div className="flex flex-col gap-6 lg:col-span-1">
             <ProfileCard
               fullName={`${user.first_name} ${user.last_name}`}
@@ -169,7 +165,7 @@ export default function StudentDashboard() {
             />
           </div>
 
-          {/* RIGHT COLUMN: Booking Widget ug Solicitation Widget (Landscape format) */}
+          {/* RIGHT COLUMN: Booking Widget and Solicitation Widget (Landscape format) */}
           <div className="flex flex-col gap-6 lg:col-span-2">
             <BookingWidget
               bookingList={schedule}
@@ -178,11 +174,9 @@ export default function StudentDashboard() {
               onBook={handleBooking}
             />
 
-            {/* TODO: non-functional as of yet..
             <SolicitationWidget 
               onSave={handleSaveSponsors}
             />
-            */}
           </div>
 
           {/* BOTTOM FULL WIDTH: Yearbook Teaser */}

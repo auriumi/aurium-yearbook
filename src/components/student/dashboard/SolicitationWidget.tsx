@@ -6,10 +6,16 @@ import toast from "react-hot-toast";
 
 interface SolicitationWidgetProps {
   initialSponsors?: string[];
-  onSave: (sponsors: string[]) => Promise<void>;
+  onSave: (sponsors: SolicitationSponsorPayload[]) => Promise<void>;
 }
 
-type SponsorType = "individual" | "company";
+type SponsorType = "PERSON" | "COMPANY";
+
+export interface SolicitationSponsorPayload {
+  type: SponsorType;
+  name: string;
+  title: string;
+}
 
 interface Sponsor {
   type: SponsorType;
@@ -26,13 +32,13 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
   const parseInitialSponsors = (): Sponsor[] => {
     const defaultSponsors = initialSponsors.length === 4 ? initialSponsors : ["", "", "", ""];
     return defaultSponsors.map(val => {
-      if (!val) return { type: "individual", title: "Mr.", name: "" };
+      if (!val) return { type: "PERSON", title: "Mr.", name: "" };
       for (const t of TITLES) {
         if (val.startsWith(t + " ")) {
-          return { type: "individual", title: t, name: val.substring(t.length + 1) };
+          return { type: "PERSON", title: t, name: val.substring(t.length + 1) };
         }
       }
-      return { type: "company", title: "", name: val };
+      return { type: "COMPANY", title: "", name: val };
     });
   };
 
@@ -47,12 +53,16 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const formattedSponsors = sponsors.map(s => {
-        if (!s.name.trim()) return "";
-        if (s.type === "individual") return `${s.title} ${s.name.trim()}`;
-        return s.name.trim();
+      const payload = sponsors.map((s) => {
+        const trimmedName = s.name.trim();
+        return {
+          type: s.type,
+          name: trimmedName,
+          title: s.type === "PERSON" ? s.title : "",
+        };
       });
-      await onSave(formattedSponsors);
+
+      await onSave(payload);
       setIsEditing(false);
     } catch (error) {
       console.error(error);
@@ -94,7 +104,7 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
             <div className="bg-amber-50/80 border border-amber-100 rounded-lg p-3 flex gap-2 items-start mb-2">
               <Info className="text-amber-600 shrink-0 mt-0.5" size={16} />
               <p className="text-[11px] text-amber-900 leading-relaxed">
-                Choose the sponsor type. For individuals, <strong>select their appropriate title</strong> to ensure correct spelling in the yearbook.
+                Choose the sponsor type. For PERSONs, <strong>select their appropriate title</strong> to ensure correct spelling in the yearbook.
               </p>
             </div>
             
@@ -104,17 +114,17 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Sponsor {index + 1}</span>
                     <div className="flex bg-white border border-stone-200 rounded-md overflow-hidden">
-                      <button onClick={() => handleUpdate(index, "type", "individual")} className={`px-2 py-1 text-[10px] font-medium flex items-center gap-1 transition-colors ${sponsor.type === "individual" ? "bg-amber-100 text-amber-800" : "text-stone-500 hover:bg-stone-50"}`}>
-                        <User size={12} /> Individual
+                      <button onClick={() => handleUpdate(index, "type", "PERSON")} className={`px-2 py-1 text-[10px] font-medium flex items-center gap-1 transition-colors ${sponsor.type === "PERSON" ? "bg-amber-100 text-amber-800" : "text-stone-500 hover:bg-stone-50"}`}>
+                        <User size={12} /> PERSON
                       </button>
-                      <button onClick={() => handleUpdate(index, "type", "company")} className={`px-2 py-1 text-[10px] font-medium flex items-center gap-1 transition-colors border-l border-stone-200 ${sponsor.type === "company" ? "bg-amber-100 text-amber-800" : "text-stone-500 hover:bg-stone-50"}`}>
-                        <Building2 size={12} /> Company
+                      <button onClick={() => handleUpdate(index, "type", "COMPANY")} className={`px-2 py-1 text-[10px] font-medium flex items-center gap-1 transition-colors border-l border-stone-200 ${sponsor.type === "COMPANY" ? "bg-amber-100 text-amber-800" : "text-stone-500 hover:bg-stone-50"}`}>
+                        <Building2 size={12} /> COMPANY
                       </button>
                     </div>
                   </div>
 
                   <div className="flex gap-2">
-                    {sponsor.type === "individual" && (
+                    {sponsor.type === "PERSON" && (
                       <select 
                         value={sponsor.title} 
                         onChange={(e) => handleUpdate(index, "title", e.target.value)}
@@ -125,7 +135,7 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
                     )}
                     <input
                       type="text"
-                      placeholder={sponsor.type === "individual" ? "Full Name" : "Company or Org Name"}
+                      placeholder={sponsor.type === "PERSON" ? "Full Name" : "COMPANY or Org Name"}
                       value={sponsor.name}
                       onChange={(e) => handleUpdate(index, "name", e.target.value)}
                       className="flex-1 h-10 px-3 text-sm border border-stone-200 rounded-md focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-stone-300 w-full"
@@ -158,7 +168,7 @@ export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave 
                     <li key={index} className="flex items-center gap-3 text-sm text-stone-700 bg-stone-50 px-3 py-2.5 rounded-md border border-stone-100">
                       <CheckCircle size={16} className="text-green-500 shrink-0" />
                       <span className="font-medium truncate">
-                        {sponsor.type === "individual" ? `${sponsor.title} ${sponsor.name}` : sponsor.name}
+                        {sponsor.type === "PERSON" ? `${sponsor.title} ${sponsor.name}` : sponsor.name}
                       </span>
                     </li>
                   )

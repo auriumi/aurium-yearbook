@@ -13,36 +13,17 @@ interface YearbookPreviewProps {
 export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
   const stud_detail = user.studentDetail;
 
-  const formatParentNameAsInitial = (nameStr?: string) => {
-    if (!nameStr || nameStr.trim() === "" || nameStr === "N/A") return "N/A";
-    
-    // Split the full name by space
-    const parts = nameStr.trim().split(/\s+/);
-    if (parts.length <= 2) return nameStr; 
-
-    // Extract First, Middle (as initial), and Last
-    const firstName = parts[0];
-    const lastName = parts[parts.length - 1];
-    
-    // Collect all middle parts and get the first letter of the first middle word
-    const middleParts = parts.slice(1, parts.length - 1);
-    const middleInitial = middleParts[0].charAt(0).toUpperCase() + ".";
-
-    return `${firstName} ${middleInitial} ${lastName}`;
-  };
-
   // Safely combines the title (Mr/Mrs/Dr) with the formatted name.
   const formatNameWithTitle = (name?: string, title?: string, defaultTitle?: string) => {
-    const formattedName = formatParentNameAsInitial(name);
-    if (!formattedName || formattedName === "N/A") return "N/A";
+    if (!name || name === "N/A") return "N/A";
     
     const finalTitle = title || defaultTitle || "";
     
     // Check if the name already starts with the title to avoid "Mr. Mr. John"
-    if (finalTitle && !formattedName.toLowerCase().startsWith(finalTitle.toLowerCase().replace(".", ""))) {
-      return `${finalTitle} ${formattedName}`;
+    if (finalTitle && !name.toLowerCase().startsWith(finalTitle.toLowerCase().replace(".", ""))) {
+      return `${finalTitle} ${name}`;
     }
-    return formattedName;
+    return name;
   };
 
   const guardian = stud_detail?.guardians_name && stud_detail.guardians_name.trim() !== "" 

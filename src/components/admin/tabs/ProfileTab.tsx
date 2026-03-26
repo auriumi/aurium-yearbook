@@ -197,6 +197,7 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             </div>
                         </div>
 
+                        {/* TODO: not functional as of yet.
                         <Button 
                             variant="secondary" 
                             size="icon" 
@@ -206,6 +207,7 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             <Camera size={20} className="text-stone-300" />
                         </Button>
                         <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="hidden" />
+                        */}
                     </div>
                     
                     <Badge className="bg-amber-950 text-amber-300 border border-amber-800 hover:bg-amber-950 px-3 py-1 uppercase text-xs tracking-wider">
@@ -249,7 +251,7 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                         </div>
                         
                         <div className="space-y-1 col-span-1 md:col-span-2">
-                             <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">Job Title</div>
+                             <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">Position</div>
                              <div className="flex items-center gap-3">
                                 <Briefcase size={18} className="text-stone-400 shrink-0" /> 
                                 <span className="font-medium text-white truncate">{displayPosition}</span>
@@ -283,11 +285,13 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             </form>
                         ) : (
                             <div className="animate-in fade-in duration-300 flex flex-col sm:flex-row gap-4 w-full">
+                                {/* not functional as of yet, including change password
                                 <Button className="w-full sm:flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold" onClick={handleOpenEdit}>
                                     <UserCog size={18} /> Edit Profile Details
                                 </Button>
-                                <Button variant="outline" className="w-full sm:flex-1 flex items-center justify-center gap-2 border-stone-700 bg-stone-950 text-stone-400 hover:bg-stone-800 hover:text-white" onClick={() => setIsPasswordModalOpen(true)}>
-                                    <Lock size={16} /> Change System Password
+                                */}
+                                <Button variant="outline" className="w-full sm:flex-1 flex items-center justify-center gap-2 border-stone-700 bg-stone-950 text-stone-400 hover:bg-stone-800 hover:text-white" onClick={() => setIsPasswordModalOpen(true)} disabled={true} >
+                                    <Lock size={16} /> Change System Password (In Progress)
                                 </Button>
                             </div>
                         )}

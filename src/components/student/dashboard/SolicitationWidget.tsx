@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Users, Edit3, Save, Info, CheckCircle, Building2, User } from "lucide-react";
 import toast from "react-hot-toast";
+import { StudentSolicitation } from "@/types";
 
 interface SolicitationWidgetProps {
-  initialSponsors?: string[];
+  initialSolicitations?: StudentSolicitation[];
   onSave: (sponsors: SolicitationSponsorPayload[]) => Promise<void>;
 }
 
@@ -24,25 +25,37 @@ interface Sponsor {
 }
 
 const TITLES = ["Mr.", "Mrs.", "Ms.", "Dr.", "Atty.", "Engr.", "Arch.", "Prof.", "Rev.", "Hon."];
+const EMPTY_SPONSORS = ["", "", "", ""];
 
-export function SolicitationWidget({ initialSponsors = ["", "", "", ""], onSave }: SolicitationWidgetProps) {
+export function SolicitationWidget({ initialSolicitations = [], onSave }: SolicitationWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const parseInitialSponsors = (): Sponsor[] => {
-    const defaultSponsors = initialSponsors.length === 4 ? initialSponsors : ["", "", "", ""];
-    return defaultSponsors.map(val => {
-      if (!val) return { type: "PERSON", title: "Mr.", name: "" };
-      for (const t of TITLES) {
-        if (val.startsWith(t + " ")) {
-          return { type: "PERSON", title: t, name: val.substring(t.length + 1) };
-        }
+    const bySlot = new Map<number, StudentSolicitation>();
+    initialSolicitations.forEach((item) => {
+      if (item.slot >= 1 && item.slot <= 4) {
+        bySlot.set(item.slot, item);
       }
-      return { type: "COMPANY", title: "", name: val };
+    });
+
+    return EMPTY_SPONSORS.map((_, index) => {
+      const slotData = bySlot.get(index + 1);
+      if (!slotData) return { type: "PERSON", title: "Mr.", name: "" };
+
+      return {
+        type: slotData.type,
+        title: slotData.type === "PERSON" ? (slotData.title || "Mr.") : "",
+        name: slotData.name || "",
+      };
     });
   };
 
   const [sponsors, setSponsors] = useState<Sponsor[]>(parseInitialSponsors());
+
+  useEffect(() => {
+    setSponsors(parseInitialSponsors());
+  }, [initialSolicitations]);
 
   const handleUpdate = (index: number, field: keyof Sponsor, value: string) => {
     const updated = [...sponsors];

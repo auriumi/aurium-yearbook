@@ -28,6 +28,14 @@ export interface Student {
   quote: string | null;
   created_at: string;
   booking: Booking[];
+  studentSolicitations: StudentSolicitation[];
+}
+
+export interface StudentSolicitation {
+  name: string;
+  title: string;
+  type: "PERSON" | "COMPANY";
+  slot: number;
 }
 
 export interface StduentDetail {

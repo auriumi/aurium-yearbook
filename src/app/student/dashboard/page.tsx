@@ -175,6 +175,7 @@ export default function StudentDashboard() {
             />
 
             <SolicitationWidget 
+              initialSolicitations={user.studentSolicitations}
               onSave={handleSaveSponsors}
             />
           </div>

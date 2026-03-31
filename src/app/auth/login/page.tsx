@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Lock, ArrowRight, Loader2, ArrowLeft, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
@@ -11,14 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
-// Added toast for alerts
-import toast from "react-hot-toast";
-
-// @Koi: Gi-import nako ang new UI Component nato para limpyo ang main file
 import { ForgotPasswordForm } from "./ForgotPasswordForm"; 
 
-// IMPORT KOII'S SERVICE (Make sure this file is in the same folder)
 import * as loginService from "./loginService";
 
 export default function StudentLoginPage() {
@@ -27,9 +22,7 @@ export default function StudentLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // --- UI STATES ---
-  const [showForgotPassword, setShowForgotPassword] = useState(false); // Bag-ong state para mo-toggle sa Forgot Password UI
-
-  // --- KOII'S STATE LOGIC ---
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isPasswordUpdateRequired, setIsPasswordUpdateRequired] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,7 +32,6 @@ export default function StudentLoginPage() {
   const [id, setId] = useState("");
   const [pass, setPass] = useState("");
 
-  // --- KOII'S LOGIN FUNCTION ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -56,7 +48,7 @@ export default function StudentLoginPage() {
               router.push('/student/dashboard');
           }
       } else {
-          toast.error(res.reason || "Invalid ID Number or Password. Please try again.");
+          toast.error(res.reason);
           setIsLoading(false);
           return;
       }

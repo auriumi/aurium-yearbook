@@ -22,6 +22,13 @@ export async function handleLogin(id: string, pass: string, is_admin?: boolean) 
                 }
             } 
 
+            if (res.status == 429) {
+                return {
+                    success: false,
+                    reason: "Too many login attempts, please try again later!"
+                }
+            } 
+
             return {
                 success: false,
                 reason: "Something went wrong in the server."

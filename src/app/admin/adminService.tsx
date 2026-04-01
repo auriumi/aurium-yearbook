@@ -19,7 +19,7 @@ export async function getStaffProfile() {
 
 export async function fetchStudents(page: number) {
     try {
-        const res = await fetch(`${baseUrl}/api/admin/student/fetch?page=${page}`, {
+        const res = await fetch(`${baseUrl}/api/admin/student?page=${page}`, {
              credentials: 'include' 
         });
 
@@ -33,10 +33,9 @@ export async function fetchStudents(page: number) {
     }
 };
 
-export async function searchStudentById(student_number: number) {
+export async function searchStudentById(id: number) {
     try {
-        const res = await fetch(
-            `${baseUrl}/api/admin/student/search?id=${student_number}`, 
+        const res = await fetch(`${baseUrl}/api/admin/student/${id}`, 
             { credentials: 'include' }
         );
         const data = await res.json();
@@ -55,15 +54,14 @@ export async function searchStudentById(student_number: number) {
     }
 };
 
-export async function handleVerify(studentId: number) {
+export async function handleVerify(id: number) {
     try {
-        const res = await fetch(`${baseUrl}/api/admin/student/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: studentId }),
+        const res = await fetch(`${baseUrl}/api/admin/student/${id}`, {
+            method: "PATCH",
             credentials: 'include'
         });
         return !res.ok ? false : true;
+
     } catch (err) {
         console.error(err); 
         return false;

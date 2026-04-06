@@ -209,7 +209,7 @@ export async function overrideStudentScheduleByNumber(studentNumber: string | nu
 
 export const fv_getPaginatedStudents = async (page: number) => {
     try {
-        const res = await fetch(`${baseUrl}/api/admin/finalize/fetch?page=${page}`, {
+        const res = await fetch(`${baseUrl}/api/admin/finalize?page=${page}`, {
              credentials: 'include' 
         });
 
@@ -226,7 +226,7 @@ export const fv_getPaginatedStudents = async (page: number) => {
 
 export async function fv_updateStudent(studentId: number, type: string, data: any) {
     try {
-        const res = await fetch(`${baseUrl}/api/admin/finalize/update/${studentId}?type=${type}`, {
+        const res = await fetch(`${baseUrl}/api/admin/finalize/${studentId}?type=${type}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -247,7 +247,7 @@ export async function fv_updateStudent(studentId: number, type: string, data: an
 
 export async function fv_finalizeStudent(studentId: string | number) {
     try {
-        const res = await fetch(`${baseUrl}/api/admin/finalize/verify?id=${encodeURIComponent(String(studentId))}`, {
+        const res = await fetch(`${baseUrl}/api/admin/finalize?id=${encodeURIComponent(String(studentId))}`, {
             method: "PATCH",
             credentials: 'include'
         });

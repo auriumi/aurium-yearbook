@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMasterlist } from "@/hooks/useMasterlist";
+import * as adminService from "@/app/admin/adminService";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist>;
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
@@ -69,20 +70,17 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
   const handleDeleteRecord = async () => {
       if (!selectedStudent) return;
-      
+       
       setIsDeleting(true);
       try {
-          const res = await fetch(`/api/student/${selectedStudent.id}`, {
-              method: 'DELETE',
-          });
+        const res = adminService.handleDelete(selectedStudent.student_number);
+        if (!res) throw new Error("Failed to delete record");
 
-          if (!res.ok) throw new Error("Failed to delete record");
-
-          toast.success("Student record has been successfully deleted.");
-          setShowDeleteConfirm(false);
-          setSelectedStudent(null);
+        toast.success("Student record has been successfully deleted.");
+        setShowDeleteConfirm(false);
+        setSelectedStudent(null);
           
-          handleLoadClick();
+        handleLoadClick();
       } catch (error) {
           console.error("Deletion error:", error);
           toast.error("Unable to delete the record at this time. Please try again.");

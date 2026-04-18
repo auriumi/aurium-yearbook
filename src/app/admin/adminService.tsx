@@ -81,6 +81,19 @@ export async function handleCancel(studentId: number) {
     }
 }
 
+export async function handleDelete(studentId: number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/student/${studentId}`, {
+            method: "DELETE",
+            credentials: 'include'
+        });
+        return !res.ok ? false : true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
 export async function addSchedule(date: string, am_cap: number, pm_cap: number) {
     const body = { 
         date: date, 

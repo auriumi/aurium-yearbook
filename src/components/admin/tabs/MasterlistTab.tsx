@@ -57,6 +57,23 @@ const EXPORT_COLUMN_GROUPS = [
 
 const DEFAULT_EXPORT_COLUMNS = new Set(["student_number", "first_name", "last_name", "department", "course", "major", "status"]);
 
+const STATUS_LABELS: Record<string, string> = {
+  REGISTERED:     "Registered",
+  APPROVED:       "Approved",
+  BOOKED:         "Booked",
+  ATTENDED:       "Attended",
+  FULLY_VERIFIED: "Fully Verified",
+};
+
+const EXPORT_STATUS_OPTIONS = [
+  { value: "ALL", label: "All Statuses",  color: null },
+  { value: "1",   label: "Registered",    color: "bg-stone-500" },
+  { value: "2",   label: "Approved",      color: "bg-blue-500" },
+  { value: "3",   label: "Booked",        color: "bg-orange-500" },
+  { value: "4",   label: "Attended",      color: "bg-purple-500" },
+  { value: "5",   label: "Fully Verified",color: "bg-green-600" },
+];
+
 export function MasterlistTab(props: MasterlistTabProps) {
   const {
     searchQuery, setSearchQuery, selectedStudent, setSelectedStudent,
@@ -88,6 +105,10 @@ export function MasterlistTab(props: MasterlistTabProps) {
   // Export States
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(DEFAULT_EXPORT_COLUMNS));
+  const [exportDeptFilter, setExportDeptFilter] = useState("ALL");
+  const [exportCourseFilter, setExportCourseFilter] = useState("ALL");
+  const [exportMajorFilter, setExportMajorFilter] = useState("ALL");
+  const [exportStatusFilter, setExportStatusFilter] = useState("ALL");
   const [isExporting, setIsExporting] = useState(false);
 
   const getObjectKey = (url: string): string => {
@@ -243,10 +264,10 @@ export function MasterlistTab(props: MasterlistTabProps) {
     try {
       const query = new URLSearchParams({
         columns: Array.from(selectedColumns).join(","),
-        dept: activeDeptFilter || "ALL",
-        course: activeCourseFilter || "ALL",
-        major: activeMajorFilter || "ALL",
-        status: activeStatusFilter || "ALL",
+        dept: exportDeptFilter,
+        course: exportCourseFilter,
+        major: exportMajorFilter,
+        status: exportStatusFilter,
       });
       const res = await fetch(`${baseUrl}/api/admin/masterlist/export?${query}`, { credentials: "include" });
       if (!res.ok) throw new Error("Export failed");
@@ -255,7 +276,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
         EXPORT_COLUMN_GROUPS.flatMap(g => g.columns.map(c => [c.key, c.label]))
       );
       const labeled = (data as Record<string, any>[]).map(row =>
-        Object.fromEntries(Object.entries(row).map(([k, v]) => [keyToLabel[k] ?? k, v]))
+        Object.fromEntries(Object.entries(row).map(([k, v]) => {
+          const header = keyToLabel[k] ?? k;
+          const value = k === "status" && typeof v === "string" ? (STATUS_LABELS[v] ?? v) : v;
+          return [header, value];
+        }))
       );
       const ws = XLSX.utils.json_to_sheet(labeled);
       const wb = XLSX.utils.book_new();
@@ -284,9 +309,15 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const selectedDeptConfig = ACADEMIC_CONFIG.find((d: any) => d.name === activeDeptFilter);
   const availableCoursesConfig = selectedDeptConfig ? selectedDeptConfig.courses : [];
   const availableCourses = availableCoursesConfig.map((c: any) => c.name);
-  
+
   const selectedCourseConfig = availableCoursesConfig.find((c: any) => c.name === activeCourseFilter);
   const availableMajors = selectedCourseConfig?.majors || [];
+
+  const exportDeptConfig = ACADEMIC_CONFIG.find((d: any) => d.name === exportDeptFilter);
+  const exportCoursesConfig = exportDeptConfig ? exportDeptConfig.courses : [];
+  const exportCourses = exportCoursesConfig.map((c: any) => c.name);
+  const exportCourseConfig = exportCoursesConfig.find((c: any) => c.name === exportCourseFilter);
+  const exportMajors = exportCourseConfig?.majors || [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 w-full overflow-x-hidden">
@@ -877,7 +908,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
         {/* EXPORT DIALOG */}
         <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-            <DialogContent className="max-w-xl p-6 bg-white rounded-xl shadow-2xl border-stone-100">
+            <DialogContent className="max-w-3xl p-6 bg-white rounded-xl shadow-2xl border-stone-100">
                 <DialogHeader className="mb-1">
                     <DialogTitle className="text-xl font-bold text-stone-900 flex items-center gap-2">
                         <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> Export to Excel
@@ -887,21 +918,75 @@ export function MasterlistTab(props: MasterlistTabProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Active filter context */}
-                <div className="flex flex-wrap gap-1.5 py-2 border-y border-stone-100">
-                    {[
-                        { label: "Dept", value: activeDeptFilter },
-                        { label: "Course", value: activeCourseFilter },
-                        { label: "Major", value: activeMajorFilter },
-                        { label: "Status", value: activeStatusFilter },
-                    ].map(f => (
-                        <span key={f.label} className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">
-                            {f.label}: <span className="text-stone-700">{f.value || "ALL"}</span>
-                        </span>
-                    ))}
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-auto">
-                        {selectedColumns.size} col{selectedColumns.size !== 1 ? "s" : ""} selected
-                    </span>
+                {/* Export filters */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-2 border-y border-stone-100">
+                    {/* Department */}
+                    <div className="space-y-1 col-span-2">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Department</span>
+                        <Select value={exportDeptFilter} onValueChange={v => { setExportDeptFilter(v); setExportCourseFilter("ALL"); setExportMajorFilter("ALL"); }}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
+                                <SelectValue placeholder="All Departments" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL" className="text-xs">All Departments</SelectItem>
+                                {ACADEMIC_CONFIG.map((d: any) => (
+                                    <SelectItem key={d.name} value={d.name} className="text-xs">{d.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Course */}
+                    <div className="space-y-1 col-span-2">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Course</span>
+                        <Select value={exportCourseFilter} onValueChange={v => { setExportCourseFilter(v); setExportMajorFilter("ALL"); }} disabled={exportDeptFilter === "ALL"}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500 disabled:opacity-50">
+                                <SelectValue placeholder={exportDeptFilter === "ALL" ? "Select dept first" : "All Courses"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL" className="text-xs">All Courses</SelectItem>
+                                {exportCourses.map((c: string) => (
+                                    <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Major */}
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Major</span>
+                        <Select value={exportMajorFilter} onValueChange={setExportMajorFilter} disabled={exportCourseFilter === "ALL" || exportMajors.length === 0}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500 disabled:opacity-50">
+                                <SelectValue placeholder={exportCourseFilter === "ALL" ? "Select course first" : exportMajors.length === 0 ? "N/A" : "All Majors"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL" className="text-xs">All Majors</SelectItem>
+                                {exportMajors.map((m: string) => (
+                                    <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Status */}
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Status</span>
+                        <Select value={exportStatusFilter} onValueChange={setExportStatusFilter}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {EXPORT_STATUS_OPTIONS.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                        <span className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full shrink-0 ${opt.color ?? "bg-transparent"}`} />
+                                            {opt.label}
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Global actions */}

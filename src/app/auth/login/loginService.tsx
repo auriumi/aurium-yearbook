@@ -1,7 +1,7 @@
 //Auth Module (Login)
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
-export async function handleLogin(id: string, pass: string, is_admin?: boolean) {
+export async function handleLogin(id: string, pass: string, captcha_token: string, is_admin?: boolean) {
     try {
         const res = await fetch(`${baseUrl}/api/auth/login`, {
             method: "POST",
@@ -9,7 +9,8 @@ export async function handleLogin(id: string, pass: string, is_admin?: boolean) 
             body: JSON.stringify({
                 id: id,
                 pass: pass,
-                is_admin: is_admin ? is_admin : false
+                is_admin: is_admin ? is_admin : false,
+                captcha_token,
             }),
             credentials: 'include',
         });

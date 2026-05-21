@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,16 +11,21 @@ import { User, Lock, ArrowRight, Loader2, ArrowLeft, KeyRound, Eye, EyeOff, Aler
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ForgotPasswordForm } from "./ForgotPasswordForm"; 
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
 import * as loginService from "./loginService";
 
 export default function StudentLoginPage() {
   const router = useRouter();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const turnstileSiteKey = process.env.NODE_ENV === "development"
+    ? "1x00000000000000000000AA"
+    : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 
   // --- UI STATES ---
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -34,11 +40,17 @@ export default function StudentLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!captchaToken) {
+      toast.error("Please complete the CAPTCHA before signing in.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await loginService.handleLogin(id, pass);
-      
+      const res = await loginService.handleLogin(id, pass, captchaToken);
+
       if (res.success) {
           toast.success("Successfully logged in!");
           if (res.is_new) {
@@ -48,12 +60,16 @@ export default function StudentLoginPage() {
               router.push('/student/dashboard');
           }
       } else {
+          turnstileRef.current?.reset();
+          setCaptchaToken(null);
           toast.error(res.reason);
           setIsLoading(false);
           return;
       }
 
     } catch (error) {
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       toast.error("Something went wrong. Please check your connection.");
       setIsLoading(false);
     }
@@ -279,10 +295,20 @@ export default function StudentLoginPage() {
                                     </div>
                                 </div>
 
-                                <Button 
-                                    type="submit" 
-                                    disabled={isLoading}
-                                    className="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold h-11 shadow-lg shadow-amber-900/10 mt-4 transition-all"
+                                <div className="flex justify-center">
+                                    <Turnstile
+                                        ref={turnstileRef}
+                                        siteKey={turnstileSiteKey}
+                                        onSuccess={(token) => setCaptchaToken(token)}
+                                        onExpire={() => setCaptchaToken(null)}
+                                        options={{ theme: "light" }}
+                                    />
+                                </div>
+
+                                <Button
+                                    type="submit"
+                                    disabled={isLoading || !captchaToken}
+                                    className="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold h-11 shadow-lg shadow-amber-900/10 mt-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isLoading ? (
                                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>

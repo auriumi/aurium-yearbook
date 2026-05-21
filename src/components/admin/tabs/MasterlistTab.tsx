@@ -2,17 +2,60 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2 } from "lucide-react";
+import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import * as XLSX from "xlsx";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist>;
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
+
+const EXPORT_COLUMN_GROUPS = [
+  { label: "Academic", columns: [
+    { key: "student_number", label: "Student No." },
+    { key: "department",     label: "Department" },
+    { key: "course",         label: "Course" },
+    { key: "major",          label: "Major" },
+    { key: "thesis_title",   label: "Thesis Title" },
+    { key: "status",         label: "Status" },
+    { key: "created_at",     label: "Date Registered" },
+  ]},
+  { label: "Personal", columns: [
+    { key: "last_name",  label: "Last Name" },
+    { key: "first_name", label: "First Name" },
+    { key: "mid_name",   label: "Middle Name" },
+    { key: "nickname",   label: "Nickname" },
+    { key: "suffix",     label: "Suffix" },
+    { key: "birth_date", label: "Birth Date" },
+  ]},
+  { label: "Contact", columns: [
+    { key: "personal_email", label: "Personal Email" },
+    { key: "school_email",   label: "School Email" },
+    { key: "contact_num",    label: "Contact No." },
+  ]},
+  { label: "Address", columns: [
+    { key: "province", label: "Province" },
+    { key: "city",     label: "City" },
+    { key: "barangay", label: "Barangay" },
+  ]},
+  { label: "Family", columns: [
+    { key: "mothers_name",    label: "Mother's Name" },
+    { key: "mothers_title",   label: "Mother's Title" },
+    { key: "fathers_name",    label: "Father's Name" },
+    { key: "fathers_title",   label: "Father's Title" },
+    { key: "guardians_name",  label: "Guardian's Name" },
+    { key: "guardians_title", label: "Guardian's Title" },
+  ]},
+];
+
+const DEFAULT_EXPORT_COLUMNS = new Set(["student_number", "first_name", "last_name", "department", "course", "major", "status"]);
 
 export function MasterlistTab(props: MasterlistTabProps) {
   const {
@@ -41,6 +84,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
   // UX update: New states for the OTP Confirmation workflow
   const [otpConfirmTarget, setOtpConfirmTarget] = useState<'personal' | 'school' | null>(null);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
+
+  // Export States
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set(DEFAULT_EXPORT_COLUMNS));
+  const [isExporting, setIsExporting] = useState(false);
 
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
@@ -169,6 +217,59 @@ export function MasterlistTab(props: MasterlistTabProps) {
       }
   };
 
+  const toggleColumn = (key: string) => {
+    setSelectedColumns(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const toggleGroup = (keys: readonly { key: string }[]) => {
+    const allSelected = keys.every(c => selectedColumns.has(c.key));
+    setSelectedColumns(prev => {
+      const next = new Set(prev);
+      keys.forEach(c => allSelected ? next.delete(c.key) : next.add(c.key));
+      return next;
+    });
+  };
+
+  const handleExport = async () => {
+    if (selectedColumns.size === 0) {
+      toast.error("Please select at least one column to export.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const query = new URLSearchParams({
+        columns: Array.from(selectedColumns).join(","),
+        dept: activeDeptFilter || "ALL",
+        course: activeCourseFilter || "ALL",
+        major: activeMajorFilter || "ALL",
+        status: activeStatusFilter || "ALL",
+      });
+      const res = await fetch(`${baseUrl}/api/admin/masterlist/export?${query}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Export failed");
+      const { data, total } = await res.json();
+      const keyToLabel = Object.fromEntries(
+        EXPORT_COLUMN_GROUPS.flatMap(g => g.columns.map(c => [c.key, c.label]))
+      );
+      const labeled = (data as Record<string, any>[]).map(row =>
+        Object.fromEntries(Object.entries(row).map(([k, v]) => [keyToLabel[k] ?? k, v]))
+      );
+      const ws = XLSX.utils.json_to_sheet(labeled);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Masterlist");
+      XLSX.writeFile(wb, `masterlist_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success(`Exported ${total} records successfully.`);
+      setShowExportDialog(false);
+    } catch {
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const InfoField = ({ label, value, icon: Icon, fullWidth = false }: any) => (
     <div className={`flex flex-col space-y-1 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -200,9 +301,20 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         Secure repository of verified graduates. Monitoring all students from Registration to Final Verification.
                     </p>
                 </div>
-                <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 px-4 py-1.5 text-sm h-fit">
-                    {isLoading ? "Fetching..." : `${totalResults} Records Found`}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowExportDialog(true)}
+                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 shadow-sm h-fit py-1.5"
+                    >
+                        <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                        Export Excel
+                    </Button>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 px-4 py-1.5 text-sm h-fit">
+                        {isLoading ? "Fetching..." : `${totalResults} Records Found`}
+                    </Badge>
+                </div>
             </div>
             
             <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-stone-50/50 p-2 rounded-xl border border-stone-100 min-w-0">
@@ -759,6 +871,103 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             Yes, Delete Record
                         </Button>
                     </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* EXPORT DIALOG */}
+        <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+            <DialogContent className="max-w-xl p-6 bg-white rounded-xl shadow-2xl border-stone-100">
+                <DialogHeader className="mb-1">
+                    <DialogTitle className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                        <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> Export to Excel
+                    </DialogTitle>
+                    <DialogDescription className="text-stone-500 text-sm">
+                        Select which columns to include. Active filters (department, course, status) will be applied to the export.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {/* Active filter context */}
+                <div className="flex flex-wrap gap-1.5 py-2 border-y border-stone-100">
+                    {[
+                        { label: "Dept", value: activeDeptFilter },
+                        { label: "Course", value: activeCourseFilter },
+                        { label: "Major", value: activeMajorFilter },
+                        { label: "Status", value: activeStatusFilter },
+                    ].map(f => (
+                        <span key={f.label} className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">
+                            {f.label}: <span className="text-stone-700">{f.value || "ALL"}</span>
+                        </span>
+                    ))}
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-auto">
+                        {selectedColumns.size} col{selectedColumns.size !== 1 ? "s" : ""} selected
+                    </span>
+                </div>
+
+                {/* Global actions */}
+                <div className="flex gap-2 pt-1">
+                    <button
+                        className="text-xs text-amber-700 hover:underline font-medium"
+                        onClick={() => setSelectedColumns(new Set(EXPORT_COLUMN_GROUPS.flatMap(g => g.columns.map(c => c.key))))}
+                    >
+                        Select All
+                    </button>
+                    <span className="text-stone-300 text-xs">|</span>
+                    <button
+                        className="text-xs text-stone-400 hover:underline font-medium"
+                        onClick={() => setSelectedColumns(new Set())}
+                    >
+                        Clear All
+                    </button>
+                </div>
+
+                {/* Column groups */}
+                <div className="space-y-4 max-h-72 overflow-y-auto pr-1">
+                    {EXPORT_COLUMN_GROUPS.map(group => {
+                        const allGroupSelected = group.columns.every(c => selectedColumns.has(c.key));
+                        return (
+                            <div key={group.label}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{group.label}</span>
+                                    <button
+                                        className="text-[10px] text-amber-600 hover:underline font-semibold"
+                                        onClick={() => toggleGroup(group.columns)}
+                                    >
+                                        {allGroupSelected ? "Deselect all" : "Select all"}
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                                    {group.columns.map(col => (
+                                        <div key={col.key} className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={col.key}
+                                                checked={selectedColumns.has(col.key)}
+                                                onCheckedChange={() => toggleColumn(col.key)}
+                                                className="border-stone-300 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                                            />
+                                            <Label htmlFor={col.key} className="text-sm text-stone-700 cursor-pointer font-normal leading-none">
+                                                {col.label}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="flex gap-3 pt-3 border-t border-stone-100">
+                    <Button variant="outline" className="flex-1 border-stone-200 text-stone-600" onClick={() => setShowExportDialog(false)} disabled={isExporting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm disabled:opacity-50"
+                        onClick={handleExport}
+                        disabled={isExporting || selectedColumns.size === 0}
+                    >
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileSpreadsheet className="w-4 h-4 mr-2" />}
+                        {isExporting ? "Exporting..." : "Download .xlsx"}
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet } from "lucide-react";
+import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,13 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const [exportMajorFilter, setExportMajorFilter] = useState("ALL");
   const [exportStatusFilter, setExportStatusFilter] = useState("ALL");
   const [isExporting, setIsExporting] = useState(false);
+
+  // Password Confirm States
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const getObjectKey = (url: string): string => {
     if (typeof url !== 'string') return "";
@@ -255,11 +262,44 @@ export function MasterlistTab(props: MasterlistTabProps) {
     });
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     if (selectedColumns.size === 0) {
       toast.error("Please select at least one column to export.");
       return;
     }
+    setConfirmPassword("");
+    setPasswordError("");
+    setShowConfirmPassword(false);
+    setShowPasswordConfirm(true);
+  };
+
+  const handleVerifyAndExport = async () => {
+    if (!confirmPassword) {
+      setPasswordError("Please enter your password.");
+      return;
+    }
+    setIsVerifyingPassword(true);
+    setPasswordError("");
+    try {
+      const verifyRes = await fetch(`${baseUrl}/api/admin/verify-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: confirmPassword }),
+        credentials: "include",
+      });
+      if (!verifyRes.ok) {
+        const body = await verifyRes.json();
+        setPasswordError(body.reason ?? "Incorrect password.");
+        return;
+      }
+    } catch {
+      setPasswordError("Could not verify. Check your connection.");
+      return;
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+
+    setShowPasswordConfirm(false);
     setIsExporting(true);
     try {
       const query = new URLSearchParams({
@@ -1052,6 +1092,58 @@ export function MasterlistTab(props: MasterlistTabProps) {
                     >
                         {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileSpreadsheet className="w-4 h-4 mr-2" />}
                         {isExporting ? "Exporting..." : "Download .xlsx"}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+
+        {/* PASSWORD CONFIRM DIALOG */}
+        <Dialog open={showPasswordConfirm} onOpenChange={(open) => { if (!isVerifyingPassword) setShowPasswordConfirm(open); }}>
+            <DialogContent className="max-w-sm p-6 bg-white rounded-xl shadow-2xl border-stone-100">
+                <DialogHeader className="mb-2">
+                    <DialogTitle className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-amber-600" /> Confirm Your Identity
+                    </DialogTitle>
+                    <DialogDescription className="text-stone-500 text-sm">
+                        Enter your admin password to authorize this export.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-2 py-1">
+                    <div className="relative">
+                        <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Your password"
+                            value={confirmPassword}
+                            onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(""); }}
+                            onKeyDown={(e) => e.key === "Enter" && handleVerifyAndExport()}
+                            className={`pr-10 bg-stone-50 border-stone-200 focus:border-amber-500 focus:ring-amber-500/20 ${passwordError ? "border-red-400 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+                            disabled={isVerifyingPassword}
+                            autoFocus
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(p => !p)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                            tabIndex={-1}
+                        >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+                    {passwordError && <p className="text-xs text-red-500 font-medium">{passwordError}</p>}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                    <Button variant="outline" className="flex-1 border-stone-200 text-stone-600" onClick={() => setShowPasswordConfirm(false)} disabled={isVerifyingPassword}>
+                        Cancel
+                    </Button>
+                    <Button
+                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white shadow-sm disabled:opacity-50"
+                        onClick={handleVerifyAndExport}
+                        disabled={isVerifyingPassword || !confirmPassword}
+                    >
+                        {isVerifyingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                        {isVerifyingPassword ? "Verifying..." : "Confirm & Export"}
                     </Button>
                 </div>
             </DialogContent>

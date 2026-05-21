@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Lock, Mail, ArrowRight, Loader2, AlertCircle } from "lucide-react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +14,23 @@ import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const turnstileSiteKey = process.env.NODE_ENV === "development"
+    ? "1x00000000000000000000AA"
+    : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!captchaToken) {
+      toast.error("Please complete the CAPTCHA before signing in.");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
 
@@ -25,11 +38,13 @@ export default function AdminLoginPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const res = await loginService.handleLogin(email, password, true);
+    const res = await loginService.handleLogin(email, password, captchaToken, true);
 
     if (res.success) {
       router.push('/admin/dashboard');
     } else {
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
       toast.error(res.reason);
       setIsLoading(false);
     }
@@ -37,7 +52,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4 relative overflow-hidden">
-      
+
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-900/20 rounded-full blur-[120px]"></div>
@@ -62,7 +77,7 @@ export default function AdminLoginPage() {
 
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            
+
             {error && (
                 <div className="p-3 bg-red-900/20 border border-red-900/50 rounded-lg flex items-center gap-2 text-sm text-red-400">
                     <AlertCircle className="h-4 w-4" />
@@ -73,11 +88,11 @@ export default function AdminLoginPage() {
             <div className="space-y-2">
                 <div className="relative">
                     <Mail className="absolute left-3 top-3 h-5 w-5 text-stone-500" />
-                    <Input 
-                        name="email" 
-                        type="email" 
-                        placeholder="admin@aurium.edu.ph" 
-                        className="pl-10 bg-stone-950/50 border-stone-800 text-stone-200 focus:border-amber-700 focus:ring-amber-900/20 h-11" 
+                    <Input
+                        name="email"
+                        type="email"
+                        placeholder="admin@aurium.edu.ph"
+                        className="pl-10 bg-stone-950/50 border-stone-800 text-stone-200 focus:border-amber-700 focus:ring-amber-900/20 h-11"
                         required
                     />
                 </div>
@@ -86,21 +101,30 @@ export default function AdminLoginPage() {
             <div className="space-y-2">
                 <div className="relative">
                     <Lock className="absolute left-3 top-3 h-5 w-5 text-stone-500" />
-                    <Input 
-                        name="password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="pl-10 bg-stone-950/50 border-stone-800 text-stone-200 focus:border-amber-700 focus:ring-amber-900/20 h-11" 
+                    <Input
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10 bg-stone-950/50 border-stone-800 text-stone-200 focus:border-amber-700 focus:ring-amber-900/20 h-11"
                         required
                     />
                 </div>
             </div>
 
-            <Button 
-                type="submit" 
-                disabled={isLoading}
-                onClick={() => handleLogin}
-                className="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold h-11 shadow-lg shadow-amber-900/20 mt-4 transition-all"
+            <div className="flex justify-center">
+                <Turnstile
+                    ref={turnstileRef}
+                    siteKey={turnstileSiteKey}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    options={{ theme: "dark" }}
+                />
+            </div>
+
+            <Button
+                type="submit"
+                disabled={isLoading || !captchaToken}
+                className="w-full bg-amber-700 hover:bg-amber-600 text-white font-bold h-11 shadow-lg shadow-amber-900/20 mt-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isLoading ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Authenticating...</>

@@ -89,6 +89,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
   const canSendOtp = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
   const canDeleteStudent = userRole === 'ADMINISTRATOR';
+  const canExport = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   
@@ -369,15 +370,17 @@ export function MasterlistTab(props: MasterlistTabProps) {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowExportDialog(true)}
-                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 shadow-sm h-fit py-1.5"
-                    >
-                        <FileSpreadsheet className="w-4 h-4 mr-1.5" />
-                        Export Excel
-                    </Button>
+                    {canExport && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowExportDialog(true)}
+                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 shadow-sm h-fit py-1.5"
+                        >
+                            <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+                            Export Excel
+                        </Button>
+                    )}
                     <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 px-4 py-1.5 text-sm h-fit">
                         {isLoading ? "Fetching..." : `${totalResults} Records Found`}
                     </Badge>

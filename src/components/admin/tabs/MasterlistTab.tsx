@@ -118,14 +118,6 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const [passwordError, setPasswordError] = useState("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
-  const getObjectKey = (url: string): string => {
-    if (typeof url !== 'string') return "";
-      const findStr = `/aurium/`;
-      const idx = url.indexOf(findStr);
-      if (idx === -1) return "";
-      return "https://static.auriumi.cloud/" + url.substring(idx + findStr.length);
-  }
-
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
 
   const getPageNumbers = () => {
@@ -661,12 +653,12 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     <div 
                                         className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg cursor-pointer hover:border-amber-400 transition-colors group"
                                         onClick={() => {
-                                            const refUrl = selectedStudent.studentDetail?.photo_url ? getObjectKey(selectedStudent.studentDetail.photo_url) : undefined;
+                                            const refUrl = selectedStudent.studentDetail?.photo_url ?? undefined;
                                             if (refUrl) setEnlargedImage(refUrl);
                                         }}
                                     >
                                         {selectedStudent.studentDetail?.photo_url ? (
-                                            <img src={getObjectKey(selectedStudent.studentDetail.photo_url)} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Reference" />
+                                            <img src={selectedStudent.studentDetail.photo_url} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Reference" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>

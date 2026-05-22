@@ -222,7 +222,7 @@ export default function AdminDashboard() {
                     {activeTab === 'masterlist' && "Verified Masterlist"}
                     {activeTab === 'scanner' && "Attendance Scanner"}
                     {activeTab === 'profile' && "My Profile"}
-                    {activeTab === 'roles' && "Manage Roles"}
+                    {activeTab === 'roles' && "Manage Staffs"}
                 </h1>
             </div>
 

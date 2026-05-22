@@ -190,10 +190,10 @@ export function RolesTab({ staffUser }: RolesTabProps) {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-amber-600" /> Staff Role Management
+              <ShieldCheck className="h-6 w-6 text-amber-600" /> Staff Management
             </h2>
             <p className="text-sm text-stone-500 mt-1">
-              Adjust roles across multiple staff members, then save all changes at once.
+              Manage your staff members by adjusting their roles
             </p>
           </div>
           <Button

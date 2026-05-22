@@ -90,7 +90,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
           <>
             <div className="my-2 border-t border-stone-800/50"></div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
-            <NavItem id="roles" label="Manage Roles" icon={ShieldCheck} />
+            <NavItem id="roles" label="Manage Staffs" icon={ShieldCheck} />
           </>
         )}
 

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { ShieldCheck, RefreshCw, Loader2, Mail, Clock } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { ShieldCheck, Shield, RefreshCw, Loader2, Mail, Clock, Save, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Admin } from "@/types";
@@ -23,32 +22,57 @@ interface RolesTabProps {
   staffUser: Admin | null;
 }
 
-const ROLE_OPTIONS = [
-  { value: "MODERATOR", label: "Moderator" },
-  { value: "MEMBER", label: "Member" },
-];
+const ROLE_ICONS: Record<string, React.ElementType> = {
+  MODERATOR: ShieldCheck,
+  MEMBER: Shield,
+};
 
-const ROLE_STYLES: Record<string, string> = {
-  MODERATOR: "bg-blue-100 text-blue-800 border-blue-200",
-  MEMBER: "bg-stone-100 text-stone-600 border-stone-200",
+const ROLE_COLORS: Record<string, { badge: string; icon: string; row: string }> = {
+  MODERATOR: { badge: "bg-blue-100 text-blue-800 border-blue-200", icon: "text-blue-600", row: "border-l-2 border-l-blue-400 bg-blue-50/40" },
+  MEMBER:    { badge: "bg-stone-100 text-stone-600 border-stone-200", icon: "text-stone-400", row: "" },
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   MODERATOR: "Can manage verification, graduation, masterlist, and close/open schedules. Can send OTP.",
-  MEMBER: "Read-only access to masterlist and staff notes only.",
+  MEMBER:    "Read-only access to masterlist and staff notes only.",
 };
+
+const ROLE_OPTIONS = [
+  { value: "MODERATOR", label: "Moderator" },
+  { value: "MEMBER",    label: "Member" },
+];
+
+function RoleChip({ role, size = "sm" }: { role: string; size?: "sm" | "xs" }) {
+  const Icon = ROLE_ICONS[role] ?? Shield;
+  const colors = ROLE_COLORS[role] ?? ROLE_COLORS.MEMBER;
+  const label = role.charAt(0) + role.slice(1).toLowerCase();
+  const sizeClass = size === "xs" ? "text-[10px] px-1.5 py-0.5 gap-1" : "text-xs px-2 py-0.5 gap-1.5";
+  const iconSize = size === "xs" ? 10 : 12;
+
+  return (
+    <span className={`inline-flex items-center font-semibold rounded-md border ${colors.badge} ${sizeClass}`}>
+      <Icon size={iconSize} className={colors.icon} />
+      {label}
+    </span>
+  );
+}
 
 export function RolesTab({ staffUser }: RolesTabProps) {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Pending role change that requires confirmation
-  const [pendingChange, setPendingChange] = useState<{
-    member: StaffMember;
-    newRole: string;
-  } | null>(null);
+  // Local role overrides — keys are member IDs, values are the new role string
+  const [localRoles, setLocalRoles] = useState<Record<number, string>>({});
 
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Rows that differ from the server state
+  const pendingChanges = useMemo(() => {
+    return staffList.filter(m => localRoles[m.id] !== undefined && localRoles[m.id] !== m.role);
+  }, [staffList, localRoles]);
+
+  const hasPendingChanges = pendingChanges.length > 0;
 
   const loadStaffList = useCallback(async () => {
     setIsLoading(true);
@@ -59,6 +83,7 @@ export function RolesTab({ staffUser }: RolesTabProps) {
         return;
       }
       setStaffList(result.data as StaffMember[]);
+      setLocalRoles({});
     } catch {
       toast.error("Could not connect to the server.");
     } finally {
@@ -74,45 +99,46 @@ export function RolesTab({ staffUser }: RolesTabProps) {
     if (!dateString) return "Never";
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Unknown";
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
   };
 
-  const handleRoleSelectChange = (member: StaffMember, newRole: string) => {
-    if (newRole === member.role) return;
-    setPendingChange({ member, newRole });
+  const handleRoleSelectChange = (memberId: number, newRole: string) => {
+    setLocalRoles(prev => ({ ...prev, [memberId]: newRole }));
   };
 
-  const confirmRoleChange = async () => {
-    if (!pendingChange) return;
+  const discardChanges = () => {
+    setLocalRoles({});
+  };
 
+  // Fires all pending role updates in parallel, then refreshes server state
+  const confirmAllChanges = async () => {
     setIsUpdating(true);
     try {
-      const result = await adminService.updateAdminRole(pendingChange.member.id, pendingChange.newRole);
-      if (!result.success) {
-        toast.error((result as any).reason || "Failed to update role.");
-        return;
+      const results = await Promise.all(
+        pendingChanges.map(m => adminService.updateAdminRole(m.id, localRoles[m.id]))
+      );
+
+      const failedCount = results.filter(r => !r.success).length;
+
+      if (failedCount > 0) {
+        toast.error(`${failedCount} update(s) failed. Refreshing to show current state.`);
+      } else {
+        toast.success(`${pendingChanges.length} role(s) updated successfully.`);
       }
 
-      setStaffList(prev =>
-        prev.map(m =>
-          m.id === pendingChange.member.id ? { ...m, role: pendingChange.newRole } : m
-        )
-      );
-
-      toast.success(
-        `${pendingChange.member.first_name} ${pendingChange.member.last_name}'s role updated to ${pendingChange.newRole}.`
-      );
-      setPendingChange(null);
+      // Refresh from server to get authoritative state
+      await loadStaffList();
+      setShowConfirmDialog(false);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsUpdating(false);
     }
   };
+
+  // The displayed role for a member is local override if set, otherwise server role
+  const getDisplayRole = (member: StaffMember) => localRoles[member.id] ?? member.role;
+  const isDirty = (member: StaffMember) => localRoles[member.id] !== undefined && localRoles[member.id] !== member.role;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -125,7 +151,7 @@ export function RolesTab({ staffUser }: RolesTabProps) {
               <ShieldCheck className="h-6 w-6 text-amber-600" /> Staff Role Management
             </h2>
             <p className="text-sm text-stone-500 mt-1">
-              Assign roles to staff members. Only Moderator and Member roles can be assigned here.
+              Adjust roles across multiple staff members, then save all changes at once.
             </p>
           </div>
           <Button
@@ -147,9 +173,9 @@ export function RolesTab({ staffUser }: RolesTabProps) {
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {ROLE_OPTIONS.map(opt => (
             <div key={opt.value} className="flex items-start gap-3 p-3 rounded-xl bg-stone-50 border border-stone-100">
-              <Badge className={`mt-0.5 shrink-0 border text-xs font-semibold ${ROLE_STYLES[opt.value]}`}>
-                {opt.label}
-              </Badge>
+              <div className="mt-0.5 shrink-0">
+                <RoleChip role={opt.value} />
+              </div>
               <p className="text-xs text-stone-500 leading-relaxed">{ROLE_DESCRIPTIONS[opt.value]}</p>
             </div>
           ))}
@@ -183,97 +209,144 @@ export function RolesTab({ staffUser }: RolesTabProps) {
               <span className="col-span-4 text-[10px] font-bold uppercase tracking-widest text-stone-500">Role</span>
             </div>
 
-            {staffList.map(member => (
-              <div
-                key={member.id}
-                className="grid grid-cols-12 items-center px-6 py-4 hover:bg-stone-50/60 transition-colors"
-              >
-                {/* Name + Email */}
-                <div className="col-span-5 min-w-0">
-                  <p className="text-sm font-semibold text-stone-800 truncate">
-                    {member.last_name}, {member.first_name}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <Mail size={11} className="text-stone-400 shrink-0" />
-                    <p className="text-xs text-stone-400 truncate">{member.email}</p>
+            {staffList.map(member => {
+              const dirty = isDirty(member);
+              const displayRole = getDisplayRole(member);
+
+              return (
+                <div
+                  key={member.id}
+                  className={`grid grid-cols-12 items-center px-6 py-4 transition-colors ${dirty ? "bg-amber-50/50" : "hover:bg-stone-50/60"}`}
+                >
+                  {/* Name + Email */}
+                  <div className="col-span-5 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-stone-800 truncate">
+                        {member.last_name}, {member.first_name}
+                      </p>
+                      {dirty && (
+                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 border border-amber-200 rounded px-1 py-0.5">
+                          Changed
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Mail size={11} className="text-stone-400 shrink-0" />
+                      <p className="text-xs text-stone-400 truncate">{member.email}</p>
+                    </div>
+                  </div>
+
+                  {/* Last Login */}
+                  <div className="col-span-3 hidden sm:flex items-center gap-1.5 text-xs text-stone-500">
+                    <Clock size={12} className="text-stone-400 shrink-0" />
+                    {formatLastLogin(member.last_login)}
+                  </div>
+
+                  {/* Role Select */}
+                  <div className="col-span-4">
+                    <Select
+                      value={displayRole}
+                      onValueChange={(newRole) => handleRoleSelectChange(member.id, newRole)}
+                    >
+                      <SelectTrigger className={`h-9 text-sm bg-white focus:ring-amber-500/20 focus:border-amber-500 transition-colors ${dirty ? "border-amber-400" : "border-stone-200"}`}>
+                        <SelectValue>
+                          <RoleChip role={displayRole} />
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLE_OPTIONS.map(opt => {
+                          const Icon = ROLE_ICONS[opt.value];
+                          const colors = ROLE_COLORS[opt.value];
+                          return (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              <div className="flex items-center gap-2">
+                                <Icon size={14} className={colors.icon} />
+                                {opt.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-
-                {/* Last Login */}
-                <div className="col-span-3 hidden sm:flex items-center gap-1.5 text-xs text-stone-500">
-                  <Clock size={12} className="text-stone-400 shrink-0" />
-                  {formatLastLogin(member.last_login)}
-                </div>
-
-                {/* Role Select */}
-                <div className="col-span-4">
-                  <Select
-                    value={member.role}
-                    onValueChange={(newRole) => handleRoleSelectChange(member, newRole)}
-                  >
-                    <SelectTrigger className="h-9 text-sm border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
+      {/* Save / Discard Bar — appears when there are unsaved changes */}
+      {hasPendingChanges && (
+        <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 bg-white px-5 py-3.5 rounded-2xl shadow-lg border border-amber-200 animate-in slide-in-from-bottom-2 duration-200">
+          <p className="text-sm font-medium text-stone-700">
+            <span className="text-amber-700 font-bold">{pendingChanges.length}</span>{" "}
+            unsaved change{pendingChanges.length > 1 ? "s" : ""}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={discardChanges}
+              className="text-stone-500 hover:text-stone-800 hover:bg-stone-100 h-8"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowConfirmDialog(true)}
+              className="bg-amber-700 hover:bg-amber-800 text-white h-8 px-4 shadow-sm"
+            >
+              <Save className="w-3.5 h-3.5 mr-1.5" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation Dialog */}
-      <Dialog open={!!pendingChange} onOpenChange={(open) => { if (!open) setPendingChange(null); }}>
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!open && !isUpdating) setShowConfirmDialog(false); }}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-stone-900">Confirm Role Change</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-stone-900">Save Role Changes?</DialogTitle>
             <DialogDescription className="text-stone-500 text-sm mt-1">
-              You are about to change{" "}
-              <span className="font-semibold text-stone-800">
-                {pendingChange?.member.first_name} {pendingChange?.member.last_name}
-              </span>
-              {"'s"} role from{" "}
-              <Badge className={`inline-flex border text-xs ${ROLE_STYLES[pendingChange?.member.role ?? "MEMBER"]}`}>
-                {pendingChange?.member.role}
-              </Badge>
-              {" "}to{" "}
-              <Badge className={`inline-flex border text-xs ${ROLE_STYLES[pendingChange?.newRole ?? "MEMBER"]}`}>
-                {pendingChange?.newRole}
-              </Badge>
-              .
+              The following {pendingChanges.length} role update{pendingChanges.length > 1 ? "s" : ""} will be applied:
             </DialogDescription>
           </DialogHeader>
 
-          {pendingChange && (
-            <div className="mt-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800 leading-relaxed">
-              <strong>New permissions:</strong> {ROLE_DESCRIPTIONS[pendingChange.newRole]}
-            </div>
-          )}
+          <div className="mt-1 divide-y divide-stone-100 rounded-xl border border-stone-200 overflow-hidden">
+            {pendingChanges.map(m => (
+              <div key={m.id} className="flex items-center justify-between px-4 py-2.5 bg-white">
+                <p className="text-sm font-medium text-stone-800 truncate">
+                  {m.last_name}, {m.first_name}
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <RoleChip role={m.role} size="xs" />
+                  <span className="text-stone-400 text-xs">→</span>
+                  <RoleChip role={localRoles[m.id]} size="xs" />
+                </div>
+              </div>
+            ))}
+          </div>
 
           <DialogFooter className="mt-4 flex gap-2">
             <Button
               variant="outline"
               className="flex-1 border-stone-200"
-              onClick={() => setPendingChange(null)}
+              onClick={() => setShowConfirmDialog(false)}
               disabled={isUpdating}
             >
               Cancel
             </Button>
             <Button
               className="flex-1 bg-amber-700 hover:bg-amber-800 text-white"
-              onClick={confirmRoleChange}
+              onClick={confirmAllChanges}
               disabled={isUpdating}
             >
               {isUpdating
                 ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</>
-                : "Confirm Change"
+                : `Apply ${pendingChanges.length} Change${pendingChanges.length > 1 ? "s" : ""}`
               }
             </Button>
           </DialogFooter>

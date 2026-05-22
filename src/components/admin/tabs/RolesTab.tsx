@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ShieldCheck, Shield, RefreshCw, Loader2, Mail, Clock, Save, RotateCcw } from "lucide-react";
+import { ShieldCheck, Shield, RefreshCw, Loader2, Mail, Clock, Save, RotateCcw, Eye, EyeOff, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Admin } from "@/types";
 import * as adminService from "@/app/admin/adminService";
 import toast from "react-hot-toast";
+
+const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 interface StaffMember {
   id: number;
@@ -27,9 +30,9 @@ const ROLE_ICONS: Record<string, React.ElementType> = {
   MEMBER: Shield,
 };
 
-const ROLE_COLORS: Record<string, { badge: string; icon: string; row: string }> = {
-  MODERATOR: { badge: "bg-blue-100 text-blue-800 border-blue-200", icon: "text-blue-600", row: "border-l-2 border-l-blue-400 bg-blue-50/40" },
-  MEMBER:    { badge: "bg-stone-100 text-stone-600 border-stone-200", icon: "text-stone-400", row: "" },
+const ROLE_COLORS: Record<string, { badge: string; icon: string }> = {
+  MODERATOR: { badge: "bg-blue-100 text-blue-800 border-blue-200", icon: "text-blue-600" },
+  MEMBER:    { badge: "bg-stone-100 text-stone-600 border-stone-200", icon: "text-stone-400" },
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
@@ -66,6 +69,12 @@ export function RolesTab({ staffUser }: RolesTabProps) {
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Password verification state
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Rows that differ from the server state
   const pendingChanges = useMemo(() => {
@@ -110,8 +119,43 @@ export function RolesTab({ staffUser }: RolesTabProps) {
     setLocalRoles({});
   };
 
-  // Fires all pending role updates in parallel, then refreshes server state
+  const closeConfirmDialog = () => {
+    if (isUpdating || isVerifying) return;
+    setShowConfirmDialog(false);
+    setPassword("");
+    setShowPassword(false);
+    setPasswordError("");
+  };
+
+  // Step 1: verify password. Step 2: apply all pending changes in parallel.
   const confirmAllChanges = async () => {
+    if (!password) {
+      setPasswordError("Please enter your password.");
+      return;
+    }
+
+    setIsVerifying(true);
+    setPasswordError("");
+    try {
+      const verifyRes = await fetch(`${baseUrl}/api/admin/verify-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+        credentials: "include",
+      });
+
+      if (!verifyRes.ok) {
+        const body = await verifyRes.json();
+        setPasswordError(body.reason ?? "Incorrect password.");
+        return;
+      }
+    } catch {
+      setPasswordError("Could not verify. Check your connection.");
+      return;
+    } finally {
+      setIsVerifying(false);
+    }
+
     setIsUpdating(true);
     try {
       const results = await Promise.all(
@@ -126,9 +170,8 @@ export function RolesTab({ staffUser }: RolesTabProps) {
         toast.success(`${pendingChanges.length} role(s) updated successfully.`);
       }
 
-      // Refresh from server to get authoritative state
       await loadStaffList();
-      setShowConfirmDialog(false);
+      closeConfirmDialog();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -136,7 +179,6 @@ export function RolesTab({ staffUser }: RolesTabProps) {
     }
   };
 
-  // The displayed role for a member is local override if set, otherwise server role
   const getDisplayRole = (member: StaffMember) => localRoles[member.id] ?? member.role;
   const isDirty = (member: StaffMember) => localRoles[member.id] !== undefined && localRoles[member.id] !== member.role;
 
@@ -305,8 +347,8 @@ export function RolesTab({ staffUser }: RolesTabProps) {
         </div>
       )}
 
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!open && !isUpdating) setShowConfirmDialog(false); }}>
+      {/* Confirmation Dialog with password gate */}
+      <Dialog open={showConfirmDialog} onOpenChange={(open) => { if (!open) closeConfirmDialog(); }}>
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-stone-900">Save Role Changes?</DialogTitle>
@@ -315,6 +357,7 @@ export function RolesTab({ staffUser }: RolesTabProps) {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Changes summary */}
           <div className="mt-1 divide-y divide-stone-100 rounded-xl border border-stone-200 overflow-hidden">
             {pendingChanges.map(m => (
               <div key={m.id} className="flex items-center justify-between px-4 py-2.5 bg-white">
@@ -330,21 +373,51 @@ export function RolesTab({ staffUser }: RolesTabProps) {
             ))}
           </div>
 
+          {/* Password field */}
+          <div className="mt-4 space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 flex items-center gap-1.5">
+              <Lock size={10} /> Confirm your password to proceed
+            </label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmAllChanges(); }}
+                className={`pr-10 bg-stone-50 focus:ring-amber-500/20 focus:border-amber-500 ${passwordError ? "border-red-400" : "border-stone-200"}`}
+                disabled={isUpdating || isVerifying}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(prev => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              >
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+            {passwordError && (
+              <p className="text-xs text-red-500 font-medium">{passwordError}</p>
+            )}
+          </div>
+
           <DialogFooter className="mt-4 flex gap-2">
             <Button
               variant="outline"
               className="flex-1 border-stone-200"
-              onClick={() => setShowConfirmDialog(false)}
-              disabled={isUpdating}
+              onClick={closeConfirmDialog}
+              disabled={isUpdating || isVerifying}
             >
               Cancel
             </Button>
             <Button
               className="flex-1 bg-amber-700 hover:bg-amber-800 text-white"
               onClick={confirmAllChanges}
-              disabled={isUpdating}
+              disabled={isUpdating || isVerifying || !password}
             >
-              {isUpdating
+              {isVerifying
+                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Verifying...</>
+                : isUpdating
                 ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</>
                 : `Apply ${pendingChanges.length} Change${pendingChanges.length > 1 ? "s" : ""}`
               }

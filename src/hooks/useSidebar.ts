@@ -1,23 +1,32 @@
 import { useMemo } from "react";
 
 export function useSidebar(user: any) {
-  
-  // kani na check kung admin ba ang ga login (case-insensitive para sure)
-  const isAdmin = useMemo(() => {
-    if (!user || !user.role) return false;
-    const role = user.role.toLowerCase();
-    return role === 'admin' || role === 'administrator';
+
+  const role = useMemo(() => {
+    if (!user || !user.role) return 'MEMBER';
+    return String(user.role).toUpperCase();
   }, [user]);
 
-  // fallback para dli ma blanko ang ubos kung wala silay gi set nga position
-  const displayPosition = user?.position || (isAdmin ? "Administrator" : "Staff Member");
+  const isAdmin = role === 'ADMINISTRATOR';
+  const isModerator = role === 'MODERATOR';
+  const isMember = role === 'MEMBER';
 
-  // pwede kaayo nato i-derive diri daan ang initials sa avatar para limpyo sa UI
+  // Tabs visible to ADMINISTRATOR and MODERATOR
+  const canAccessVerification = isAdmin || isModerator;
+  const canAccessSchedules = isAdmin || isModerator;
+
+  // Tab visible to ADMINISTRATOR only
+  const canManageRoles = isAdmin;
+
+  const displayPosition = user?.position || (
+    isAdmin ? "Administrator" : isModerator ? "Moderator" : "Staff Member"
+  );
+
   const getInitials = (name: string) => {
     if (!name) return isAdmin ? 'AD' : 'ST';
     const parts = name.split(' ');
     if (parts.length > 1) {
-        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   };
@@ -25,7 +34,13 @@ export function useSidebar(user: any) {
   const userInitials = useMemo(() => getInitials(user?.name), [user?.name, isAdmin]);
 
   return {
+    role,
     isAdmin,
+    isModerator,
+    isMember,
+    canAccessVerification,
+    canAccessSchedules,
+    canManageRoles,
     displayPosition,
     userInitials
   };

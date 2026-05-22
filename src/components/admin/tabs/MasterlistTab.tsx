@@ -14,7 +14,7 @@ import * as XLSX from "xlsx";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
 
-type MasterlistTabProps = ReturnType<typeof useMasterlist>;
+type MasterlistTabProps = ReturnType<typeof useMasterlist> & { userRole: string };
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 const EXPORT_COLUMN_GROUPS = [
@@ -77,14 +77,18 @@ const EXPORT_STATUS_OPTIONS = [
 export function MasterlistTab(props: MasterlistTabProps) {
   const {
     searchQuery, setSearchQuery, selectedStudent, setSelectedStudent,
-    activeDeptFilter, setActiveDeptFilter, 
+    activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
-    activeStatusFilter, setActiveStatusFilter,  
+    activeStatusFilter, setActiveStatusFilter,
     activeMajorFilter, setActiveMajorFilter,
     currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
-  } = props as any; 
+    userRole,
+  } = props as any;
+
+  const canSendOtp = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
+  const canDeleteStudent = userRole === 'ADMINISTRATOR';
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   
@@ -669,16 +673,18 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                 </div>
                             </div>
                             
-                            <div className="mt-auto pt-10 w-full">
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold transition-colors"
-                                    onClick={() => setShowDeleteConfirm(true)}
-                                >
-                                    <Trash2 size={16} className="mr-2" />
-                                    Remove Student Record
-                                </Button>
-                            </div>
+                            {canDeleteStudent && (
+                                <div className="mt-auto pt-10 w-full">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-semibold transition-colors"
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                    >
+                                        <Trash2 size={16} className="mr-2" />
+                                        Remove Student Record
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex-1 bg-white p-8 md:p-10 overflow-y-auto">
@@ -837,34 +843,36 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         Save Email Changes (WIP)
                     </Button>
                     
-                    <div className="relative w-full pt-4 border-t border-stone-100">
-                        <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">Resend Verification Code</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Button 
-                                onClick={() => setOtpConfirmTarget('personal')} 
-                                disabled={hasUnsavedEmailChanges || !isPersonalEmailValid} 
-                                variant="outline" 
-                                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
-                            >
-                                <Send className="w-4 h-4 mr-2" />
-                                To Personal
-                            </Button>
-                            <Button 
-                                onClick={() => setOtpConfirmTarget('school')} 
-                                disabled={hasUnsavedEmailChanges || !editSchoolEmail || !isSchoolEmailValid} 
-                                variant="outline" 
-                                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
-                            >
-                                <Send className="w-4 h-4 mr-2" />
-                                To School
-                            </Button>
+                    {canSendOtp && (
+                        <div className="relative w-full pt-4 border-t border-stone-100">
+                            <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">Resend Verification Code</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <Button
+                                    onClick={() => setOtpConfirmTarget('personal')}
+                                    disabled={hasUnsavedEmailChanges || !isPersonalEmailValid}
+                                    variant="outline"
+                                    className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                                >
+                                    <Send className="w-4 h-4 mr-2" />
+                                    To Personal
+                                </Button>
+                                <Button
+                                    onClick={() => setOtpConfirmTarget('school')}
+                                    disabled={hasUnsavedEmailChanges || !editSchoolEmail || !isSchoolEmailValid}
+                                    variant="outline"
+                                    className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                                >
+                                    <Send className="w-4 h-4 mr-2" />
+                                    To School
+                                </Button>
+                            </div>
+                            {hasUnsavedEmailChanges && (
+                                <p className="text-[10px] text-red-500 text-center mt-2 absolute -bottom-5 w-full">
+                                    *Please save your email changes before resending the OTP.
+                                </p>
+                            )}
                         </div>
-                        {hasUnsavedEmailChanges && (
-                            <p className="text-[10px] text-red-500 text-center mt-2 absolute -bottom-5 w-full">
-                                *Please save your email changes before resending the OTP.
-                            </p>
-                        )}
-                    </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

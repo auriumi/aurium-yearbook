@@ -18,9 +18,11 @@ import toast from "react-hot-toast";
 interface ScheduleProp {
     schedules: Schedule[];
     fetchSchedules: () => Promise<void>;
+    userRole: string;
 }
 
-export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
+export function SchedulesTab({ schedules, fetchSchedules, userRole }: ScheduleProp) {
+  const canCreateSchedule = userRole === 'ADMINISTRATOR';
 
   // Input states
   const [newDateInput, setNewDateInput] = useState("");
@@ -229,13 +231,15 @@ export function SchedulesTab({ schedules, fetchSchedules }: ScheduleProp) {
                 <p className="text-stone-500 text-sm mt-1">Manage dates, capacities, and monitor student attendance per session.</p>
             </div>
             
-            {/* Modal for adding a new schedule date */}
+            {/* Modal for adding a new schedule date — ADMINISTRATOR only */}
             <Dialog open={isAddDateOpen} onOpenChange={setIsAddDateOpen}>
-                <DialogTrigger asChild>
-                    <Button className="bg-amber-900 hover:bg-amber-800 shadow-lg">
-                        <Plus className="mr-2 h-4 w-4" /> Add Date
-                    </Button>
-                </DialogTrigger>
+                {canCreateSchedule && (
+                    <DialogTrigger asChild>
+                        <Button className="bg-amber-900 hover:bg-amber-800 shadow-lg">
+                            <Plus className="mr-2 h-4 w-4" /> Add Date
+                        </Button>
+                    </DialogTrigger>
+                )}
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Open New Schedule</DialogTitle>

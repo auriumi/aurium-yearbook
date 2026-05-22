@@ -301,3 +301,34 @@ export async function getLiveQueue(period: string) {
         return { success: false };
     }
 }
+
+export async function fetchStaffList() {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/staff/list`, {
+            credentials: 'include'
+        });
+        const data = await res.json();
+        if (!res.ok) return { success: false, reason: data.reason };
+        return { success: true, data };
+    } catch (err) {
+        console.error("Server error:", err);
+        return { success: false };
+    }
+}
+
+export async function updateAdminRole(adminId: number, newRole: string) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/staff/${adminId}/role`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: newRole }),
+            credentials: 'include'
+        });
+        const data = await res.json();
+        if (!res.ok) return { success: false, reason: data.reason };
+        return { success: true };
+    } catch (err) {
+        console.error("Server error:", err);
+        return { success: false };
+    }
+}

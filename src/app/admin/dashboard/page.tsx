@@ -14,9 +14,10 @@ import { VerificationTab } from "@/components/admin/tabs/VerificationTab"; // Or
 import { ProfileTab } from "@/components/admin/tabs/ProfileTab";
 import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
+import { RolesTab } from "@/components/admin/tabs/RolesTab";
 
 // --- MERGED IMPORTS ---
-import { NotesTab } from "@/components/admin/tabs/NotesTab"; 
+import { NotesTab } from "@/components/admin/tabs/NotesTab";
 import { GraduateReviewTab } from "@/components/admin/tabs/GraduateReviewTab"; // <--- The Renamed Staff File
 
 // Service Import
@@ -30,26 +31,29 @@ import { Admin } from "@/types";
 export default function AdminDashboard() {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState("verification"); 
+  const [activeTab, setActiveTab] = useState("masterlist");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
-  const [currentPage, setCurrentPage] = useState(1); 
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalUnverified, setTotalUnverified] = useState(0);
 
   //Cache
   const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
   const masterlistProps = useMasterlist();
 
-  //Schedules 
-  const { schedules, fetchSchedules } = useSchedules();  
+  //Schedules
+  const { schedules, fetchSchedules } = useSchedules();
 
   // State specific to the Graduate Review Tab (Moved from Staff)
   // This handles the "Select a student to view details" feature
   const [selectedReviewStudent, setSelectedReviewStudent] = useState<any>(null);
 
-    const [staffUser, setStaffUser] = useState<Admin | null>(null);
+  const [staffUser, setStaffUser] = useState<Admin | null>(null);
+
+  // Derived role — defaults to MEMBER until the profile loads
+  const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
 
   const getStaffDetails = useCallback(async () => {
     try {
@@ -218,6 +222,7 @@ export default function AdminDashboard() {
                     {activeTab === 'masterlist' && "Verified Masterlist"}
                     {activeTab === 'scanner' && "Attendance Scanner"}
                     {activeTab === 'profile' && "My Profile"}
+                    {activeTab === 'roles' && "Manage Roles"}
                 </h1>
             </div>
 
@@ -260,9 +265,12 @@ export default function AdminDashboard() {
             {activeTab === 'notes' && <NotesTab />}
 
             {/* 4. OTHER ADMIN TABS */}
-            {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps}/>}
-            {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} />}
+            {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
+            {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} />}
+
+            {/* 5. ROLE MANAGEMENT — ADMINISTRATOR only */}
+            {activeTab === 'roles' && <RolesTab staffUser={staffUser} />}
         </div>
       </main>
     </div>

@@ -85,13 +85,15 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
           <NavItem id="slots" label="Schedules" icon={Calendar} />
         )}
 
+        <div className="my-2 border-t border-stone-800/50"></div>
+
+        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
+
+        <NavItem id="profile" label="Profile" icon={User} />
+
         {/* Roles Management — ADMINISTRATOR only */}
         {canManageRoles && (
-          <>
-            <div className="my-2 border-t border-stone-800/50"></div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
-            <NavItem id="roles" label="Manage Staffs" icon={ShieldCheck} />
-          </>
+          <NavItem id="roles" label="Manage Staffs" icon={ShieldCheck} />
         )}
 
         <div className="my-2 border-t border-stone-800/50"></div>
@@ -103,8 +105,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
             <ScanLine size={18} /> Attendance Scanner
           </Button>
         </Link>
-
-        <NavItem id="profile" label="My Profile" icon={User} />
       </nav>
 
       <div className="p-6 border-t border-stone-800/50 bg-stone-950">

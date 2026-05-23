@@ -238,7 +238,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* CONTENT AREA */}
-        <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className={`space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'profile' ? 'max-w-7xl mx-auto' : ''}`}>
             {/* 1. ORIGINAL ADMIN VERIFICATION (Queue) */}
             {activeTab === "verification" && (
                 <VerificationTab 

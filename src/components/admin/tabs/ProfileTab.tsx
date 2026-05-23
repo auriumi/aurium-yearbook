@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, UserCheck, Lock, AlertCircle, CheckCircle2, Briefcase, Mail, KeyRound, Camera, Upload, UserCog } from "lucide-react";
+import { ShieldCheck, UserCheck, Lock, AlertCircle, CheckCircle2, Briefcase, Mail, KeyRound } from "lucide-react";
 
 import { Admin } from "@/types";
 
@@ -17,53 +16,7 @@ interface ProfileTabProps {
     setUser: (user: Admin | null) => void;
 }
 
-export function ProfileTab({ user, setUser }: ProfileTabProps) {
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempAvatarUrl, setTempAvatarUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const triggerFileInput = () => {
-      fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-          const fileReader = new FileReader();
-          fileReader.onload = () => {
-              setTempAvatarUrl(fileReader.result as string);
-              setSelectedFile(file);
-          };
-          fileReader.readAsDataURL(file);
-      }
-  };
-
-  const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (!user) return;
-
-      const fd = new FormData(e.currentTarget);
-      
-      setUser({
-          ...user, 
-          name: fd.get('name') as string, 
-          email: fd.get('email') as string,
-          position: fd.get('position') as string,
-          avatar: tempAvatarUrl || user.avatar
-      } as Admin);
-      
-      setIsEditing(false);
-      setSelectedFile(null);
-  };
-
-  const handleOpenEdit = () => setIsEditing(true);
-  const handleCancelEdit = () => {
-      setIsEditing(false);
-      setTempAvatarUrl(null); 
-      setSelectedFile(null);
-  };
+export function ProfileTab({ user }: ProfileTabProps) {
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -74,13 +27,13 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!user) {
-      return <div className="p-10 text-stone-500">Loading profile...</div>;
+      return <div className="p-10 text-stone-400">Loading profile...</div>;
   }
 
   const isAdmin = user?.role.toLowerCase() === 'administrator';
   const displayName = (user as any).name || `${user.first_name} ${user.last_name}`;
   const displayPosition = (user as any).position || "Not specified";
-  const currentPhoto = tempAvatarUrl || user?.avatar || "";
+  const currentPhoto = user?.avatar || "";
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -132,141 +85,100 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
   };
 
   return (
-    // FIX: Changed classes to rounded-3xl and h-fit, removed full screen height constraints
-    <div className="w-full h-fit bg-[#111] p-10 rounded-3xl shadow-xl animate-in fade-in duration-500 my-4 mx-auto max-w-screen-2xl">
-        
-        <div className="flex justify-between items-center mb-10">
-            <h1 className="text-3xl font-bold uppercase tracking-wide text-white">Admin Profile</h1>
-        </div>
+    <div className="w-full animate-in fade-in duration-500">
 
-        <Card className={`max-w-7xl mx-auto shadow-2xl border-t-4 bg-stone-900 border-stone-800 overflow-hidden ${isAdmin ? 'border-amber-500' : 'border-blue-600'}`}>
-            <CardContent className="p-10 flex flex-col md:flex-row gap-12 w-full">
-                
+        <div className="w-full flex flex-col md:flex-row gap-6 items-stretch min-h-[calc(100vh-10rem)]">
+
                 {/* Left Section: Avatar */}
-                <div className="w-full md:w-[350px] shrink-0 flex flex-col items-center justify-center p-6 bg-stone-950/50 rounded-2xl border border-stone-800">
-                    <div className="relative mb-5 transform hover:scale-105 transition-transform duration-500 ease-out group">
-                        <div className="w-48 h-48 xl:w-56 xl:h-56 rounded-full border border-stone-700 flex items-center justify-center p-2.5">
-                            <div className="w-full h-full rounded-full border-4 border-stone-600 p-2 relative">
-                                <Avatar className="w-full h-full border-4 border-white shadow-xl relative z-10">
+                <div className="w-full md:w-80 shrink-0 flex flex-col items-center justify-start pt-10 px-8 pb-8 bg-white rounded-2xl border border-stone-200 shadow-sm">
+                    <div className="relative mb-6 transform hover:scale-105 transition-transform duration-500 ease-out group">
+                        <div className="w-56 h-56 xl:w-72 xl:h-72 rounded-full border border-stone-300 flex items-center justify-center p-2.5">
+                            <div className="w-full h-full rounded-full border-4 border-stone-200 p-2 relative">
+                                <Avatar className="w-full h-full border-4 border-white shadow-md relative z-10">
                                     <AvatarImage src={currentPhoto} className="object-cover" />
-                                    <AvatarFallback className="bg-stone-800 text-stone-500 text-3xl">{isAdmin ? 'AD' : 'ST'}</AvatarFallback>
+                                    <AvatarFallback className="bg-stone-200 text-stone-400 text-3xl">{isAdmin ? 'AD' : 'ST'}</AvatarFallback>
                                 </Avatar>
-                                <span className="absolute bottom-3 right-3 h-5 w-5 rounded-full bg-emerald-500 border-4 border-stone-900 z-30 animate-pulse"></span>
+                                <span className="absolute bottom-3 right-3 h-5 w-5 rounded-full bg-emerald-500 border-4 border-white z-30 animate-pulse"></span>
                             </div>
                         </div>
 
                         {/* TODO: not functional as of yet.
-                        <Button 
-                            variant="secondary" 
-                            size="icon" 
-                            className="absolute bottom-0 right-0 h-10 w-10 rounded-full border border-stone-700 bg-stone-800 hover:bg-stone-700 z-20"
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute bottom-0 right-0 h-10 w-10 rounded-full border border-stone-300 bg-white hover:bg-stone-100 z-20"
                             onClick={triggerFileInput}
                         >
-                            <Camera size={20} className="text-stone-300" />
+                            <Camera size={20} className="text-stone-600" />
                         </Button>
                         <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="hidden" />
                         */}
                     </div>
-                    
-                    <Badge className="bg-amber-950 text-amber-300 border border-amber-800 hover:bg-amber-950 px-3 py-1 uppercase text-xs tracking-wider">
+
+                    <Badge className="bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-100 px-3 py-1 uppercase text-xs tracking-wider">
                         ADMIN ACCOUNT
                     </Badge>
+
+                    <div className="w-full mt-8 pt-6 border-t border-stone-100">
+                        <Button className="w-full flex items-center justify-center gap-2 bg-red-600 text-white hover:bg-red-700" onClick={() => setIsPasswordModalOpen(true)}>
+                            <Lock size={15} /> Change Password
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Right Section: Details */}
-                <div className="flex-1 w-full min-w-0 space-y-8 bg-stone-950/50 rounded-2xl border border-stone-800 p-10">
-                    
-                    <div className="border-b border-stone-800 pb-6 mb-8 w-full">
+                <div className="flex-1 w-full min-w-0 flex flex-col space-y-6 bg-white rounded-2xl border border-stone-200 shadow-sm p-10">
+
+                    <div className="border-b border-stone-200 pb-5 w-full">
                         <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">User Name</div>
-                        <h2 className="text-3xl xl:text-4xl font-black text-white uppercase tracking-tight flex items-center gap-3 w-full min-w-0">
-                            <span className="truncate min-w-0">{displayName}</span> <KeyRound size={20} className="text-amber-400 shrink-0" />
+                        <h2 className="text-3xl xl:text-4xl font-black text-stone-900 uppercase tracking-tight flex items-center gap-3 w-full min-w-0">
+                            <span className="truncate min-w-0">{displayName}</span> <KeyRound size={20} className="text-amber-500 shrink-0" />
                         </h2>
-                        <p className="text-stone-500 text-sm mt-1">{isAdmin ? 'System Administrator' : user.role}</p>
+                        <p className="text-stone-400 text-sm mt-1">{isAdmin ? 'System Administrator' : user.role}</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 w-full">
+                    <div className="flex flex-col gap-y-6 w-full">
                         <div className="space-y-1">
-                            <div className="text-xs font-bold text-stone-400 uppercase tracking-wider tracking-widest">System Role</div>
+                            <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">System Role</div>
                             <div className="flex items-center gap-3">
                                 {isAdmin ? (
-                                    <><ShieldCheck size={18} className="text-amber-400 shrink-0" /> <span className="font-semibold text-white">Administrator</span></>
+                                    <><ShieldCheck size={18} className="text-amber-500 shrink-0" /> <span className="font-semibold text-stone-800">Administrator</span></>
                                 ) : (
-                                    <><UserCheck size={18} className="text-blue-500 shrink-0" /> <span className="font-semibold text-white">{`${user.role}`}</span></>
+                                    <><UserCheck size={18} className="text-blue-500 shrink-0" /> <span className="font-semibold text-stone-800">{`${user.role}`}</span></>
                                 )}
                             </div>
-                            <p className="text-xs text-stone-500 font-mono">Full system access permissions</p>
+                            <p className="text-xs text-stone-400 font-mono">Full system access permissions</p>
                         </div>
 
                         <div className="space-y-1 w-full min-w-0">
                             <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">Email</div>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full min-w-0">
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <Mail size={18} className="text-stone-400 shrink-0" /> 
-                                    <span className="font-medium text-white truncate min-w-0">{user.email}</span>
-                                </div>
-                                <Badge variant="outline" className="border-emerald-700/50 text-emerald-400 text-xs px-2 h-5 w-fit shrink-0 whitespace-nowrap ml-auto sm:ml-0">Verified Email</Badge>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Mail size={18} className="text-stone-400 shrink-0" />
+                                <span className="font-medium text-stone-800 truncate min-w-0">{user.email}</span>
                             </div>
                         </div>
-                        
-                        <div className="space-y-1 col-span-1 md:col-span-2">
+
+                        <div className="space-y-1">
                              <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">Position</div>
                              <div className="flex items-center gap-3">
-                                <Briefcase size={18} className="text-stone-400 shrink-0" /> 
-                                <span className="font-medium text-white truncate">{displayPosition}</span>
+                                <Briefcase size={18} className="text-stone-400 shrink-0" />
+                                <span className="font-medium text-stone-800 truncate">{displayPosition}</span>
                              </div>
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-stone-800 mt-10 w-full pb-2">
-                        {isEditing ? (
-                            <form onSubmit={handleSaveProfile} className="space-y-6 animate-in fade-in duration-300 w-full">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name" className="text-xs font-bold text-stone-400 uppercase tracking-wider">Full Name</Label>
-                                    <Input id="name" name="name" defaultValue={displayName} className="bg-stone-950 border-stone-700 text-white focus:border-amber-500" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-xs font-bold text-stone-400 uppercase tracking-wider">Email Address</Label>
-                                    <Input id="email" name="email" type="email" defaultValue={user.email} className="bg-stone-950 border-stone-700 text-white focus:border-amber-500" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="position" className="text-xs font-bold text-stone-400 uppercase tracking-wider">Job Title / Position</Label>
-                                    <Input id="position" name="position" defaultValue={(user as any).position || ""} placeholder="e.g. Lead Developer" className="bg-stone-950 border-stone-700 text-white focus:border-amber-500" />
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-3 pt-6 w-full">
-                                    <Button type="button" variant="ghost" className="w-full sm:flex-1 text-stone-400 hover:text-white" onClick={handleCancelEdit}>
-                                        Cancel Changes
-                                    </Button>
-                                    <Button type="submit" className="w-full sm:flex-1 bg-stone-950 border border-stone-700 hover:bg-stone-800 text-white flex items-center justify-center gap-2">
-                                        <Upload size={16} /> Save Profile Changes
-                                    </Button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="animate-in fade-in duration-300 flex flex-col sm:flex-row gap-4 w-full">
-                                {/* not functional as of yet, including change password
-                                <Button className="w-full sm:flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold" onClick={handleOpenEdit}>
-                                    <UserCog size={18} /> Edit Profile Details
-                                </Button>
-                                */}
-                                <Button variant="outline" className="w-full sm:flex-1 flex items-center justify-center gap-2 border-stone-700 bg-stone-950 text-stone-400 hover:bg-stone-800 hover:text-white" onClick={() => setIsPasswordModalOpen(true)}>
-                                    <Lock size={16} /> Change System Password
-                                </Button>
-                            </div>
-                        )}
-                    </div>
 
                 </div>
-            </CardContent>
-        </Card>
+        </div>
 
         {/* CHANGE PASSWORD MODAL */}
         <Dialog open={isPasswordModalOpen} onOpenChange={handleCloseModal}>
-            <DialogContent className="sm:max-w-md bg-stone-900 border-stone-800">
+            <DialogContent className="sm:max-w-md bg-white border-stone-200">
                 <DialogHeader className="flex flex-col items-center text-center pb-2">
-                    <div className="w-12 h-12 bg-amber-950 text-amber-400 rounded-full flex items-center justify-center mb-4 border border-amber-800">
+                    <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4 border border-amber-200">
                         <Lock size={24} />
                     </div>
-                    <DialogTitle className="text-xl font-bold text-white">Change System Password</DialogTitle>
+                    <DialogTitle className="text-xl font-bold text-stone-900">Change Password</DialogTitle>
                     <DialogDescription className="text-stone-500 mt-2">
                         Enter your current password to confirm your identity, then set a new one.
                     </DialogDescription>
@@ -274,20 +186,20 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
 
                 <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-2">
                     {passwordError && (
-                        <div className="p-3 bg-red-950 text-red-300 border border-red-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                             <AlertCircle size={16} className="shrink-0" />
                             <span>{passwordError}</span>
                         </div>
                     )}
                     {passwordSuccess && (
-                        <div className="p-3 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                             <CheckCircle2 size={16} className="shrink-0" />
                             <span>{passwordSuccess}</span>
                         </div>
                     )}
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="currentPassword" className="text-stone-400">Current Password</Label>
+                        <Label htmlFor="currentPassword" className="text-stone-600">Current Password</Label>
                         <Input
                             id="currentPassword"
                             type="password"
@@ -295,12 +207,12 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             disabled={isProcessing}
-                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            className="bg-white border-stone-300 text-stone-900 focus:border-amber-500"
                             required
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="newPassword" className="text-stone-400">New Password</Label>
+                        <Label htmlFor="newPassword" className="text-stone-600">New Password</Label>
                         <Input
                             id="newPassword"
                             type="password"
@@ -308,11 +220,11 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             disabled={isProcessing}
-                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            className="bg-white border-stone-300 text-stone-900 focus:border-amber-500"
                             required
                         />
                         <div className="pt-1 space-y-1">
-                            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Password Must Include</p>
+                            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Password Must Include</p>
                             {[
                                 { label: "At least 8 characters long", met: newPassword.length >= 8 },
                                 { label: "At least one uppercase letter", met: /[A-Z]/.test(newPassword) },
@@ -320,16 +232,16 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                                 { label: "At least one symbol", met: /[^A-Za-z0-9]/.test(newPassword) },
                             ].map(({ label, met }) => (
                                 <div key={label} className="flex items-center gap-2 text-xs">
-                                    <span className={met ? "text-emerald-400" : "text-stone-600"}>
+                                    <span className={met ? "text-emerald-500" : "text-stone-300"}>
                                         {met ? "✓" : "✗"}
                                     </span>
-                                    <span className={met ? "text-emerald-400" : "text-stone-500"}>{label}</span>
+                                    <span className={met ? "text-emerald-600" : "text-stone-400"}>{label}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="confirmPassword" className="text-stone-400">Confirm New Password</Label>
+                        <Label htmlFor="confirmPassword" className="text-stone-600">Confirm New Password</Label>
                         <Input
                             id="confirmPassword"
                             type="password"
@@ -337,13 +249,13 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             disabled={isProcessing}
-                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            className="bg-white border-stone-300 text-stone-900 focus:border-amber-500"
                             required
                         />
                     </div>
 
                     <DialogFooter className="pt-4 flex sm:justify-between w-full gap-2">
-                        <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-400 hover:text-white">
+                        <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-500 hover:text-stone-900">
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isProcessing} className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold">

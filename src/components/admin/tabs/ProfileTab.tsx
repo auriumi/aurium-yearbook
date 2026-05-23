@@ -120,7 +120,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
                     </Badge>
 
                     <div className="w-full mt-8 pt-6 border-t border-stone-100">
-                        <Button className="w-full flex items-center justify-center gap-2 bg-red-600 text-white hover:bg-red-700" onClick={() => setIsPasswordModalOpen(true)}>
+                        <Button className="w-full flex items-center justify-center gap-2 bg-red-500 text-white hover:bg-red-600" onClick={() => setIsPasswordModalOpen(true)}>
                             <Lock size={15} /> Change Password
                         </Button>
                     </div>
@@ -258,7 +258,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
                         <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-500 hover:text-stone-900">
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isProcessing} className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold">
+                        <Button type="submit" disabled={isProcessing} className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold">
                             {isProcessing ? "Updating..." : "Update Password"}
                         </Button>
                     </DialogFooter>

@@ -87,8 +87,9 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
       setPasswordError("");
       setPasswordSuccess("");
 
-      if (newPassword.length < 8) {
-          setPasswordError("Password must be at least 8 characters long.");
+      const passwordPolicy = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$/;
+      if (!passwordPolicy.test(newPassword)) {
+          setPasswordError("Password does not meet the requirements below.");
           return;
       }
       if (newPassword !== confirmPassword) {
@@ -303,13 +304,29 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                         <Input
                             id="newPassword"
                             type="password"
-                            placeholder="Enter new password (min. 8 characters)"
+                            placeholder="Enter new password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             disabled={isProcessing}
                             className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
                             required
                         />
+                        <div className="pt-1 space-y-1">
+                            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Password Must Include</p>
+                            {[
+                                { label: "At least 8 characters long", met: newPassword.length >= 8 },
+                                { label: "At least one uppercase letter", met: /[A-Z]/.test(newPassword) },
+                                { label: "At least one number", met: /[0-9]/.test(newPassword) },
+                                { label: "At least one symbol", met: /[^A-Za-z0-9]/.test(newPassword) },
+                            ].map(({ label, met }) => (
+                                <div key={label} className="flex items-center gap-2 text-xs">
+                                    <span className={met ? "text-emerald-400" : "text-stone-600"}>
+                                        {met ? "✓" : "✗"}
+                                    </span>
+                                    <span className={met ? "text-emerald-400" : "text-stone-500"}>{label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="space-y-1.5">
                         <Label htmlFor="confirmPassword" className="text-stone-400">Confirm New Password</Label>

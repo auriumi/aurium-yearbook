@@ -65,16 +65,10 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
       setSelectedFile(null);
   };
 
-  // ========================================================
-  // NEW LOGIC: 3-Step Change Password Wizard
-  // Step 1: Request Code | Step 2: Verify Code | Step 3: Reset
-  // ========================================================
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [passwordStep, setPasswordStep] = useState<1 | 2 | 3>(1);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -88,47 +82,6 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
   const displayPosition = (user as any).position || "Not specified";
   const currentPhoto = tempAvatarUrl || user?.avatar || "";
 
-  // STEP 1 HANDLER: Trigger the email code
-  const handleSendCode = async () => {
-      setIsProcessing(true);
-      setPasswordError("");
-      try {
-          // Simulate API call to send email
-          await new Promise(resolve => setTimeout(resolve, 1500)); 
-          setPasswordStep(2);
-          setPasswordSuccess("Verification code sent to your email!");
-          setTimeout(() => setPasswordSuccess(""), 4000);
-      } catch (error) {
-          setPasswordError("Failed to send verification code. Try again.");
-      } finally {
-          setIsProcessing(false);
-      }
-  };
-
-  // STEP 2 HANDLER: Verify the inputted code
-  const handleVerifyCode = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsProcessing(true);
-      setPasswordError("");
-      try {
-          // Simulate API call to verify code
-          await new Promise(resolve => setTimeout(resolve, 1500)); 
-          
-          if (verificationCode.length < 6) {
-             throw new Error("Invalid code length");
-          }
-
-          setPasswordStep(3);
-          setPasswordSuccess("Identity verified successfully.");
-          setTimeout(() => setPasswordSuccess(""), 3000);
-      } catch (error) {
-          setPasswordError("Invalid verification code. Please check your email.");
-      } finally {
-          setIsProcessing(false);
-      }
-  };
-
-  // STEP 3 HANDLER: Finalize the new password
   const handlePasswordSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setPasswordError("");
@@ -138,24 +91,29 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
           setPasswordError("Password must be at least 8 characters long.");
           return;
       }
-      
       if (newPassword !== confirmPassword) {
           setPasswordError("Passwords do not match.");
           return;
       }
 
       setIsProcessing(true);
-
       try {
-          // Simulate final API call
-          await new Promise(resolve => setTimeout(resolve, 1500)); 
+          const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
+          const res = await fetch(`${baseUrl}/api/admin/change-password`, {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+              setPasswordError(data?.reason || "Failed to update password.");
+              return;
+          }
           setPasswordSuccess("Password updated successfully!");
-          
-          setTimeout(() => {
-              handleCloseModal(); // Reset everything and close
-          }, 2000);
-      } catch (error) {
-          setPasswordError("An error occurred while updating the password.");
+          setTimeout(() => handleCloseModal(), 2000);
+      } catch {
+          setPasswordError("An error occurred. Please try again.");
       } finally {
           setIsProcessing(false);
       }
@@ -164,8 +122,7 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
   const handleCloseModal = () => {
       if (!isProcessing) {
           setIsPasswordModalOpen(false);
-          setPasswordStep(1);
-          setVerificationCode("");
+          setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
           setPasswordError("");
@@ -290,8 +247,8 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
                                     <UserCog size={18} /> Edit Profile Details
                                 </Button>
                                 */}
-                                <Button variant="outline" className="w-full sm:flex-1 flex items-center justify-center gap-2 border-stone-700 bg-stone-950 text-stone-400 hover:bg-stone-800 hover:text-white" onClick={() => setIsPasswordModalOpen(true)} disabled={true} >
-                                    <Lock size={16} /> Change System Password (In Progress)
+                                <Button variant="outline" className="w-full sm:flex-1 flex items-center justify-center gap-2 border-stone-700 bg-stone-950 text-stone-400 hover:bg-stone-800 hover:text-white" onClick={() => setIsPasswordModalOpen(true)}>
+                                    <Lock size={16} /> Change System Password
                                 </Button>
                             </div>
                         )}
@@ -301,137 +258,82 @@ export function ProfileTab({ user, setUser }: ProfileTabProps) {
             </CardContent>
         </Card>
 
-        {/* ========================================== */}
-        {/* WIZARD MODAL: 3-STEP CHANGE PASSWORD */}
-        {/* ========================================== */}
+        {/* CHANGE PASSWORD MODAL */}
         <Dialog open={isPasswordModalOpen} onOpenChange={handleCloseModal}>
-            <DialogContent className="sm:max-w-md bg-stone-900 border-stone-800 transition-all duration-300">
-                <DialogHeader className="flex flex-col items-center text-center sm:text-center pb-2">
-                    
-                    {/* Dynamic Icon based on step */}
+            <DialogContent className="sm:max-w-md bg-stone-900 border-stone-800">
+                <DialogHeader className="flex flex-col items-center text-center pb-2">
                     <div className="w-12 h-12 bg-amber-950 text-amber-400 rounded-full flex items-center justify-center mb-4 border border-amber-800">
-                        {passwordStep === 1 && <Mail size={24} />}
-                        {passwordStep === 2 && <ShieldCheck size={24} />}
-                        {passwordStep === 3 && <Lock size={24} />}
+                        <Lock size={24} />
                     </div>
-                    
-                    {/* Dynamic Title based on step */}
-                    <DialogTitle className="text-xl font-bold text-white">
-                        {passwordStep === 1 && "Verification Required"}
-                        {passwordStep === 2 && "Enter Security Code"}
-                        {passwordStep === 3 && "Create New Password"}
-                    </DialogTitle>
-                    
-                    {/* Dynamic Description based on step */}
+                    <DialogTitle className="text-xl font-bold text-white">Change System Password</DialogTitle>
                     <DialogDescription className="text-stone-500 mt-2">
-                        {passwordStep === 1 && "To protect your account, we need to send a one-time verification code to your email."}
-                        {passwordStep === 2 && "Please check your inbox and enter the 6-digit code we sent you."}
-                        {passwordStep === 3 && "Your identity is verified. You may now set a new, secure password."}
+                        Enter your current password to confirm your identity, then set a new one.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="pt-2">
-                    {/* Universal Feedback Messages */}
+                <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-2">
                     {passwordError && (
-                        <div className="p-3 mb-4 bg-red-950 text-red-300 border border-red-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-3 bg-red-950 text-red-300 border border-red-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                             <AlertCircle size={16} className="shrink-0" />
                             <span>{passwordError}</span>
                         </div>
                     )}
                     {passwordSuccess && (
-                        <div className="p-3 mb-4 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-3 bg-emerald-950 text-emerald-300 border border-emerald-800 rounded-lg text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                             <CheckCircle2 size={16} className="shrink-0" />
                             <span>{passwordSuccess}</span>
                         </div>
                     )}
 
-                    {/* WIZARD STEP 1: Send Code */}
-                    {passwordStep === 1 && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                            <div className="p-4 bg-stone-950 border border-stone-800 rounded-lg text-center">
-                                <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Registered Email</p>
-                                <p className="font-bold text-white text-lg">{user.email}</p>
-                            </div>
-                            <DialogFooter className="pt-6 flex sm:justify-between w-full gap-2">
-                                <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-400 hover:text-white">
-                                    Cancel
-                                </Button>
-                                <Button type="button" onClick={handleSendCode} disabled={isProcessing} className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold">
-                                    {isProcessing ? "Sending..." : "Send Code"}
-                                </Button>
-                            </DialogFooter>
-                        </div>
-                    )}
+                    <div className="space-y-1.5">
+                        <Label htmlFor="currentPassword" className="text-stone-400">Current Password</Label>
+                        <Input
+                            id="currentPassword"
+                            type="password"
+                            placeholder="Enter current password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            disabled={isProcessing}
+                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="newPassword" className="text-stone-400">New Password</Label>
+                        <Input
+                            id="newPassword"
+                            type="password"
+                            placeholder="Enter new password (min. 8 characters)"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            disabled={isProcessing}
+                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="confirmPassword" className="text-stone-400">Confirm New Password</Label>
+                        <Input
+                            id="confirmPassword"
+                            type="password"
+                            placeholder="Confirm new password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            disabled={isProcessing}
+                            className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
+                            required
+                        />
+                    </div>
 
-                    {/* WIZARD STEP 2: Verify Code */}
-                    {passwordStep === 2 && (
-                        <form onSubmit={handleVerifyCode} className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                            <div className="space-y-2 text-center">
-                                <Label htmlFor="verificationCode" className="text-stone-400 sr-only">Verification Code</Label>
-                                <Input 
-                                    id="verificationCode" 
-                                    type="text" 
-                                    placeholder="000000"
-                                    value={verificationCode}
-                                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))} // only allow numbers
-                                    disabled={isProcessing}
-                                    maxLength={6}
-                                    className="bg-stone-950 border-stone-700 text-white focus:border-amber-500 text-center tracking-[0.5em] font-mono text-2xl h-14"
-                                    required
-                                />
-                            </div>
-                            <DialogFooter className="pt-6 flex sm:justify-between w-full gap-2">
-                                <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-400 hover:text-white">
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={isProcessing || verificationCode.length < 6} className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold">
-                                    {isProcessing ? "Verifying..." : "Verify Identity"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    )}
-
-                    {/* WIZARD STEP 3: Create New Password */}
-                    {passwordStep === 3 && (
-                        <form onSubmit={handlePasswordSubmit} className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="newPassword" className="text-stone-400">New Password</Label>
-                                <Input 
-                                    id="newPassword" 
-                                    type="password" 
-                                    placeholder="Enter new password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    disabled={isProcessing}
-                                    className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="confirmPassword" className="text-stone-400">Confirm Password</Label>
-                                <Input 
-                                    id="confirmPassword" 
-                                    type="password" 
-                                    placeholder="Confirm new password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    disabled={isProcessing}
-                                    className="bg-stone-950 border-stone-700 text-white focus:border-amber-500"
-                                    required
-                                />
-                            </div>
-
-                            <DialogFooter className="pt-6 flex sm:justify-between w-full gap-2">
-                                <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-400 hover:text-white">
-                                    Cancel
-                                </Button>
-                                <Button type="submit" className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold" disabled={isProcessing}>
-                                    {isProcessing ? "Updating..." : "Update Password"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    )}
-                </div>
+                    <DialogFooter className="pt-4 flex sm:justify-between w-full gap-2">
+                        <Button type="button" variant="ghost" onClick={handleCloseModal} disabled={isProcessing} className="w-full sm:w-auto text-stone-400 hover:text-white">
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isProcessing} className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold">
+                            {isProcessing ? "Updating..." : "Update Password"}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     </div>

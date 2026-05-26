@@ -14,9 +14,10 @@ import { Admin } from "@/types";
 interface ProfileTabProps {
     user: Admin | null;
     setUser: (user: Admin | null) => void;
+    onLogout: () => void;
 }
 
-export function ProfileTab({ user }: ProfileTabProps) {
+export function ProfileTab({ user, onLogout }: ProfileTabProps) {
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -65,7 +66,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
               return;
           }
           setPasswordSuccess("Password updated successfully!");
-          setTimeout(() => handleCloseModal(), 2000);
+          setTimeout(() => { handleCloseModal(); onLogout(); }, 2000);
       } catch {
           setPasswordError("An error occurred. Please try again.");
       } finally {

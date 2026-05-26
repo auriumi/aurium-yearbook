@@ -267,7 +267,7 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
-            {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} />}
+            {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 
             {/* 5. ROLE MANAGEMENT — ADMINISTRATOR only */}
             {activeTab === 'roles' && <RolesTab staffUser={staffUser} />}

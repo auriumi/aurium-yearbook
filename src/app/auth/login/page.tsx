@@ -38,11 +38,22 @@ export default function StudentLoginPage() {
   const [id, setId] = useState("");
   const [pass, setPass] = useState("");
 
+  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //this strips every non-digit character before storing for zero trust
+    const digitsOnly = e.target.value.replace(/\D/g, "");
+    setId(digitsOnly);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!captchaToken) {
       toast.error("Please complete the CAPTCHA before signing in.");
+      return;
+    }
+
+    if (!/^\d{1,8}$/.test(id)) {
+      toast.error("ID Number has a max of 8 digits only.");
       return;
     }
 
@@ -248,12 +259,14 @@ export default function StudentLoginPage() {
                                 <div className="space-y-2">
                                     <div className="relative">
                                         <User className="absolute left-3 top-3 h-5 w-5 text-stone-400" />
-                                        <Input 
+                                        <Input
                                             id="id"
                                             value={id}
-                                            onChange={(e) => setId(e.target.value)}
-                                            placeholder="ID Number (e.g. 149449)" 
-                                            className="pl-10 bg-stone-50 border-stone-200 text-stone-800 focus:border-amber-500 focus:ring-amber-500/20 h-11" 
+                                            onChange={handleIdChange}
+                                            placeholder="ID Number (e.g. 149449)"
+                                            inputMode="numeric"
+                                            maxLength={20}
+                                            className="pl-10 bg-stone-50 border-stone-200 text-stone-800 focus:border-amber-500 focus:ring-amber-500/20 h-11"
                                             required
                                         />
                                     </div>

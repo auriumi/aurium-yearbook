@@ -306,16 +306,23 @@ export function MasterlistTab(props: MasterlistTabProps) {
         major: exportMajorFilter,
         status: exportStatusFilter,
       });
+
       const res = await fetch(`${baseUrl}/api/admin/masterlist/export?${query}`, { credentials: "include" });
       if (!res.ok) throw new Error("Export failed");
       const { data, total } = await res.json();
       const keyToLabel = Object.fromEntries(
         EXPORT_COLUMN_GROUPS.flatMap(g => g.columns.map(c => [c.key, c.label]))
       );
+
       const labeled = (data as Record<string, any>[]).map(row =>
         Object.fromEntries(Object.entries(row).map(([k, v]) => {
           const header = keyToLabel[k] ?? k;
-          const value = k === "status" && typeof v === "string" ? (STATUS_LABELS[v] ?? v) : v;
+
+          //this parses ISO date into formal date
+          const value =
+            k === "status" && typeof v === "string" ? (STATUS_LABELS[v] ?? v) :
+            k === "birth_date" && typeof v === "string" ? v.split("T")[0] : v;
+
           return [header, value];
         }))
       );

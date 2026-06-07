@@ -46,6 +46,9 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   const [isRosterOpen, setIsRosterOpen] = useState(false);
   const [activeRoster, setActiveRoster] = useState<{date: string, session: 'morning' | 'afternoon', students: any[]} | null>(null);
 
+  // Toggles between the upcoming schedule list and the read-only history view
+  const [showHistory, setShowHistory] = useState(false);
+
   // Schedule management states
   const [isCloseDateOpen, setIsCloseDateOpen] = useState(false);
   const [dateToClose, setDateToClose] = useState<string | null>(null);
@@ -79,8 +82,11 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
       return scheduleDate < today;
   };
 
-  // Past dates are hidden from the list entirely, so they can never be re-opened from here
+  // Past dates are hidden from the main list entirely, so they can never be re-opened from here.
+  // They remain viewable (read-only) through the History toggle.
   const upcomingSchedules = schedules.filter((day) => !isPastDate(day.date));
+  const pastSchedules = schedules.filter((day) => isPastDate(day.date));
+  const displayedSchedules = showHistory ? pastSchedules : upcomingSchedules;
 
   // Opens the capacity modal and determines initial lock state
   const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
@@ -242,9 +248,25 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl border border-stone-200 shadow-sm gap-4">
             <div>
                 <h2 className="text-2xl font-serif font-bold text-stone-800">Pictorial Availability</h2>
-                <p className="text-stone-500 text-sm mt-1">Manage dates, capacities, and monitor student attendance per session.</p>
+                <p className="text-stone-500 text-sm mt-1">
+                    {showHistory
+                        ? "Viewing past schedule dates (read-only)."
+                        : "Manage dates, capacities, and monitor student attendance per session."}
+                </p>
             </div>
-            
+
+            <div className="flex items-center gap-3">
+                {/* Toggle between upcoming schedules and a read-only history view of past dates */}
+                <Button
+                    variant="outline"
+                    className="border-stone-200 text-stone-600 hover:bg-stone-50"
+                    onClick={() => setShowHistory(!showHistory)}
+                >
+                    {showHistory
+                        ? <><Calendar className="mr-2 h-4 w-4" /> View Upcoming</>
+                        : <><Clock className="mr-2 h-4 w-4" /> View History</>}
+                </Button>
+
             {/* Modal for adding a new schedule date — ADMINISTRATOR only */}
             <Dialog open={isAddDateOpen} onOpenChange={setIsAddDateOpen}>
                 {canCreateSchedule && (
@@ -302,11 +324,17 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            </div>
         </div>
-        
+
         {/* Schedule Cards */}
         <div className="grid gap-6">
-            {upcomingSchedules.map((day: Schedule, idx) => {
+            {displayedSchedules.length === 0 && (
+                <div className="text-center text-stone-400 py-12 text-sm italic bg-white rounded-2xl border border-dashed border-stone-200">
+                    {showHistory ? "No past schedule dates yet." : "No upcoming schedule dates."}
+                </div>
+            )}
+            {displayedSchedules.map((day: Schedule, idx) => {
 
                 // Calculate booked slots for rendering status
                 const totalBooked = day.bookings.length;
@@ -328,34 +356,43 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                     Pressing "Open" actually closes the schedule and vice versa for "Close".
                                     (I have no idea on how did you pass the "not allowed" symbol into this button) */}
                                 <div className="flex items-center gap-3">
-                                    {/* UI/UX Fix: Transformed to a dynamic toggle button with clear open/close states */}
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className={ 
-                                            day.is_open 
-                                            ? "text-amber-700 border-amber-200 hover:bg-amber-50 h-8 px-3 font-medium bg-white" 
-                                            : "text-green-700 border-green-200 hover:bg-green-50 h-8 px-3 font-medium bg-white"
-                                        }
-                                        onClick={() => {
-                                            setDateToClose(day.date);
-                                            setSelectedBookingId(day.id);
-                                            setIsClosingAction(day.is_open); // Determine the intended action for the modal
-                                            setIsCloseDateOpen(true);
-                                        }}
-                                    >
-                                        {day.is_open ? <><Lock className="w-4 h-4 mr-1.5" /> Close Schedule</> : <><Unlock className="w-4 h-4 mr-1.5" /> Re-open</>} 
-                                    </Button>
-
-                                    {/* Status Badge: Now clearly indicates if the day is manually CLOSED */}
-                                    {!day.is_open ? (
+                                    {/* History entries are read-only — no close/re-open action, just a status badge */}
+                                    {showHistory ? (
                                         <Badge variant="outline" className="text-stone-500 border-stone-300 bg-stone-100 uppercase font-bold tracking-wider">
-                                            <Lock className="w-3 h-3 mr-1"/> CLOSED
+                                            <Clock className="w-3 h-3 mr-1"/> PAST
                                         </Badge>
                                     ) : (
-                                        <Badge variant="outline" className={isFull ? "text-red-600 border-red-200 bg-red-50" : "text-green-600 border-green-200 bg-green-50"}>
-                                            {isFull ? "FULLY BOOKED" : "AVAILABLE"}
-                                        </Badge>
+                                        <>
+                                            {/* UI/UX Fix: Transformed to a dynamic toggle button with clear open/close states */}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className={
+                                                    day.is_open
+                                                    ? "text-amber-700 border-amber-200 hover:bg-amber-50 h-8 px-3 font-medium bg-white"
+                                                    : "text-green-700 border-green-200 hover:bg-green-50 h-8 px-3 font-medium bg-white"
+                                                }
+                                                onClick={() => {
+                                                    setDateToClose(day.date);
+                                                    setSelectedBookingId(day.id);
+                                                    setIsClosingAction(day.is_open); // Determine the intended action for the modal
+                                                    setIsCloseDateOpen(true);
+                                                }}
+                                            >
+                                                {day.is_open ? <><Lock className="w-4 h-4 mr-1.5" /> Close Schedule</> : <><Unlock className="w-4 h-4 mr-1.5" /> Re-open</>}
+                                            </Button>
+
+                                            {/* Status Badge: Now clearly indicates if the day is manually CLOSED */}
+                                            {!day.is_open ? (
+                                                <Badge variant="outline" className="text-stone-500 border-stone-300 bg-stone-100 uppercase font-bold tracking-wider">
+                                                    <Lock className="w-3 h-3 mr-1"/> CLOSED
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className={isFull ? "text-red-600 border-red-200 bg-red-50" : "text-green-600 border-green-200 bg-green-50"}>
+                                                    {isFull ? "FULLY BOOKED" : "AVAILABLE"}
+                                                </Badge>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -391,16 +428,18 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                     {is_morning ? '🌤️ Morning Session' : '☀️ Afternoon Session'}
                                                 </h4>
                                                 
-                                                {/* Edit Capacity Button - triggers the edit modal */}
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm" 
-                                                    className="h-8 w-8 p-0 text-stone-400 hover:text-amber-700" 
-                                                    title="Edit Capacity"
-                                                    onClick={() => openCapacityDialog(day.date, session.toUpperCase() as 'AM'|'PM', slots, bookedCount, day.id)}
-                                                >
-                                                    <Edit3 className="h-4 w-4" />
-                                                </Button>
+                                                {/* Edit Capacity Button - hidden in history view since past data is read-only */}
+                                                {!showHistory && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 w-8 p-0 text-stone-400 hover:text-amber-700"
+                                                        title="Edit Capacity"
+                                                        onClick={() => openCapacityDialog(day.date, session.toUpperCase() as 'AM'|'PM', slots, bookedCount, day.id)}
+                                                    >
+                                                        <Edit3 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
 
                                             {/* Progress bar for visual capacity tracking */}

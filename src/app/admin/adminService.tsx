@@ -110,18 +110,17 @@ export async function addSchedule(date: string, am_cap: number, pm_cap: number) 
         });
 
         if (!res.ok) {
-            //duplicate handler (explicitly 409)
-            if (res.status == 409) {
+            if (res.status === 409 || res.status === 400) {
                 const err_body = await res.json();
                 return {
                     success: false,
                     reason: err_body.reason
                 };
             }
-            
-            return { 
-                success: false, 
-                reason: "Something went wrong in the server" 
+
+            return {
+                success: false,
+                reason: "Something went wrong in the server"
             };
         }
         return { success: true };

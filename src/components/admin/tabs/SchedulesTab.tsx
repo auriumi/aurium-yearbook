@@ -85,6 +85,14 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
       return scheduleDate < today;
   };
 
+  // Today's date as "YYYY-MM-DD", used to stop the date picker from offering past dates
+  const todayInputValue = (() => {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${now.getFullYear()}-${month}-${day}`;
+  })();
+
   // Newest date first
   const byDateDescending = (a: Schedule, b: Schedule) => new Date(b.date).getTime() - new Date(a.date).getTime();
 
@@ -123,6 +131,9 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   // Handles adding a new schedule date
   const handleAddNewDate = async () => {
     if (!newDateInput) return;
+
+    if (isPastDate(newDateInput)) { toast.error("Cannot schedule a date that has already passed."); return; }
+
     const exists = schedules.some(s => s.date === newDateInput);
     if (exists) { toast.error("Date already exists!"); return; }
 
@@ -291,7 +302,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label>Select Date</Label>
-                            <Input type="date" value={newDateInput} onChange={(e) => setNewDateInput(e.target.value)} />
+                            <Input type="date" min={todayInputValue} value={newDateInput} onChange={(e) => setNewDateInput(e.target.value)} />
                         </div>
 
                         {/* Dropdown to select whole day or half day session */}

@@ -266,9 +266,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
             <div>
                 <h2 className="text-2xl font-serif font-bold text-stone-800">Pictorial Availability</h2>
                 <p className="text-stone-500 text-sm mt-1">
-                    {showHistory
-                        ? "Viewing past schedule dates (read-only)."
-                        : "Manage dates, capacities, and monitor student attendance per session."}
+                    Manage dates, capacities, and monitor student attendance per session.
                 </p>
             </div>
 

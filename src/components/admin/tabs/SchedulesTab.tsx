@@ -68,6 +68,20 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
       return new Date(dateString).toLocaleDateString('en-US', { month: 'long', day: '2-digit' });
   };
 
+  // True if the schedule date is strictly before today (time-of-day ignored)
+  const isPastDate = (dateString: string) => {
+      const scheduleDate = new Date(dateString);
+      scheduleDate.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return scheduleDate < today;
+  };
+
+  // Past dates are hidden from the list entirely, so they can never be re-opened from here
+  const upcomingSchedules = schedules.filter((day) => !isPastDate(day.date));
+
   // Opens the capacity modal and determines initial lock state
   const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
     setEditingCapacity({ date, session, value: currentSlots, limit: limit, id: id });
@@ -292,7 +306,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
         
         {/* Schedule Cards */}
         <div className="grid gap-6">
-            {schedules.map((day: Schedule, idx) => {
+            {upcomingSchedules.map((day: Schedule, idx) => {
 
                 // Calculate booked slots for rendering status
                 const totalBooked = day.bookings.length;

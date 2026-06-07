@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Edit3, Calendar, UserPlus, Hash, Users, CheckCircle2, XCircle, Clock, Filter, Loader2, Ban, Lock, Unlock } from "lucide-react";
+import { Plus, Edit3, Calendar, UserPlus, Hash, Users, CheckCircle2, XCircle, Clock, Filter, Loader2, Ban, Lock, Unlock, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,9 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   // Toggles between the upcoming schedule list and the read-only history view
   const [showHistory, setShowHistory] = useState(false);
 
+  // Toggles between the detailed card layout and a compact list/table layout
+  const [isCompactView, setIsCompactView] = useState(false);
+
   // Schedule management states
   const [isCloseDateOpen, setIsCloseDateOpen] = useState(false);
   const [dateToClose, setDateToClose] = useState<string | null>(null);
@@ -82,10 +85,13 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
       return scheduleDate < today;
   };
 
+  // Newest date first
+  const byDateDescending = (a: Schedule, b: Schedule) => new Date(b.date).getTime() - new Date(a.date).getTime();
+
   // Past dates are hidden from the main list entirely, so they can never be re-opened from here.
   // They remain viewable (read-only) through the History toggle.
-  const upcomingSchedules = schedules.filter((day) => !isPastDate(day.date));
-  const pastSchedules = schedules.filter((day) => isPastDate(day.date));
+  const upcomingSchedules = schedules.filter((day) => !isPastDate(day.date)).sort(byDateDescending);
+  const pastSchedules = schedules.filter((day) => isPastDate(day.date)).sort(byDateDescending);
   const displayedSchedules = showHistory ? pastSchedules : upcomingSchedules;
 
   // Opens the capacity modal and determines initial lock state
@@ -327,13 +333,156 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
             </div>
         </div>
 
+        {/* Layout toggle: switch between the detailed card layout and a compact list/table layout */}
+        <div className="flex items-center justify-end">
+            <div className="flex items-center rounded-lg border border-stone-200 bg-white p-1">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Card view"
+                    className={`h-8 px-2.5 ${!isCompactView ? "bg-stone-100 text-stone-800" : "text-stone-400 hover:text-stone-600"}`}
+                    onClick={() => setIsCompactView(false)}
+                >
+                    <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Compact list view"
+                    className={`h-8 px-2.5 ${isCompactView ? "bg-stone-100 text-stone-800" : "text-stone-400 hover:text-stone-600"}`}
+                    onClick={() => setIsCompactView(true)}
+                >
+                    <List className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+
+        {/* Empty state — shared between both layouts */}
+        {displayedSchedules.length === 0 && (
+            <div className="text-center text-stone-400 py-12 text-sm italic bg-white rounded-2xl border border-dashed border-stone-200">
+                {showHistory ? "No past schedule dates yet." : "No upcoming schedule dates."}
+            </div>
+        )}
+
+        {/* Compact list/table view — same actions as the card view, just denser */}
+        {isCompactView && displayedSchedules.length > 0 && (
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead className="bg-stone-50 border-b border-stone-100 text-stone-500 uppercase text-xs tracking-wider">
+                        <tr>
+                            <th className="text-left font-semibold px-4 py-3">Date</th>
+                            <th className="text-left font-semibold px-4 py-3">Status</th>
+                            <th className="text-left font-semibold px-4 py-3">Morning (AM)</th>
+                            <th className="text-left font-semibold px-4 py-3">Afternoon (PM)</th>
+                            {/* No actionable state on past dates, so the column is dropped entirely */}
+                            {!showHistory && <th className="text-right font-semibold px-4 py-3">Actions</th>}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                        {displayedSchedules.map((day: Schedule, idx) => {
+                            const totalBooked = day.bookings.length;
+                            const totalSlots = day.max_morning_cap + day.max_afternoon_cap;
+                            const isFull = totalBooked >= totalSlots;
+
+                            const amRoster = day.bookings.filter(p => p.period === "AM");
+                            const pmRoster = day.bookings.filter(p => p.period === "PM");
+
+                            return (
+                                <tr key={idx} className={!day.is_open ? "opacity-60" : ""}>
+                                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className={`${day.is_open ? "text-amber-600" : "text-stone-400"} h-4 w-4`} />
+                                            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {showHistory ? (
+                                            <Badge variant="outline" className="text-stone-500 border-stone-300 bg-stone-100 uppercase font-bold tracking-wider">
+                                                <Clock className="w-3 h-3 mr-1"/> ENDED
+                                            </Badge>
+                                        ) : !day.is_open ? (
+                                            <Badge variant="outline" className="text-stone-500 border-stone-300 bg-stone-100 uppercase font-bold tracking-wider">
+                                                <Lock className="w-3 h-3 mr-1"/> CLOSED
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className={isFull ? "text-red-600 border-red-200 bg-red-50" : "text-green-600 border-green-200 bg-green-50"}>
+                                                {isFull ? "FULLY BOOKED" : "AVAILABLE"}
+                                            </Badge>
+                                        )}
+                                    </td>
+
+                                    {/* Morning / Afternoon session cells share the same layout */}
+                                    {([
+                                        { label: 'AM' as const, slots: day.max_morning_cap, roster: amRoster, rosterKey: 'morning' as const },
+                                        { label: 'PM' as const, slots: day.max_afternoon_cap, roster: pmRoster, rosterKey: 'afternoon' as const },
+                                    ]).map(({ label, slots, roster, rosterKey }) => (
+                                        <td key={label} className="px-4 py-3">
+                                            {slots === 0 ? (
+                                                <span className="text-stone-300 italic text-xs">No schedule</span>
+                                            ) : (
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`font-medium ${roster.length >= slots ? "text-red-600" : "text-stone-700"}`}>{roster.length}</span>
+                                                    <span className="text-stone-400">/ {slots}</span>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0 ml-1 text-stone-400 hover:text-stone-700"
+                                                        title="View Roster"
+                                                        onClick={() => openRosterDialog(day.date, rosterKey, roster)}
+                                                    >
+                                                        <Users className="h-3.5 w-3.5" />
+                                                    </Button>
+
+                                                    {!showHistory && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 w-7 p-0 text-stone-400 hover:text-amber-700"
+                                                            title="Edit Capacity"
+                                                            onClick={() => openCapacityDialog(day.date, label, slots, roster.length, day.id)}
+                                                        >
+                                                            <Edit3 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </td>
+                                    ))}
+
+                                    {/* No actionable state on past dates, so the column is dropped entirely */}
+                                    {!showHistory && (
+                                        <td className="px-4 py-3 text-right">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className={
+                                                    day.is_open
+                                                    ? "text-amber-700 border-amber-200 hover:bg-amber-50 h-8 px-3 font-medium bg-white"
+                                                    : "text-green-700 border-green-200 hover:bg-green-50 h-8 px-3 font-medium bg-white"
+                                                }
+                                                onClick={() => {
+                                                    setDateToClose(day.date);
+                                                    setSelectedBookingId(day.id);
+                                                    setIsClosingAction(day.is_open);
+                                                    setIsCloseDateOpen(true);
+                                                }}
+                                            >
+                                                {day.is_open ? <><Lock className="w-4 h-4 mr-1.5" /> Close</> : <><Unlock className="w-4 h-4 mr-1.5" /> Re-open</>}
+                                            </Button>
+                                        </td>
+                                    )}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        )}
+
         {/* Schedule Cards */}
+        {!isCompactView && (
         <div className="grid gap-6">
-            {displayedSchedules.length === 0 && (
-                <div className="text-center text-stone-400 py-12 text-sm italic bg-white rounded-2xl border border-dashed border-stone-200">
-                    {showHistory ? "No past schedule dates yet." : "No upcoming schedule dates."}
-                </div>
-            )}
             {displayedSchedules.map((day: Schedule, idx) => {
 
                 // Calculate booked slots for rendering status
@@ -484,6 +633,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                 )
             })}
         </div>
+        )}
 
         {/* --- MODAL: ROSTER / ATTENDANCE CHECKER --- */}
         <Dialog open={isRosterOpen} onOpenChange={setIsRosterOpen}>

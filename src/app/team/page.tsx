@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { ArrowLeft, Sparkles, Users, Award, Star, X } from "lucide-react";
+import { ArrowLeft, Users, Award, Star, X } from "lucide-react";
 
 const STAFF_ARCHIVES = {
   "2025": { count: 12, folder: "AURIUM Staff 2025", groupPic: "GROUP PHOTO.jpg" },

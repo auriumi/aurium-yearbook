@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, CheckCircle, AlertTriangle, Loader2, Edit } from "lucide-react"; 
+import { Calendar, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import QRCode from "react-qr-code"; 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Booking, Schedule } from "@/types";
 import { useModalState } from "@/hooks/useModalState";
 
@@ -45,14 +45,6 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
             setIsSubmitting(false);
         }
     }
-  };
-
-  // Helper to open modal for re-booking
-  const handleRebookClick = () => {
-    setSelectedBookingId(0);
-    setSelectedDate("");
-    setSelectedSession("");
-    bookingModal.open();
   };
 
   return (

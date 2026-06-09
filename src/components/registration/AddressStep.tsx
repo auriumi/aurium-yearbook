@@ -7,7 +7,7 @@ const fixTextEncoding = (text: string) => {
     try {
         // This decodes wrongly encoded UTF-8 strings returned by older PHP/MySQL APIs
         return decodeURIComponent(escape(text));
-    } catch (e) {
+    } catch {
         return text; // Fallback if it fails to decode
     }
 };

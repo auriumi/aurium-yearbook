@@ -27,34 +27,34 @@ interface Sponsor {
 const TITLES = ["Mr.", "Mrs.", "Ms.", "Dr.", "Atty.", "Engr.", "Arch.", "Prof.", "Rev.", "Hon."];
 const EMPTY_SPONSORS = ["", "", "", ""];
 
+function parseInitialSponsors(initialSolicitations: StudentSolicitation[]): Sponsor[] {
+  const bySlot = new Map<number, StudentSolicitation>();
+  initialSolicitations.forEach((item) => {
+    if (item.slot >= 1 && item.slot <= 4) {
+      bySlot.set(item.slot, item);
+    }
+  });
+
+  return EMPTY_SPONSORS.map((_, index) => {
+    const slotData = bySlot.get(index + 1);
+    if (!slotData) return { type: "PERSON", title: "Mr.", name: "" };
+
+    return {
+      type: slotData.type,
+      title: slotData.type === "PERSON" ? (slotData.title || "Mr.") : "",
+      name: slotData.name || "",
+    };
+  });
+}
+
 export function SolicitationWidget({ initialSolicitations = [], onSave }: SolicitationWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  const parseInitialSponsors = (): Sponsor[] => {
-    const bySlot = new Map<number, StudentSolicitation>();
-    initialSolicitations.forEach((item) => {
-      if (item.slot >= 1 && item.slot <= 4) {
-        bySlot.set(item.slot, item);
-      }
-    });
 
-    return EMPTY_SPONSORS.map((_, index) => {
-      const slotData = bySlot.get(index + 1);
-      if (!slotData) return { type: "PERSON", title: "Mr.", name: "" };
-
-      return {
-        type: slotData.type,
-        title: slotData.type === "PERSON" ? (slotData.title || "Mr.") : "",
-        name: slotData.name || "",
-      };
-    });
-  };
-
-  const [sponsors, setSponsors] = useState<Sponsor[]>(parseInitialSponsors());
+  const [sponsors, setSponsors] = useState<Sponsor[]>(() => parseInitialSponsors(initialSolicitations));
 
   useEffect(() => {
-    setSponsors(parseInitialSponsors());
+    setSponsors(parseInitialSponsors(initialSolicitations));
   }, [initialSolicitations]);
 
   const handleUpdate = (index: number, field: keyof Sponsor, value: string) => {
@@ -86,7 +86,7 @@ export function SolicitationWidget({ initialSolicitations = [], onSave }: Solici
   };
 
   const handleCancel = () => {
-    setSponsors(parseInitialSponsors());
+    setSponsors(parseInitialSponsors(initialSolicitations));
     setIsEditing(false);
   };
 

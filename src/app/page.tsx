@@ -3,18 +3,13 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image"; 
-import { motion, useScroll, useTransform, easeOut, AnimatePresence } from "framer-motion";
+import { motion, easeOut, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, 
-  BookOpen, 
-  CalendarDays,
   CheckCircle,
-  LayoutGrid,
   HelpCircle,
   UserCircle,
-  ScrollText,
   Trophy,
-  Shield,
   Star,
   Clock,
   Ribbon,
@@ -26,15 +21,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Anchor,
-  Facebook,
-  AlertTriangle
+  Facebook
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AuriumLandingPage() {
-  const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
-  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const carouselRef = useRef(null);
   

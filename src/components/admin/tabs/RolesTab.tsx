@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Admin } from "@/types";
 import * as adminService from "@/app/admin/adminService";
 import toast from "react-hot-toast";
 
@@ -19,10 +18,6 @@ interface StaffMember {
   email: string;
   role: string;
   last_login: string | null;
-}
-
-interface RolesTabProps {
-  staffUser: Admin | null;
 }
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
@@ -60,7 +55,7 @@ function RoleChip({ role, size = "sm" }: { role: string; size?: "sm" | "xs" }) {
   );
 }
 
-export function RolesTab({ staffUser }: RolesTabProps) {
+export function RolesTab() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

@@ -69,7 +69,7 @@ export default function QueuePage() {
         } else {
             setQueueData([]);
         }
-      } catch (error) {
+      } catch {
         setIsOffline(true);
       } finally {
         setIsLoading(false);
@@ -158,11 +158,14 @@ export default function QueuePage() {
             {serving.length > 0 ? serving.map((student) => (
               <Card key={student.id} className="bg-stone-900 border-amber-600/30 border-t-4 shadow-2xl relative overflow-hidden group rounded-xl">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10"></div>
-                <img 
-                  src={student.photoUrl ?? ""} 
+                <Image
+                  unoptimized
+                  fill
+                  src={student.photoUrl || "https://github.com/shadcn.png"}
                   alt={student.name}
+                  sizes="20vw"
                   className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://github.com/shadcn.png"; }}
+                  onError={(event) => { event.currentTarget.src = "https://github.com/shadcn.png"; }}
                 />
                 <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-center">
                   <h3 className="text-xl font-bold text-white leading-tight mb-2 truncate px-2">{student.name}</h3>

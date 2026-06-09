@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Edit3, Calendar, UserPlus, Hash, Users, CheckCircle2, XCircle, Clock, Filter, Loader2, Ban, Lock, Unlock, LayoutGrid, List } from "lucide-react";
+import { Plus, Edit3, Calendar, Hash, Users, CheckCircle2, Clock, Loader2, Lock, Unlock, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,13 +48,11 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   // Student override states
   const [manualStudentId, setManualStudentId] = useState("");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
-  const [activeAddStudentSession, setActiveAddStudentSession] = useState<{date: string, session: 'am'|'pm'} | null>(null);
+  const [activeAddStudentSession] = useState<{date: string, session: 'am'|'pm'} | null>(null);
 
   // Capacity override states
   const [isEditCapacityOpen, setIsEditCapacityOpen] = useState(false);
   const [editingCapacity, setEditingCapacity] = useState<{date: string, session: 'AM'|'PM', value: number, limit: number, id: number } | null>(null);
-  const [isSessionClosed, setIsSessionClosed] = useState(false);
-  const [previousCapacity, setPreviousCapacity] = useState(50);
 
   // Roster view states
   const [isRosterOpen, setIsRosterOpen] = useState(false);
@@ -117,8 +115,6 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   // Opens the capacity modal and determines initial lock state
   const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
     setEditingCapacity({ date, session, value: currentSlots, limit: limit, id: id });
-    setIsSessionClosed(currentSlots === 0);
-    setPreviousCapacity(currentSlots > 0 ? currentSlots : 50); // Remember the last valid capacity
     setIsEditCapacityOpen(true);
   };
 
@@ -171,13 +167,6 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
       console.error("Error adding schedule", err);
       toast.error("Error connecting to the server");
     }
-  };
-
-  // Opens the modal for adding a student manually
-  const handleOpenStudentOverride = (date: string, session: 'am'|'pm') => {
-    setActiveAddStudentSession({ date, session });
-    setManualStudentId("");
-    setIsAddStudentOpen(true);
   };
 
   // Processes the server request to update the schedule capacity

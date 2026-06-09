@@ -1,8 +1,8 @@
 "use client";
 
-import { ScanLine, CheckCircle, XCircle, Camera, CameraOff, Search, ListFilter } from "lucide-react";
+import { ScanLine, XCircle, Camera, CameraOff, Search, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,7 +25,7 @@ export default function ScannerPage() {
     isCameraActive, setIsCameraActive,
     currentSessionKey, setCurrentSessionKey,
     selectedSession,
-    filter, setFilter,
+    setFilter,
     displayedList,
     totalStudents,
     attendedCount,

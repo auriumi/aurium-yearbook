@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, MapPin, Phone, Mail, Quote, GraduationCap } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Student } from "@/types";
@@ -89,11 +90,18 @@ export function YearbookPreview({ user, onClose }: YearbookPreviewProps) {
         <div className="w-full lg:w-[40%] bg-stone-100 relative flex items-center justify-center p-8 lg:p-12 order-1 pt-24 lg:pt-12">
             <div className="bg-white p-4 shadow-2xl rotate-1 w-full max-w-md mx-auto relative z-10">
                 <div className="aspect-[3/4] w-full bg-stone-200 relative overflow-hidden">
-                   <img 
-                     src={photoUrl} 
-                     alt="Graduation Portrait" 
-                     className="w-full h-full object-cover" 
-                   />
+                   {photoUrl ? (
+                     <Image
+                       unoptimized
+                       fill
+                       src={photoUrl}
+                       alt="Graduation Portrait"
+                       sizes="(max-width: 1024px) 100vw, 40vw"
+                       className="object-cover"
+                     />
+                   ) : (
+                     <div className="w-full h-full bg-stone-300" />
+                   )}
                 </div>
                 <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-[#2a1a10] text-white px-6 py-2 shadow-lg w-max max-w-[90%] text-center">
                    <span className="text-xl font-serif font-bold tracking-widest truncate block">{details.personal.lname}</span>

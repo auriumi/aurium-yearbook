@@ -1,11 +1,5 @@
-import { useMemo } from "react";
-
 export function useSidebar(user: any) {
-
-  const role = useMemo(() => {
-    if (!user || !user.role) return 'MEMBER';
-    return String(user.role).toUpperCase();
-  }, [user]);
+  const role = user?.role ? String(user.role).toUpperCase() : 'MEMBER';
 
   const isAdmin = role === 'ADMINISTRATOR';
   const isModerator = role === 'MODERATOR';
@@ -31,7 +25,7 @@ export function useSidebar(user: any) {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const userInitials = useMemo(() => getInitials(user?.name), [user?.name, isAdmin]);
+  const userInitials = getInitials(user?.name);
 
   return {
     role,

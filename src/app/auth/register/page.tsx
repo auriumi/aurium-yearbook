@@ -1,4 +1,3 @@
-import RegistrationWizard from "@/components/forms/RegistrationWizard";
 import { redirect } from "next/navigation";
 
 export default function RegisterPage() {

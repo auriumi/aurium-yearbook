@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Booking, Schedule } from "@/types";
+import { useModalState } from "@/hooks/useModalState";
 
 interface BookingWidgetProps {
   bookingList: Schedule[], 
@@ -17,8 +18,8 @@ interface BookingWidgetProps {
 };
 
 export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const bookingModal = useModalState();
+  const confirmationModal = useModalState();
   const [selectedBookingId, setSelectedBookingId] = useState<number>(0);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSession, setSelectedSession] = useState<"AM" | "PM" | "">("");
@@ -36,8 +37,8 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
         setIsSubmitting(true);
         try {
           await onBook(selectedBookingId, selectedSession);
-          setIsConfirmDialogOpen(false);
-          setIsBookingModalOpen(false);
+          confirmationModal.close();
+          bookingModal.close();
         } catch (error) {
             console.error("Booking failed:", error);
         } finally {
@@ -51,7 +52,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
     setSelectedBookingId(0);
     setSelectedDate("");
     setSelectedSession("");
-    setIsBookingModalOpen(true);
+    bookingModal.open();
   };
 
   return (
@@ -117,12 +118,12 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                  <p className="text-sm text-stone-500 max-w-xs mx-auto">Slots are filling up fast. Book now to secure your spot.</p>
              </div>
              
-             <Button className="bg-amber-900 hover:bg-amber-800" onClick={() => setIsBookingModalOpen(true)}>Book a Slot Now</Button>
+             <Button className="bg-amber-900 hover:bg-amber-800" onClick={bookingModal.open}>Book a Slot Now</Button>
           </div>
         )}
 
         {/* MODALS MOVED OUTSIDE CONDITIONAL RENDER TO RE-USE THEM */}
-        <Dialog open={isBookingModalOpen} onOpenChange={setIsBookingModalOpen}>
+        <Dialog open={bookingModal.isOpen} onOpenChange={bookingModal.setIsOpen}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{booking ? "Change Schedule" : "Select Pictorial Schedule"}</DialogTitle>
@@ -174,14 +175,14 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                     <div className="text-xs text-stone-500 text-center sm:text-left">
                         {selectedDate ? <span>Selected: <strong>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} ({selectedSession})</strong></span> : "Please select a slot"}
                     </div>
-                    <Button onClick={() => setIsConfirmDialogOpen(true)} disabled={!selectedDate || !selectedSession} className="bg-amber-900 w-full sm:w-auto">
+                    <Button onClick={confirmationModal.open} disabled={!selectedDate || !selectedSession} className="bg-amber-900 w-full sm:w-auto">
                         {booking ? "Confirm New Schedule" : "Submit Schedule"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
          </Dialog>
 
-         <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+         <Dialog open={confirmationModal.isOpen} onOpenChange={confirmationModal.setIsOpen}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-5 h-5" /> Final Confirmation</DialogTitle>
@@ -193,7 +194,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsConfirmDialogOpen(false)} disabled={isSubmitting}>Cancel</Button>
+                    <Button variant="outline" onClick={confirmationModal.close} disabled={isSubmitting}>Cancel</Button>
                     <Button onClick={handleConfirm} disabled={isSubmitting} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
                         {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                         {isSubmitting ? "Booking..." : "Yes, Finalize"}

@@ -17,15 +17,16 @@ import toast from "react-hot-toast";
 import { Booking, Schedule } from "@/types/index";
 import * as studentService from "@/app/student/studentService";
 import { Student } from "@/types";
+import { useModalState } from "@/hooks/useModalState";
 
 export default function StudentDashboard() {
   const router = useRouter(); 
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [booking, setBooking] = useState<Booking>();
-  const [showPreview, setShowPreview] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const previewModal = useModalState();
+  const logoutModal = useModalState();
 
   const fetchStudent = useCallback(async () => {
     try {
@@ -113,8 +114,8 @@ export default function StudentDashboard() {
     );
   }
 
-  if (showPreview) {
-    return <YearbookPreview user={user} onClose={() => setShowPreview(false)} />;
+  if (previewModal.isOpen) {
+    return <YearbookPreview user={user} onClose={previewModal.close} />;
   }
 
   return (
@@ -122,7 +123,7 @@ export default function StudentDashboard() {
       
       <StudentHeader 
         user={{ fname: user.first_name, idNumber: user.student_number, photoUrl: user.studentDetail.photo_url ?? ""}}
-        onLogout={() => setShowLogoutConfirm(true)} 
+        onLogout={logoutModal.open}
       />
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
@@ -153,7 +154,7 @@ export default function StudentDashboard() {
               idNumber={user.student_number}
               course={user.course}
               photoUrl={user.studentDetail.photo_url ?? ""}
-              onCheckEntry={() => setShowPreview(true)} 
+              onCheckEntry={previewModal.open}
             />
           </div>
 
@@ -181,7 +182,7 @@ export default function StudentDashboard() {
       </main>
 
       {/* --- LOGOUT CONFIRMATION MODAL --- */}
-      {showLogoutConfirm && (
+      {logoutModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -193,7 +194,7 @@ export default function StudentDashboard() {
             </p>
             <div className="flex gap-3 w-full">
               <button 
-                onClick={() => setShowLogoutConfirm(false)}
+                onClick={logoutModal.close}
                 disabled={isLoggingOut}
                 className="flex-1 py-2.5 rounded-lg border border-stone-200 text-stone-600 font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
               >

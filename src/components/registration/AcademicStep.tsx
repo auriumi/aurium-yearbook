@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
-import { departmentOptions } from "./RegistrationConstants";
+import { departmentOptions } from "@/constants/registration";
 import { MailWarning, AlertCircle, CheckCircle2 } from "lucide-react"; 
 
 export const AcademicStep = ({ 

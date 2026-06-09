@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
-import { departmentOptions as ACADEMIC_CONFIG } from "@/components/registration/RegistrationConstants";
+import { departmentOptions as ACADEMIC_CONFIG } from "@/constants/registration";
+import { STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
-
-export const STATUS_STEPS = [
-  { id: 1, label: "REGISTERED", color: "bg-stone-500" },      
-  { id: 2, label: "APPROVED", color: "bg-blue-500" },        
-  { id: 3, label: "BOOKED", color: "bg-orange-500" },        
-  { id: 4, label: "ATTENDED", color: "bg-purple-500" },      
-  { id: 5, label: "FULLY_VERIFIED", color: "bg-green-600" }, 
-];
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
@@ -150,6 +143,6 @@ export function useMasterlist() {
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG
+    DEPARTMENT_ORDER, STATUS_STEPS: STUDENT_STATUS_STEPS, ACADEMIC_CONFIG
   };
 }

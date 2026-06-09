@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toTitleCase } from "./RegistrationConstants";
+import { toTitleCase } from "@/constants/registration";
 import { AlertCircle } from "lucide-react"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added missing Select imports
 

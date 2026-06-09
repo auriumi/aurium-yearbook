@@ -146,7 +146,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
        
       setIsDeleting(true);
       try {
-        const res = adminService.handleDelete(selectedStudent.student_number);
+        const res = await adminService.handleDelete(selectedStudent.student_number);
         if (!res) throw new Error("Failed to delete record");
 
         toast.success("Student record has been successfully deleted.");

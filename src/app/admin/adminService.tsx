@@ -68,7 +68,7 @@ export async function handleVerify(id: number) {
     }
 };
 
-export async function handleCancel(studentId: number) {
+async function deleteStudent(studentId: number) {
     try {
         const res = await fetch(`${baseUrl}/api/admin/student/${studentId}`, {
             method: "DELETE",
@@ -81,18 +81,8 @@ export async function handleCancel(studentId: number) {
     }
 }
 
-export async function handleDelete(studentId: number) {
-    try {
-        const res = await fetch(`${baseUrl}/api/admin/student/${studentId}`, {
-            method: "DELETE",
-            credentials: 'include'
-        });
-        return !res.ok ? false : true;
-    } catch (err) {
-        console.error(err);
-        return false;
-    }
-}
+export const handleCancel = deleteStudent;
+export const handleDelete = deleteStudent;
 
 export async function addSchedule(date: string, am_cap: number, pm_cap: number) {
     const body = { 

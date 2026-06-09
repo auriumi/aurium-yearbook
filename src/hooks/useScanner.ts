@@ -53,9 +53,8 @@ export function useScanner() {
   const [isCameraActive, setIsCameraActive] = useState(true);
   
   // --- REAL DATA STATES ---
-  const [sessionOptions, setSessionOptions] = useState<{label: string, date: string, session: "AM"|"PM"}[]>([]);
   const [currentSessionKey, setCurrentSessionKey] = useState<string>(""); 
-    const [schedules, setSchedules] = useState<ScheduleDay[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleDay[]>([]);
   const [localStudentDB, setLocalStudentDB] = useState<StudentRecord[]>([]);
   const [isLoadingDB, setIsLoadingDB] = useState(false);
   
@@ -72,42 +71,48 @@ export function useScanner() {
 
           if (!Array.isArray(data)) {
               setSchedules([]);
-              setSessionOptions([]);
               return;
           }
 
           const mappedSchedules = data as ScheduleDay[];
           setSchedules(mappedSchedules);
-
-          const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
-          mappedSchedules.forEach((day) => {
-              const dayDate = day.date?.substring(0, 10);
-              if (!dayDate) return;
-
-              if (day.max_morning_cap > 0) {
-                  options.push({ label: `${dayDate} - Morning (AM)`, date: dayDate, session: "AM" });
-              }
-              if (day.max_afternoon_cap > 0) {
-                  options.push({ label: `${dayDate} - Afternoon (PM)`, date: dayDate, session: "PM" });
-              }
-          });
-
-          setSessionOptions(options);
-          if (options.length > 0 && !currentSessionKey) {
-              setCurrentSessionKey(`${options[0].date}-${options[0].session}`);
-          }
       } catch (error) {
           console.error("Failed to load schedules for scanner", error);
           toast.error("Could not load session options.");
       } finally {
           setIsLoadingDB(false);
       }
-  }, [currentSessionKey]);
+  }, []);
+
+  const sessionOptions = useMemo(() => {
+      const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
+
+      schedules.forEach((day) => {
+          const dayDate = day.date?.substring(0, 10);
+          if (!dayDate) return;
+
+          if (day.max_morning_cap > 0) {
+              options.push({ label: `${dayDate} - Morning (AM)`, date: dayDate, session: "AM" });
+          }
+          if (day.max_afternoon_cap > 0) {
+              options.push({ label: `${dayDate} - Afternoon (PM)`, date: dayDate, session: "PM" });
+          }
+      });
+
+      return options;
+  }, [schedules]);
 
   // --- INITIALIZATION: FETCH AVAILABLE SCHEDULES ---
   useEffect(() => {
       loadSchedules();
   }, [loadSchedules]);
+
+  useEffect(() => {
+      if (!currentSessionKey && sessionOptions.length > 0) {
+          const firstOption = sessionOptions[0];
+          setCurrentSessionKey(`${firstOption.date}-${firstOption.session}`);
+      }
+  }, [currentSessionKey, sessionOptions]);
 
   // --- BUILD ROSTER FROM FETCHED SCHEDULE BOOKINGS ---
   useEffect(() => {
@@ -161,7 +166,10 @@ export function useScanner() {
 
   // Stats Counters
   const totalStudents = localStudentDB.length;
-  const attendedCount = localStudentDB.filter(s => s.status === "attended").length;
+  const attendedCount = useMemo(
+      () => localStudentDB.filter(s => s.status === "attended").length,
+      [localStudentDB]
+  );
   const pendingCount = totalStudents - attendedCount;
 
   // --- CORE SCAN LOGIC (Live Backend Interaction) ---

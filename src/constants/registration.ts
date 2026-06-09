@@ -1,5 +1,3 @@
-// src/components/registration/RegistrationConstants.ts
-
 export const titleOptions = ["Mr.", "Mrs.", "Ms.", "Dr.", "Atty.", "Engr.", "Arch.", "Prof.", "Rev."];
 
 export const departmentOptions = [

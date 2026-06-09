@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
-import { titleOptions, toTitleCase } from "./RegistrationConstants";
+import { titleOptions, toTitleCase } from "@/constants/registration";
 
 export const FamilyStep = ({ useGuardian, setUseGuardian, guardianLname, setGuardianLname, guardianTitle, setGuardianTitle, guardianFname, setGuardianFname, guardianRel, setGuardianRel, fatherLname, setFatherLname, fatherTitle, setFatherTitle, fatherFname, setFatherFname, fatherMname, setFatherMname, fatherSuffix, setFatherSuffix, motherLname, setMotherLname, motherTitle, setMotherTitle, motherFname, setMotherFname, motherMname, setMotherMname }: any) => (
   <div className="space-y-6">

@@ -12,7 +12,7 @@ import { Wifi, WifiOff } from "lucide-react";
 
 
 // SOLID: Importing isolated Step Components and Constants
-import { departmentOptions } from "@/components/registration/RegistrationConstants";
+import { departmentOptions } from "@/constants/registration";
 import { PersonalStep } from "@/components/registration/PersonalStep";
 import { AddressStep } from "@/components/registration/AddressStep";
 import { AcademicStep } from "@/components/registration/AcademicStep";

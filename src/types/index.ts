@@ -23,7 +23,7 @@ export interface Student {
   thesis_title: string;
   personal_email: string;
   studentAuth: StudentAuth;
-  studentDetail: StduentDetail;
+  studentDetail: StudentDetail;
   photo_url: string | null;
   quote: string | null;
   created_at: string;
@@ -38,7 +38,7 @@ export interface StudentSolicitation {
   slot: number;
 }
 
-export interface StduentDetail {
+export interface StudentDetail {
   guardians_name: string;
   guardians_title: string;
   fathers_name: string;

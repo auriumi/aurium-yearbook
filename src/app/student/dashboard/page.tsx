@@ -4,7 +4,7 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 import { useState, useCallback, useEffect } from "react";
 import { CheckCircle, Clock, Loader2, LogOut } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge";
-import { StudentHeader } from "@/components/student/dashboard/StudentHeader";
+import { StudentHeader } from "@/components/layout/StudentHeader";
 import { ProfileCard } from "@/components/student/dashboard/ProfileCard";
 import { BookingWidget } from "@/components/student/dashboard/BookingWidget";
 import { YearbookTeaser } from "@/components/student/dashboard/YearbookTeaser";

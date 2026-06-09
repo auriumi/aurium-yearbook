@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Student } from "@/types";
 
@@ -39,7 +39,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await adminService.fv_getPaginatedStudents(currentPage);
@@ -64,11 +64,11 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage]);
 
   useEffect(() => {
     fetchStudents();
-  }, [currentPage, appliedSearchQuery]);
+  }, [appliedSearchQuery, fetchStudents]);
 
   const handleSearchClick = () => {
       setAppliedSearchQuery(searchQuery.trim());

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -128,7 +129,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const getPageNumbers = () => {
       const pages = [];
       let start = Math.max(1, currentPage - 2);
-      let end = Math.min(totalPages, start + 4);
+      const end = Math.min(totalPages, start + 4);
       if (end - start < 4) start = Math.max(1, end - 4);
       for (let i = start; i <= end; i++) pages.push(i);
       return pages;
@@ -245,7 +246,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const toggleColumn = (key: string) => {
     setSelectedColumns(prev => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   };
@@ -648,7 +653,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         onClick={() => selectedStudent.photo_grad && setEnlargedImage(selectedStudent.photo_grad)}
                                     >
                                         {selectedStudent.photo_grad ? (
-                                            <img src={selectedStudent.photo_grad} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Graduation" />
+                                            <Image unoptimized src={selectedStudent.photo_grad} width={800} height={1000} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Graduation" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
@@ -667,7 +672,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         onClick={() => selectedStudent.photo_creative && setEnlargedImage(selectedStudent.photo_creative)}
                                     >
                                         {selectedStudent.photo_creative ? (
-                                            <img src={selectedStudent.photo_creative} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Creative" />
+                                            <Image unoptimized src={selectedStudent.photo_creative} width={800} height={1000} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Creative" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
@@ -689,7 +694,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         }}
                                     >
                                         {selectedStudent.studentDetail?.photo_url ? (
-                                            <img src={selectedStudent.studentDetail.photo_url} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Reference" />
+                                            <Image unoptimized src={selectedStudent.studentDetail.photo_url} width={800} height={1000} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Reference" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
@@ -1187,8 +1192,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         <X size={20}/>
                     </button>
                     {enlargedImage && (
-                        <img 
+                        <Image
+                            unoptimized
                             src={enlargedImage} 
+                            width={1600}
+                            height={2000}
                             className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl bg-black/5 backdrop-blur-sm border border-white/20" 
                             alt="Enlarged view" 
                         />

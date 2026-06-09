@@ -78,7 +78,7 @@ export default function StudentLoginPage() {
           return;
       }
 
-    } catch (error) {
+    } catch {
       turnstileRef.current?.reset();
       setCaptchaToken(null);
       toast.error("Something went wrong. Please check your connection.");
@@ -113,7 +113,7 @@ export default function StudentLoginPage() {
             toast.error(res.reason);
         }
 
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong. Please check your connection.");
       setIsLoading(false);
     }

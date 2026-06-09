@@ -270,7 +270,7 @@ export default function AdminDashboard() {
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 
             {/* 5. ROLE MANAGEMENT — ADMINISTRATOR only */}
-            {activeTab === 'roles' && <RolesTab staffUser={staffUser} />}
+            {activeTab === 'roles' && <RolesTab />}
         </div>
       </main>
     </div>

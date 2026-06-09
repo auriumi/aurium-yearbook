@@ -74,7 +74,7 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
       setSelectedFile(null);
       // We keep the previewUrl active so the user sees their new face for this current session
 
-    } catch (err) {
+    } catch {
       toast.error("Failed to upload photo. Please try again.");
     } finally {
       setIsUploading(false);

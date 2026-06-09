@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Users, Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
-  ClipboardList, FileCheck, ShieldCheck
+  ClipboardList, FileCheck, ShieldCheck, type LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,21 +22,33 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
-  const { isAdmin, isModerator, canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
+interface NavItemProps {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  activeTab: string;
+  onSelect: (tab: string) => void;
+}
 
-  const NavItem = ({ id, label, icon: Icon }: { id: string; label: string; icon: any }) => (
+function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
+  return (
     <Button
       variant="ghost"
       className={`w-full justify-start gap-4 h-12 text-sm font-medium transition-all ${activeTab === id ? 'bg-amber-900/30 text-amber-100 border-r-2 border-amber-500' : 'text-stone-400 hover:text-white hover:bg-stone-900'}`}
-      onClick={() => {
-        setActiveTab(id);
-        if (isMobile && setIsOpen) setIsOpen(false);
-      }}
+      onClick={() => onSelect(id)}
     >
       <Icon size={18} className={activeTab === id ? "text-amber-500" : "text-stone-500"} /> {label}
     </Button>
   );
+}
+
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
+  const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
+
+  const handleSelect = (tab: string) => {
+    setActiveTab(tab);
+    if (isMobile && setIsOpen) setIsOpen(false);
+  };
 
   return (
     <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'hidden md:flex w-72 h-screen fixed left-0 top-0'} bg-stone-950 text-stone-300 flex-col border-r border-stone-800 shadow-2xl transition-transform`}>
@@ -64,36 +76,36 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         {/* Verification Queue — ADMINISTRATOR and MODERATOR */}
         {canAccessVerification && (
-          <NavItem id="verification" label="Verification Queue" icon={Users} />
+          <NavItem id="verification" label="Verification Queue" icon={Users} activeTab={activeTab} onSelect={handleSelect} />
         )}
 
         {/* Graduate Verification — ADMINISTRATOR and MODERATOR */}
         {canAccessVerification && (
-          <NavItem id="graduate-review" label="Graduate Verification" icon={FileCheck} />
+          <NavItem id="graduate-review" label="Graduate Verification" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
 
         <div className="my-2 px-3 text-[10px] font-bold uppercase tracking-widest text-stone-600 mt-4">Review & Notes</div>
 
         {/* Masterlist — all roles */}
-        <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} />
-        <NavItem id="notes" label="Staff Notes" icon={ClipboardList} />
+        <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />
+        <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />
 
         <div className="my-2 border-t border-stone-800/50"></div>
 
         {/* Schedules — ADMINISTRATOR and MODERATOR */}
         {canAccessSchedules && (
-          <NavItem id="slots" label="Schedules" icon={Calendar} />
+          <NavItem id="slots" label="Schedules" icon={Calendar} activeTab={activeTab} onSelect={handleSelect} />
         )}
 
         <div className="my-2 border-t border-stone-800/50"></div>
 
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
 
-        <NavItem id="profile" label="Profile" icon={User} />
+        <NavItem id="profile" label="Profile" icon={User} activeTab={activeTab} onSelect={handleSelect} />
 
         {/* Roles Management — ADMINISTRATOR only */}
         {canManageRoles && (
-          <NavItem id="roles" label="Manage Staffs" icon={ShieldCheck} />
+          <NavItem id="roles" label="Manage Staffs" icon={ShieldCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
 
         <div className="my-2 border-t border-stone-800/50"></div>

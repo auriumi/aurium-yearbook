@@ -101,7 +101,7 @@ export function useMasterlist() {
     const fetchFromAPI = async () => {
       setIsLoading(true);
       try {
-        let query = new URLSearchParams();
+        const query = new URLSearchParams();
 
         if (appliedSearchQuery) {
           query.append("id", appliedSearchQuery);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText } from "lucide-react";
+import Image from "next/image";
+import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,26 @@ interface VerificationTabProps {
   setSelectedStudent: (student: any) => void;
 }
 
+interface InfoFieldProps {
+  label: string;
+  value?: React.ReactNode;
+  icon?: LucideIcon;
+  fullWidth?: boolean;
+}
+
+function InfoField({ label, value, icon: Icon, fullWidth = false }: InfoFieldProps) {
+  return (
+    <div className={`flex flex-col space-y-1.5 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
+      <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+        {Icon && <Icon size={12} />} {label}
+      </span>
+      <div className="px-3 py-2.5 bg-white rounded-lg border border-stone-200 text-xs font-semibold text-stone-800 break-words leading-tight shadow-sm min-h-[38px] flex items-center">
+        {value || <span className="text-stone-300 italic">N/A</span>}
+      </div>
+    </div>
+  );
+}
+
 export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStudent }: VerificationTabProps) {
 
   const {
@@ -44,7 +65,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const getPageNumbers = () => {
       const pages = [];
       let start = Math.max(1, currentPage - 2);
-      let end = Math.min(totalPages, start + 4);
+      const end = Math.min(totalPages, start + 4);
       if (end - start < 4) start = Math.max(1, end - 4);
       for (let i = start; i <= end; i++) pages.push(i);
       return pages;
@@ -56,17 +77,6 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
       if (isNaN(date.getTime())) return dateString; 
       return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
   };
-
-  const InfoField = ({ label, value, icon: Icon, fullWidth = false }: any) => (
-    <div className={`flex flex-col space-y-1.5 ${fullWidth ? "col-span-2" : "col-span-1"}`}>
-        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-            {Icon && <Icon size={12} />} {label}
-        </span>
-        <div className="px-3 py-2.5 bg-white rounded-lg border border-stone-200 text-xs font-semibold text-stone-800 break-words leading-tight shadow-sm min-h-[38px] flex items-center">
-            {value || <span className="text-stone-300 italic">N/A</span>}
-        </div>
-    </div>
-  );
 
   // Helper function to combine Prefix, Name, and Suffix dynamically
   const formatParentName = (prefix?: string, name?: string, suffix?: string) => {
@@ -324,7 +334,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         <div className="w-full flex flex-col items-center mt-1">
                                             <div className="relative mb-3 transform hover:scale-105 transition-transform duration-500 ease-out group">
                                                 <div className="w-40 h-40 xl:w-56 xl:h-56 bg-white p-2.5 shadow-xl border border-stone-200 relative z-10 rounded-md">
-                                                    <img src={selectedStudent.studentDetail?.photo_url || "https://github.com/shadcn.png"} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
+                                                    <Image unoptimized src={selectedStudent.studentDetail?.photo_url || "https://github.com/shadcn.png"} width={224} height={224} className="w-full h-full object-cover bg-stone-200 grayscale-[15%]" alt="Student" />
                                                     <div className="absolute -left-3 top-5 bottom-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
                                                     <div className="absolute -right-3 bottom-5 top-8 w-1.5 bg-amber-500 z-20 shadow-sm"></div>
                                                 </div>
@@ -517,7 +527,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                 <div className="w-full aspect-[4/5] bg-stone-100 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
                                     {selectedStudent?.studentDetail?.photo_url ? (
                                         <>
-                                            <img src={selectedStudent.studentDetail.photo_url || "https://github.com/shadcn.png"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
+                                            <Image unoptimized src={selectedStudent.studentDetail.photo_url || "https://github.com/shadcn.png"} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
                                                 <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Search size={14}/> Enlarge</div>
                                             </div>
@@ -549,7 +559,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                 <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
                                     {selectedStudent?.photo_grad ? (
                                         <>
-                                            <img src={selectedStudent.photo_grad} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Graduation" />
+                                            <Image unoptimized src={selectedStudent.photo_grad} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Graduation" />
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
                                                 <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
                                             </div>
@@ -585,7 +595,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                 <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
                                     {selectedStudent?.photo_creative ? (
                                         <>
-                                            <img src={selectedStudent.photo_creative} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Creative" />
+                                            <Image unoptimized src={selectedStudent.photo_creative} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Creative" />
                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
                                                 <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
                                             </div>
@@ -634,8 +644,11 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                         <X size={20}/>
                     </button>
                     {enlargedImage && (
-                        <img 
+                        <Image
+                            unoptimized
                             src={enlargedImage} 
+                            width={1600}
+                            height={2000}
                             className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl bg-black/10 backdrop-blur-md border border-white/20 relative z-50" 
                             alt="Enlarged view" 
                         />

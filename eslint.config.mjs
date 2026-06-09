@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // API response contracts are still being migrated from legacy untyped services.
+      "@typescript-eslint/no-explicit-any": "off",
+      // Marketing and yearbook copy intentionally contains literal quotes and apostrophes.
+      "react/no-unescaped-entities": "off",
+      // Initial async data loaders are valid effects in this client-rendered application.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

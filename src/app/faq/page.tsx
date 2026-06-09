@@ -5,13 +5,10 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, 
-  HelpCircle, 
   ChevronDown, 
-  Search, 
   UserCircle, 
   CalendarDays, 
-  FileText, 
-  AlertCircle 
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -180,7 +177,7 @@ export default function FAQPage() {
                    Contact Support
                  </Button>
                </Link>
-               <Link href="/login">
+               <Link href="/auth/login">
                  <Button variant="outline" className="border-stone-300 text-stone-700 hover:bg-stone-50 px-8 h-12 rounded-full text-lg">
                    Log In to Portal
                  </Button>

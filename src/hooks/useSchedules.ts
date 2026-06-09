@@ -10,7 +10,7 @@ export function useSchedules() {
       const schedules = await adminService.fetchSchedule();
       setSchedules(schedules);
 
-    } catch (err) {
+    } catch {
       console.error("Error loading schedules");
     }
   }, []);

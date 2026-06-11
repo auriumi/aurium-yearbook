@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useGraduateReview } from "@/hooks/useGraduateReview"; 
+import { standardizeThesisTitle } from "@/lib/thesisTitle";
 
 interface VerificationTabProps {
   staffUser: any;
@@ -94,6 +95,19 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
   const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [thesisTitleStandardized, setThesisTitleStandardized] = useState(false);
+
+  const handleThesisTitleBlur = async (event: React.FocusEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    try {
+      const result = await standardizeThesisTitle(input.value);
+      input.value = result.standardized;
+      setThesisTitleStandardized(result.changed);
+    } catch (error) {
+      console.error("Failed to preview standardized thesis title:", error);
+      setThesisTitleStandardized(false);
+    }
+  };
 
   const onSaveInfoClick = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -278,7 +292,11 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         <TabsContent value="academic" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Course</Label><Input name="course" defaultValue={selectedStudent.course} className="h-9 text-sm"/></div>
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Major</Label><Input name="major" defaultValue={selectedStudent.major} className="h-9 text-sm"/></div>
-                                            <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Thesis Title</Label><Input name="thesis" defaultValue={selectedStudent.thesis_title} className="h-9 text-sm"/></div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-stone-500 font-bold text-[10px] uppercase">Thesis Title</Label>
+                                                <Input name="thesis" defaultValue={selectedStudent.thesis_title} onBlur={handleThesisTitleBlur} className="h-9 text-sm"/>
+                                                {thesisTitleStandardized && <p className="text-[10px] text-green-700">APA title case was applied automatically. Please review before saving.</p>}
+                                            </div>
                                         </TabsContent>
 
                                         <TabsContent value="contact" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">

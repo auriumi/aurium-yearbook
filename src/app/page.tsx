@@ -166,13 +166,14 @@ export default function AuriumLandingPage() {
                     src="/images/umtc-logo.png" 
                     alt="UMTC Logo" 
                     fill 
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    sizes="(max-width: 768px) 32px, 48px"
+                    loading="eager"
                     className="object-contain" 
                    />
                 </div>
                 <div className="h-6 md:h-8 w-[1px] bg-stone-300"></div>
                 <div className="relative w-8 h-8 md:w-12 md:h-12 overflow-hidden hover:scale-105 transition-transform duration-300">
-                   <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill className="object-contain" />
+                   <Image src="/images/aurium-logo.png" alt="Aurium Logo" fill sizes="(max-width: 768px) 32px, 48px" className="object-contain" />
                 </div>
             </div>
             <div className="flex flex-col">
@@ -371,6 +372,7 @@ export default function AuriumLandingPage() {
                        src="/images/gradpics/DSC_0963.jpg" 
                        alt="Standard of Excellence" 
                        fill 
+                       sizes="(max-width: 768px) 100vw, 50vw"
                        className="object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000"
                      />
                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30"></div>
@@ -454,6 +456,7 @@ export default function AuriumLandingPage() {
                      src={edition.image} 
                      alt={`${edition.theme} ${edition.year}`}
                      fill
+                     sizes="(max-width: 768px) 85vw, 350px"
                      className="object-cover transition-transform duration-700 hover:scale-105"
                    />
                    
@@ -570,6 +573,7 @@ export default function AuriumLandingPage() {
                         src={team.image} 
                         alt={team.title} 
                         fill 
+                        sizes="(max-width: 768px) 300px, 400px"
                         className="object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                    </div>
@@ -659,7 +663,7 @@ export default function AuriumLandingPage() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative w-10 h-10 grayscale opacity-80">
-                   <Image src="/images/aurium-logo.png" alt="Aurium" fill className="object-contain" />
+                   <Image src="/images/aurium-logo.png" alt="Aurium" fill sizes="40px" className="object-contain" />
                 </div>
                 <span className="text-2xl font-serif font-bold text-stone-200 tracking-wide">AURIUM</span>
               </div>

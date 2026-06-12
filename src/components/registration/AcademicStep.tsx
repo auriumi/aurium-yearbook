@@ -10,7 +10,7 @@ export const AcademicStep = ({
     selectedDepartment, handleDepartmentChange, 
     selectedCourse, handleCourseChange, currentCourses, 
     selectedMajor, setSelectedMajor, currentMajors, 
-    thesisTitle, setThesisTitle, 
+    thesisTitle, onThesisTitleChange, onThesisTitleBlur, thesisTitleStatus,
     contactNum, setContactNum, 
     email, setEmail, 
     umEmail, setUmEmail,
@@ -54,7 +54,11 @@ export const AcademicStep = ({
 
       <div className="space-y-2">
           <Label>Thesis / Capstone Title <span className="text-red-500">*</span></Label>
-          <Input value={thesisTitle} onChange={e => setThesisTitle(e.target.value)} placeholder="Enter complete title of your Thesis or Capstone Project" className="h-11" />
+          <Input value={thesisTitle} onChange={e => onThesisTitleChange(e.target.value)} onBlur={onThesisTitleBlur} placeholder="Enter complete title of your Thesis or Capstone Project" className="h-11" />
+          {thesisTitleStatus === "loading" && <p className="text-[10px] text-stone-500">Standardizing APA title case...</p>}
+          {thesisTitleStatus === "changed" && <p className="text-[10px] text-green-700">APA title case was applied automatically. Please review the standardized title.</p>}
+          {thesisTitleStatus === "unchanged" && <p className="text-[10px] text-green-700">The title already follows the standard casing.</p>}
+          {thesisTitleStatus === "error" && <p className="text-[10px] text-amber-700">Preview is unavailable. The title will still be standardized when submitted.</p>}
       </div>
 
       <div className="h-px bg-gray-200 my-2"></div>

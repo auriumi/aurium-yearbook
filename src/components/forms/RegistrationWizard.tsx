@@ -19,6 +19,7 @@ import { AcademicStep } from "@/components/registration/AcademicStep";
 import { FamilyStep } from "@/components/registration/FamilyStep";
 import { ReviewStep } from "@/components/registration/ReviewStep";
 import { PrivacyStep } from "@/components/registration/PrivacyStep";
+import { useThesisTitleStandardization } from "@/hooks/useThesisTitleStandardization";
 import toast from "react-hot-toast";
 
 const steps = [
@@ -144,6 +145,21 @@ export default function RegistrationWizard() {
   const [email, setEmail] = useState("");
   const [umEmail, setUmEmail] = useState(""); 
   const [hasUmEmailAccess, setHasUmEmailAccess] = useState(true);
+  const {
+    standardize: standardizeThesisTitle,
+    status: thesisTitleStatus,
+    reset: resetThesisTitleStatus,
+  } = useThesisTitleStandardization();
+
+  const handleThesisTitleChange = (value: string) => {
+    setThesisTitle(value);
+    resetThesisTitleStatus();
+  };
+
+  const handleThesisTitleBlur = async () => {
+    const standardized = await standardizeThesisTitle(thesisTitle);
+    setThesisTitle(standardized);
+  };
 
   // --- STATE: Family ---
   const [useGuardian, setUseGuardian] = useState(false);
@@ -321,7 +337,7 @@ export default function RegistrationWizard() {
                     {/* SOLID PRINCIPLE IN ACTION: Passing Props to Child Components */}
                     {currentStep === 1 && <PersonalStep idNumber={idNumber} setIdNumber={setIdNumber} lname={lname} setLname={setLname} fname={fname} setFname={setFname} mname={mname} setMname={setMname} suffix={suffix} setSuffix={setSuffix} nickname={nickname} setNickname={setNickname} bdate={bdate} setBdate={setBdate} />}
                     {currentStep === 2 && <AddressStep isLoadingProvinces={isLoadingProvinces} provinceList={provinceList} selectedProvinceCode={selectedProvinceCode} handleProvinceChange={handleProvinceChange} isLoadingCities={isLoadingCities} cityList={cityList} selectedCityCode={selectedCityCode} handleCityChange={handleCityChange} isLoadingBarangays={isLoadingBarangays} barangayList={barangayList} selectedBarangayCode={selectedBarangayCode} setSelectedBarangayCode={setSelectedBarangayCode} />}
-                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
+                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} onThesisTitleChange={handleThesisTitleChange} onThesisTitleBlur={handleThesisTitleBlur} thesisTitleStatus={thesisTitleStatus} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
                     
                     {/* FIXED: Included FamilyStep (Step 4) */}
                     {currentStep === 4 && <FamilyStep useGuardian={useGuardian} setUseGuardian={setUseGuardian} guardianLname={guardianLname} setGuardianLname={setGuardianLname} guardianTitle={guardianTitle} setGuardianTitle={setGuardianTitle} guardianFname={guardianFname} setGuardianFname={setGuardianFname} guardianRel={guardianRel} setGuardianRel={setGuardianRel} fatherLname={fatherLname} setFatherLname={setFatherLname} fatherTitle={fatherTitle} setFatherTitle={setFatherTitle} fatherFname={fatherFname} setFatherFname={setFatherFname} fatherMname={fatherMname} setFatherMname={setFatherMname} fatherSuffix={fatherSuffix} setFatherSuffix={setFatherSuffix} motherLname={motherLname} setMotherLname={setMotherLname} motherTitle={motherTitle} setMotherTitle={setMotherTitle} motherFname={motherFname} setMotherFname={setMotherFname} motherMname={motherMname} setMotherMname={setMotherMname} />}

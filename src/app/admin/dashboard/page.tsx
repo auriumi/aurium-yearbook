@@ -1,7 +1,7 @@
 "use client";
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image"; 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,8 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUnverified, setTotalUnverified] = useState(0);
 
-  // The cache does not affect rendering, so keep it outside React state.
-  const studentCache = useRef<{[page: number]: any[]}>({});
+  //Cache
+  const [studentCache, setStudentCache] = useState<{[page: number]: any[]}>({});
   const masterlistProps = useMasterlist();
 
   //Schedules
@@ -55,57 +55,31 @@ export default function AdminDashboard() {
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
 
-  useEffect(() => {
-    let isActive = true;
-
-    adminService.getStaffProfile()
-      .then((res) => {
-        if (!isActive) return;
-        if (!res.success) {
-          toast.error(res.reason);
-          return;
-        }
-
-        setStaffUser(res.data);
-      })
-      .catch((error) => {
-        console.error("Error loading admin details:", error);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const loadStudents = useCallback(async (page: number, forceRefresh = false) => {
-    const cachedStudents = studentCache.current[page];
-
-    if (cachedStudents && !forceRefresh) {
-      setPendingStudents(cachedStudents);
-      return;
-    }
-
+  const getStaffDetails = useCallback(async () => {
     try {
-        const students = await adminService.fetchStudents(page);
-        if (!students.success) {
-          setPendingStudents([]);
-          return;
-        }
+      const res = await adminService.getStaffProfile();
+      if (!res.success) {
+        toast.error(res.reason);
+        return;
+      }
+      
+      setStaffUser(res.data);
 
-        setPendingStudents(students.data.student_list);
-        setTotalUnverified(students.data.total);
-        studentCache.current[page] = students.data.student_list;
     } catch (error) {
-        console.error("Error loading students:", error);
+      console.error("Error loading admin details:", error);
     }
   }, []);
 
-  const onPageChange = useCallback((page: number) => {
+  useEffect(() => {
+    getStaffDetails();
+  }, [getStaffDetails]);
+
+  const onPageChange = (page: number) => {
     setCurrentPage(page);
     loadStudents(page);
-  }, [loadStudents]);
+  }
 
-  const searchStudentById = useCallback(async (student_number: number) => {
+  const searchStudentById = async (student_number: number) => {
     try {
       const students = await adminService.searchStudentById(student_number);
       if (!students.success) {
@@ -119,43 +93,80 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error loading student:", error);
     }
-  }, []);
+  }
+
+  const loadStudents = useCallback(async (page: number) => {
+
+    if (studentCache[page]) {
+      setPendingStudents(studentCache[page]);
+      return;
+    }
+
+    try {
+        const students = await adminService.fetchStudents(page);
+        if (!students.success) {
+          setPendingStudents([]);
+          return;
+        }
+
+        setPendingStudents(students.data.student_list);
+        setTotalUnverified(students.data.total);
+
+        setStudentCache(prev => ({
+          ...prev,
+          [page]: students.data.student_list
+        }));
+
+    } catch (error) {
+        console.error("Error loading students:", error);
+    }
+  }, [studentCache]);
 
   useEffect(() => {
     loadStudents(currentPage);
   }, [loadStudents, currentPage]);
 
-  const updateOnVerify = useCallback(async (studentId: number) => {
+  const updateOnVerify = async (studentId: number) => {
     const res = await adminService.handleVerify(studentId);
 
     if (res) {
-      delete studentCache.current[currentPage];
-      loadStudents(currentPage, true);
+      setStudentCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[currentPage];
+        return newCache;
+      });
+
+      loadStudents(currentPage);
 
       toast.success("Student succesfully verified!");
       return;
     }
     toast.error("Something went wrong!");
-  }, [currentPage, loadStudents]);
+  }
 
-  const updateOnCancel = useCallback(async (studentId: number) => {
+  const updateOnCancel = async (studentId: number) => {
     const res = await adminService.handleCancel(studentId);
     if (res) {
-      delete studentCache.current[currentPage];
-      loadStudents(currentPage, true);
+      setStudentCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[currentPage];
+        return newCache;
+      });
+
+      loadStudents(currentPage);
 
       toast.success("Student succesfully rejected!")
       return;
     }
     toast.error("Something went wrong!");
-  }, [currentPage, loadStudents]);
+  }
 
-  const onLogout = useCallback(async () => {
+  const onLogout = async () => {
     const res = await fetch(`${baseUrl}/api/auth/logout`, {
       credentials: 'include'
     });
     if (res.ok) router.push('/');
-  }, [router]);
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 flex font-sans relative">

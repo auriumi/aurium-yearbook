@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useGraduateReview } from "@/hooks/useGraduateReview"; 
+import { getThesisTitleStandardization } from "@/utils/thesisTitle";
 
 interface VerificationTabProps {
   staffUser: any;
@@ -94,6 +95,14 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
   const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [thesisDraft, setThesisDraft] = useState("");
+  const thesisTitleStandardization = useMemo(() => getThesisTitleStandardization(thesisDraft), [thesisDraft]);
+
+  useEffect(() => {
+    if (isEditing) {
+      setThesisDraft(selectedStudent?.thesis_title || "");
+    }
+  }, [isEditing, selectedStudent?.id, selectedStudent?.thesis_title]);
 
   const onSaveInfoClick = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -278,7 +287,26 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                         <TabsContent value="academic" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Course</Label><Input name="course" defaultValue={selectedStudent.course} className="h-9 text-sm"/></div>
                                             <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Major</Label><Input name="major" defaultValue={selectedStudent.major} className="h-9 text-sm"/></div>
-                                            <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Thesis Title</Label><Input name="thesis" defaultValue={selectedStudent.thesis_title} className="h-9 text-sm"/></div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-stone-500 font-bold text-[10px] uppercase">Thesis Title</Label>
+                                                <Input name="thesis" value={thesisDraft} onChange={(e) => setThesisDraft(e.target.value)} className="h-9 text-sm"/>
+                                                {thesisTitleStandardization.isChanged && (
+                                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950 space-y-2">
+                                                        <p className="font-bold uppercase tracking-wide text-[10px] text-amber-700">Standardized APA title preview</p>
+                                                        <p><span className="font-semibold">Original:</span> {thesisTitleStandardization.original}</p>
+                                                        <p><span className="font-semibold">Standardized:</span> {thesisTitleStandardization.standardized}</p>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                                                            onClick={() => setThesisDraft(thesisTitleStandardization.standardized)}
+                                                        >
+                                                            Use Standardized Title
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </TabsContent>
 
                                         <TabsContent value="contact" className="space-y-4 sm:space-y-5 bg-white p-4 sm:p-6 rounded-xl border border-stone-200 shadow-sm">

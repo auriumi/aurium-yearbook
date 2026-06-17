@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Student } from "@/types";
+import { formatApaThesisTitle } from "@/utils/thesisTitle";
 
 import * as adminService from "../app/admin/adminService";
 
@@ -100,8 +101,14 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         continue;
       }
 
-      const submittedValue = normalizeValue(formData.get(formKey));
-      const currentValue = normalizeValue(getCurrentValue(dataKey));
+      const submittedValue =
+        dataKey === "thesis"
+          ? formatApaThesisTitle(formData.get(formKey))
+          : normalizeValue(formData.get(formKey));
+      const currentValue =
+        dataKey === "thesis"
+          ? normalizeValue(selectedStudent?.thesis_title)
+          : normalizeValue(getCurrentValue(dataKey));
       const category = fieldCategories[dataKey];
 
       if (!category || submittedValue === currentValue) {

@@ -1,10 +1,12 @@
 // src/components/registration/AcademicStep.tsx
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
 import { departmentOptions } from "@/constants/registration";
 import { MailWarning, AlertCircle, CheckCircle2 } from "lucide-react"; 
+import { getThesisTitleStandardization } from "@/utils/thesisTitle";
 
 export const AcademicStep = ({ 
     selectedDepartment, handleDepartmentChange, 
@@ -16,6 +18,7 @@ export const AcademicStep = ({
     umEmail, setUmEmail,
     hasUmEmailAccess, setHasUmEmailAccess 
 }: any) => {
+  const thesisTitleStandardization = getThesisTitleStandardization(thesisTitle);
 
   // Simple Regex to check if email format is valid (has @ and domain)
   const isValidEmail = (emailStr: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
@@ -55,6 +58,27 @@ export const AcademicStep = ({
       <div className="space-y-2">
           <Label>Thesis / Capstone Title <span className="text-red-500">*</span></Label>
           <Input value={thesisTitle} onChange={e => setThesisTitle(e.target.value)} placeholder="Enter complete title of your Thesis or Capstone Project" className="h-11" />
+          {thesisTitleStandardization.isChanged && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950 space-y-3">
+              <div>
+                <p className="font-bold uppercase tracking-wide text-[10px] text-amber-700">Standardized APA title preview</p>
+                <p className="mt-1 text-stone-600">This is how the title will be saved unless an admin reviews an exception.</p>
+              </div>
+              <div className="space-y-1">
+                <p><span className="font-bold">Original:</span> {thesisTitleStandardization.original}</p>
+                <p><span className="font-bold">Standardized:</span> {thesisTitleStandardization.standardized}</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                onClick={() => setThesisTitle(thesisTitleStandardization.standardized)}
+              >
+                Use Standardized Title
+              </Button>
+            </div>
+          )}
       </div>
 
       <div className="h-px bg-gray-200 my-2"></div>

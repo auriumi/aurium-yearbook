@@ -20,6 +20,7 @@ import { FamilyStep } from "@/components/registration/FamilyStep";
 import { ReviewStep } from "@/components/registration/ReviewStep";
 import { PrivacyStep } from "@/components/registration/PrivacyStep";
 import toast from "react-hot-toast";
+import { formatApaThesisTitle } from "@/utils/thesisTitle";
 
 const steps = [
   { id: 1, name: "Personal", title: "Personal Information" },
@@ -144,6 +145,7 @@ export default function RegistrationWizard() {
   const [email, setEmail] = useState("");
   const [umEmail, setUmEmail] = useState(""); 
   const [hasUmEmailAccess, setHasUmEmailAccess] = useState(true);
+  const standardizedThesisTitle = useMemo(() => formatApaThesisTitle(thesisTitle), [thesisTitle]);
 
   // --- STATE: Family ---
   const [useGuardian, setUseGuardian] = useState(false);
@@ -239,7 +241,7 @@ export default function RegistrationWizard() {
         nickname: nickname, 
         birthdate: bdate, 
         contact_num: contactNum, 
-        academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: thesisTitle }, 
+        academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: standardizedThesisTitle },
         ...relation, 
         province: provinceName, 
         city: cityName, 
@@ -326,7 +328,7 @@ export default function RegistrationWizard() {
                     {/* FIXED: Included FamilyStep (Step 4) */}
                     {currentStep === 4 && <FamilyStep useGuardian={useGuardian} setUseGuardian={setUseGuardian} guardianLname={guardianLname} setGuardianLname={setGuardianLname} guardianTitle={guardianTitle} setGuardianTitle={setGuardianTitle} guardianFname={guardianFname} setGuardianFname={setGuardianFname} guardianRel={guardianRel} setGuardianRel={setGuardianRel} fatherLname={fatherLname} setFatherLname={setFatherLname} fatherTitle={fatherTitle} setFatherTitle={setFatherTitle} fatherFname={fatherFname} setFatherFname={setFatherFname} fatherMname={fatherMname} setFatherMname={setFatherMname} fatherSuffix={fatherSuffix} setFatherSuffix={setFatherSuffix} motherLname={motherLname} setMotherLname={setMotherLname} motherTitle={motherTitle} setMotherTitle={setMotherTitle} motherFname={motherFname} setMotherFname={setMotherFname} motherMname={motherMname} setMotherMname={setMotherMname} />}
                     
-                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
+                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} standardizedThesisTitle={standardizedThesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
                     {currentStep === 6 && <PrivacyStep privacyAgreed={privacyAgreed} setPrivacyAgreed={setPrivacyAgreed} />}
                     
                     </motion.div>

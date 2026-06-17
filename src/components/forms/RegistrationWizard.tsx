@@ -8,7 +8,8 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wifi, WifiOff } from "lucide-react";
+import { CheckCircle2, Mail, Wifi, WifiOff } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 // SOLID: Importing isolated Step Components and Constants
@@ -37,6 +38,7 @@ export default function RegistrationWizard() {
   const [direction, setDirection] = useState(0); 
   const [isOnline, setIsOnline] = useState(true); 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRegistrationConfirmation, setShowRegistrationConfirmation] = useState(false);
 
   // --- STATE: Personal ---
   const [idNumber, setIdNumber] = useState(""); 
@@ -254,8 +256,8 @@ export default function RegistrationWizard() {
       });
 
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      toast.success("Information has been submitted succesfully!")
-      router.push('/');
+      toast.success("Information has been submitted succesfully!");
+      setShowRegistrationConfirmation(true);
 
     } catch (err) { 
       console.error("Something went wrong..", err); 
@@ -347,6 +349,49 @@ export default function RegistrationWizard() {
       <footer className="bg-white border-t border-stone-200 py-8 mt-auto">
         <div className="container mx-auto px-6 text-center text-xs text-stone-400"><p>© 2026 AURIUM Yearbook Committee.</p></div>
       </footer>
+
+      <Dialog open={showRegistrationConfirmation} onOpenChange={setShowRegistrationConfirmation}>
+        <DialogContent showCloseButton={false} className="sm:max-w-xl">
+          <DialogHeader className="items-center text-center">
+            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
+              <CheckCircle2 size={36} />
+            </div>
+            <DialogTitle className="text-2xl font-serif text-amber-950">Registration Submitted</DialogTitle>
+            <DialogDescription className="text-stone-600">
+              Your pre-registration details were received. Please read the next steps before leaving this page.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-5 text-sm text-stone-700">
+            <div>
+              <p className="font-bold text-amber-950">What to do next</p>
+              <ul className="mt-2 list-disc space-y-2 pl-5">
+                <li>Monitor your registered email for AURIUM updates and instructions.</li>
+                <li>Keep your student ID number ready when visiting the office or asking for support.</li>
+                <li>If you no longer have UM email access, use your personal email for follow-ups.</li>
+              </ul>
+            </div>
+            <div className="flex items-start gap-2 rounded-xl bg-white p-3 text-xs text-stone-600">
+              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <p>
+                For corrections or inquiries, contact{" "}
+                <a href="mailto:support@aurium-umtc.edu.ph" className="font-bold text-amber-700 hover:underline">
+                  support@aurium-umtc.edu.ph
+                </a>.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-center">
+            <Button
+              className="w-full bg-amber-900 text-white hover:bg-amber-800 sm:w-auto"
+              onClick={() => router.push("/")}
+            >
+              Exit Registration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

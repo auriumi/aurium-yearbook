@@ -11,7 +11,7 @@ export function useSidebar(user: any) {
   const canManageImages = isAdmin || isModerator;
 
   // Image approvals: ADMINISTRATOR always; MODERATOR only if flagged
-  const canApproveImages = isAdmin || (isModerator && !!user?.can_approve_images);
+  const canApproveImages = isAdmin || isModerator;
 
   // Tab visible to ADMINISTRATOR only
   const canManageRoles = isAdmin;

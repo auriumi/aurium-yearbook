@@ -154,7 +154,7 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
       {/* Header + filters (approvers only) */}
-      {isApprover && (
+      {(
         <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
           <div>
             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
@@ -224,7 +224,7 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
       )}
 
       {/* Queue (approvers only) */}
-      {isApprover && (
+      {(
         <div className="space-y-4 pb-10 min-h-[300px]">
           {isLoading ? (
             <div className="text-center py-24 text-stone-400 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">
@@ -301,14 +301,14 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
         </div>
       )}
 
-      {/* Non-approver landing (reached via a notification deep-link) */}
-      {!isApprover && !selectedId && (
+      {/* Non-approver landing (reached via a notification deep-link) -- broken owo */}
+      {/*!isApprover && !selectedId && (
         <div className="text-center py-24 text-stone-400 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">
           <Inbox className="h-12 w-12 mb-4 opacity-20" />
           <p className="text-lg font-medium text-stone-500">Open a notification to view a request</p>
           <p className="text-sm">You can view and reply on requests you uploaded.</p>
         </div>
-      )}
+      )*/}
 
       {/* Forum detail dialog */}
       <Dialog open={!!selectedId} onOpenChange={(open) => { if (!open) closeDetail(); }}>

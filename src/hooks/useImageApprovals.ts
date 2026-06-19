@@ -22,7 +22,6 @@ export function useImageApprovals(enabled = true) {
   useEffect(() => { setPage(1); }, [view, typeFilter, yearFilter]);
 
   useEffect(() => {
-    if (!enabled) return;
     const run = async () => {
       setIsLoading(true);
       try {

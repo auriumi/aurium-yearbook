@@ -4,6 +4,7 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 export type YearbookImageType = "GRADUATION" | "THEME";
 
 interface ImageStudentParams {
+    id: string;
     page: number;
     dept: string;
     course: string;
@@ -16,15 +17,19 @@ interface ImageStudentParams {
 //fetch students (paginated) with their graduation/theme image status for a year
 export async function fetchImageStudents(params: ImageStudentParams) {
     try {
-        const query = new URLSearchParams({
-            page: String(params.page),
-            dept: params.dept,
-            course: params.course,
-            major: params.major,
-            status: params.status,
-            year: String(params.year),
-            missing: params.missing,
-        });
+
+        const query = new URLSearchParams();
+        if (params.id) {
+            query.append("id", params.id);
+        } else {
+          query.append("page", String(params.page));
+          query.append("dept", params.dept);
+          query.append("course", params.course);
+          query.append("major", params.major);
+          query.append("status", params.status);
+          query.append("year", String(params.year));
+          query.append("status", params.missing);
+        }
 
         const res = await fetch(`${baseUrl}/api/admin/images/students?${query}`, {
             credentials: "include",

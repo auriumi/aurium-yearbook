@@ -5,8 +5,9 @@ import Image from "next/image";
 import {
   Image as ImageIcon, Upload, Loader2, X, Camera, Filter, GraduationCap,
   BookOpen, ListFilter, ChevronLeft, ChevronRight, Calendar, Sparkles,
-  CheckCircle2, Clock, XCircle, UserSquare2,
+  CheckCircle2, Clock, XCircle, UserSquare2, Search
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -92,6 +93,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
 
 export function ImageManagementTab() {
   const {
+    searchQuery, setSearchQuery,
     activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
     activeMajorFilter, setActiveMajorFilter,
@@ -101,7 +103,7 @@ export function ImageManagementTab() {
     appliedFilters,
     currentPage, setCurrentPage,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    handleLoadClick, refresh,
+    handleLoadClick, handleSearchClick, handleSearchKeyDown, refresh,
     DEPARTMENT_ORDER, YEAR_OPTIONS, MISSING_OPTIONS,
     STATUS_STEPS, ACADEMIC_CONFIG,
   } = useImageManagement();
@@ -220,25 +222,24 @@ export function ImageManagementTab() {
           </p>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-2 items-stretch">
-          {/* Year */}
-          <div className="w-full xl:w-[120px] shrink-0">
-            <Select value={String(activeYearFilter)} onValueChange={(v) => setActiveYearFilter(Number(v))}>
-              <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
-                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
-                  <Calendar size={16} className="shrink-0" />
-                  <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
-                    <SelectValue placeholder="Year" />
-                  </div>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {YEAR_OPTIONS.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-stone-50/50 p-2 rounded-xl border border-stone-100 min-w-0">
+          <div className="flex gap-2 w-full xl:w-[25%] min-w-0">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
+              <Input
+                placeholder="Search by ID Number..."
+                className="pl-10 h-11 bg-white border-stone-200 focus:ring-amber-500/20 focus:border-amber-500 shadow-sm w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+              />
+            </div>
+            <Button onClick={handleSearchClick} className="h-11 px-5 bg-stone-800 hover:bg-stone-900 shadow-sm shrink-0">
+              Search
+            </Button>
           </div>
+
+          <div className="hidden xl:block text-stone-300 font-medium text-sm px-1 shrink-0">OR</div>
 
           {/* Missing filter */}
           <div className="w-full xl:w-[180px] shrink-0">
@@ -319,26 +320,6 @@ export function ImageManagementTab() {
                 <SelectItem value="ALL">All Courses</SelectItem>
                 {availableCourses.map((course: string) => (
                   <SelectItem key={course} value={course}>{course}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Major */}
-          <div className="w-full xl:flex-1 min-w-0">
-            <Select value={activeMajorFilter} onValueChange={setActiveMajorFilter} disabled={activeCourseFilter === "ALL" || availableMajors.length === 0}>
-              <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
-                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
-                  <BookOpen size={16} className="shrink-0" />
-                  <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate pr-1">
-                    <SelectValue placeholder={activeCourseFilter === "ALL" ? "Select Course First" : availableMajors.length === 0 ? "N/A" : "Major"} />
-                  </div>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Majors</SelectItem>
-                {availableMajors.map((major: string) => (
-                  <SelectItem key={major} value={major}>{major}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

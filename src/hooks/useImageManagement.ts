@@ -32,12 +32,24 @@ export function useImageManagement() {
   const defaultYear = YEAR_OPTIONS.includes(currentYear) ? currentYear : YEAR_OPTIONS[0];
 
   // --- UI INPUT STATES ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+
   const [activeDeptFilter, setActiveDeptFilter] = useState<string>("ALL");
   const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL");
   const [activeMajorFilter, setActiveMajorFilter] = useState<string>("ALL");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL");
   const [activeYearFilter, setActiveYearFilter] = useState<number>(defaultYear);
   const [activeMissingFilter, setActiveMissingFilter] = useState<string>("ALL");
+
+  const handleSearchClick = () => {
+    setAppliedSearchQuery(searchQuery.trim());
+    setCurrentPage(1);
+  };
+
+  const handleSearchKeyDown = (e: any) => {
+      if (e.key === 'Enter') handleSearchClick();
+  };
 
   // --- APPLIED FILTERS (sent to API on LOAD) ---
   const [appliedFilters, setAppliedFilters] = useState({
@@ -79,6 +91,8 @@ export function useImageManagement() {
       year: activeYearFilter,
       missing: activeMissingFilter,
     });
+    setAppliedSearchQuery("");
+    setSearchQuery("");
     setCurrentPage(1);
   };
 
@@ -90,6 +104,7 @@ export function useImageManagement() {
       setIsLoading(true);
       try {
         const result = await fetchImageStudents({
+          id: appliedSearchQuery,
           page: currentPage,
           dept: appliedFilters.dept,
           course: appliedFilters.course,
@@ -117,9 +132,10 @@ export function useImageManagement() {
     };
 
     run();
-  }, [appliedFilters, currentPage, reloadKey]);
+  }, [appliedFilters, appliedSearchQuery, currentPage, reloadKey]);
 
   return {
+    searchQuery, setSearchQuery,
     activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
     activeMajorFilter, setActiveMajorFilter,
@@ -129,7 +145,7 @@ export function useImageManagement() {
     appliedFilters,
     currentPage, setCurrentPage,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    handleLoadClick, refresh,
+    handleLoadClick, handleSearchClick, handleSearchKeyDown, refresh,
     DEPARTMENT_ORDER, YEAR_OPTIONS, MISSING_OPTIONS,
     STATUS_STEPS: STUDENT_STATUS_STEPS, ACADEMIC_CONFIG,
   };

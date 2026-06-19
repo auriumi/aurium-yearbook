@@ -7,6 +7,7 @@ export interface Admin {
   last_name: string;
   role: string;
   avatar: string | null;
+  can_approve_images?: boolean;
 }
 
 export interface Student {

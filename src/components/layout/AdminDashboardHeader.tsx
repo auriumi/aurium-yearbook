@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/admin/NotificationBell";
 
 const TAB_TITLES: Record<string, string> = {
   verification: "Verification Queue",
@@ -11,6 +12,7 @@ const TAB_TITLES: Record<string, string> = {
   slots: "Schedule Manager",
   masterlist: "Verified Masterlist",
   images: "Image Management",
+  "images-approvals": "Image Approvals",
   scanner: "Attendance Scanner",
   profile: "My Profile",
   roles: "Manage Staffs",
@@ -19,9 +21,10 @@ const TAB_TITLES: Record<string, string> = {
 interface AdminDashboardHeaderProps {
   activeTab: string;
   onOpenMenu: () => void;
+  onNavigate: (tab: string, imageId?: number | null) => void;
 }
 
-export function AdminDashboardHeader({ activeTab, onOpenMenu }: AdminDashboardHeaderProps) {
+export function AdminDashboardHeader({ activeTab, onOpenMenu, onNavigate }: AdminDashboardHeaderProps) {
   return (
     <header className="flex items-center justify-between mb-8 py-4 border-b border-stone-200/50">
       <div className="flex items-center gap-4">
@@ -48,10 +51,7 @@ export function AdminDashboardHeader({ activeTab, onOpenMenu }: AdminDashboardHe
         <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white border border-stone-200 rounded-full shadow-sm text-xs font-medium text-stone-500">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> System Online
         </div>
-        <Button variant="ghost" size="icon" className="relative rounded-full text-stone-400 hover:text-amber-800">
-          <Bell className="h-5 w-5"/>
-          <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </Button>
+        <NotificationBell onNavigate={onNavigate} />
       </div>
     </header>
   );

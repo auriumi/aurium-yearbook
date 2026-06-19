@@ -14,6 +14,7 @@ import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
+import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -32,6 +33,9 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState("masterlist");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // notification deep-link target for the Image Approvals tab
+  const [focusedApprovalId, setFocusedApprovalId] = useState<number | null>(null);
 
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
@@ -53,6 +57,13 @@ export default function AdminDashboard() {
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
+  const isImageApprover = userRole === 'ADMINISTRATOR' || (userRole === 'MODERATOR' && !!staffUser?.can_approve_images);
+
+  // navigate to a tab (optionally focusing a request) — used by the notification bell
+  const handleNavigate = useCallback((tab: string, imageId?: number | null) => {
+    setActiveTab(tab);
+    setFocusedApprovalId(imageId ?? null);
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -185,7 +196,7 @@ export default function AdminDashboard() {
       {/* FIX APPLIED HERE: md:p-8 was changed to md:px-8 md:pt-4 */}
       <main className="flex-1 md:ml-72 p-4 md:px-8 md:pt-4 min-h-screen bg-[#FDFBF7]">
         
-        <AdminDashboardHeader activeTab={activeTab} onOpenMenu={() => setIsMobileMenuOpen(true)} />
+        <AdminDashboardHeader activeTab={activeTab} onOpenMenu={() => setIsMobileMenuOpen(true)} onNavigate={handleNavigate} />
 
         {/* CONTENT AREA */}
         <div className={`space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'profile' ? 'max-w-7xl mx-auto' : ''}`}>
@@ -217,6 +228,13 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'images' && <ImageManagementTab />}
+            {activeTab === 'images-approvals' && (
+              <ImageApprovalsTab
+                isApprover={isImageApprover}
+                focusImageId={focusedApprovalId}
+                onConsumeFocus={() => setFocusedApprovalId(null)}
+              />
+            )}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 

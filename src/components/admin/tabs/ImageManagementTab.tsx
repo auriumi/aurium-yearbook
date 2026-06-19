@@ -74,7 +74,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
       </div>
 
       <div className="mt-1.5 flex items-center justify-between gap-1">
-        {image ? <ImageStatusBadge status={image.status} /> : <span className="text-[10px] font-bold text-stone-400 py-0.5">Pending</span>}
+        {image ? <ImageStatusBadge status={image.status} /> : <span className="text-[10px] font-bold text-stone-400 py-0.5">No image provided</span>}
       </div>
 
       <Button

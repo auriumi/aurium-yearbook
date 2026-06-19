@@ -12,7 +12,7 @@ const TAB_TITLES: Record<string, string> = {
   slots: "Schedule Manager",
   masterlist: "Verified Masterlist",
   images: "Image Management",
-  "images-approvals": "Image Approvals",
+  "images-approvals": "Approval Thread",
   scanner: "Attendance Scanner",
   profile: "My Profile",
   roles: "Manage Staffs",

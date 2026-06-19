@@ -96,7 +96,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         {/* Image Approvals — ADMINISTRATOR and approver MODERATORs */}
         {canApproveImages && (
-          <NavItem id="images-approvals" label="Image Approvals" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />
+          <NavItem id="images-approvals" label="Approval Thread" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
 
         <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />

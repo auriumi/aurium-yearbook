@@ -158,7 +158,7 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
         <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm space-y-4">
           <div>
             <h2 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-              <Inbox className="h-6 w-6 text-amber-600" /> Image Approvals
+              <Inbox className="h-6 w-6 text-amber-600" /> Approval Thread
             </h2>
             <p className="text-sm text-stone-500 mt-1">
               Review submitted graduation and theme photos and discuss in the thread to approve or reject request.

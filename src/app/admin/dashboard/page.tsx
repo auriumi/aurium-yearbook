@@ -13,6 +13,7 @@ import { ProfileTab } from "@/components/admin/tabs/ProfileTab";
 import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
+import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -215,6 +216,7 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
+            {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 

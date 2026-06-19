@@ -8,6 +8,7 @@ export function useSidebar(user: any) {
   // Tabs visible to ADMINISTRATOR and MODERATOR
   const canAccessVerification = isAdmin || isModerator;
   const canAccessSchedules = isAdmin || isModerator;
+  const canManageImages = isAdmin || isModerator;
 
   // Tab visible to ADMINISTRATOR only
   const canManageRoles = isAdmin;
@@ -34,6 +35,7 @@ export function useSidebar(user: any) {
     isMember,
     canAccessVerification,
     canAccessSchedules,
+    canManageImages,
     canManageRoles,
     displayPosition,
     userInitials

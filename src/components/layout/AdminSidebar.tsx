@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Users, Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
-  ClipboardList, FileCheck, ShieldCheck, type LucideIcon
+  ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, type LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,7 +43,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
 }
 
 export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
-  const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
+  const { canAccessVerification, canAccessSchedules, canManageImages, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
     setActiveTab(tab);
@@ -88,6 +88,12 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         {/* Masterlist — all roles */}
         <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />
+
+        {/* Image Management — ADMINISTRATOR and MODERATOR */}
+        {canManageImages && (
+          <NavItem id="images" label="Image Management" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />
+        )}
+
         <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />
 
         <div className="my-2 border-t border-stone-800/50"></div>

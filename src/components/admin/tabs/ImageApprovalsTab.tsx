@@ -388,7 +388,7 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
                           ? "text-[11px] font-semibold bg-green-100 text-green-800 border-green-200 rounded-full px-3 py-1"
                           : "text-[11px] bg-red-100 text-red-700 border-red-200 rounded-full px-3 py-1"
                         }>
-                          {c.body.slice(0, -1)}. {c.author_name} · {fmtTime(c.created_at)}
+                          {c.body.slice(0, -1)}. Authored by {c.author_name} · {fmtTime(c.created_at)}
                         </span>
                       </div>
                     ) : (

@@ -45,9 +45,10 @@ interface ImageSlotProps {
   icon: React.ElementType;
   image: StudentImage | null;
   onUpload: () => void;
+  setEnlargedImage: (url: string | null) => void;
 }
 
-function ImageSlot({ label, icon: Icon, image, onUpload }: ImageSlotProps) {
+function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: ImageSlotProps) {
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-1.5 mb-1.5">
@@ -55,7 +56,12 @@ function ImageSlot({ label, icon: Icon, image, onUpload }: ImageSlotProps) {
         <span className="text-[10px] font-bold uppercase tracking-wide text-stone-500 truncate">{label}</span>
       </div>
 
-      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:border-amber-400"
+        onClick={() => {
+          const refUrl = image?.photo_url;
+          if (refUrl) setEnlargedImage(refUrl);
+        }}
+      >
         {image?.photo_url ? (
           <Image unoptimized src={image.photo_url} fill sizes="200px" className="object-cover" alt={label} />
         ) : (
@@ -67,7 +73,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload }: ImageSlotProps) {
       </div>
 
       <div className="mt-1.5 flex items-center justify-between gap-1">
-        {image ? <ImageStatusBadge status={image.status} /> : <span className="text-[10px] text-stone-400">—</span>}
+        {image ? <ImageStatusBadge status={image.status} /> : <span className="text-[10px] font-bold text-stone-400 py-0.5">Pending</span>}
       </div>
 
       <Button
@@ -75,9 +81,10 @@ function ImageSlot({ label, icon: Icon, image, onUpload }: ImageSlotProps) {
         size="sm"
         onClick={onUpload}
         className="w-full mt-1.5 h-7 text-[11px] border-amber-200 text-amber-900 hover:bg-amber-50 hover:text-amber-900"
+        disabled={image?.status === "APPROVED"}
       >
         <Camera className="w-3 h-3 mr-1.5" />
-        {image ? "Replace" : "Upload"}
+        {image ? "Change" : "Upload"}
       </Button>
     </div>
   );
@@ -106,6 +113,8 @@ export function ImageManagementTab() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
 
@@ -206,7 +215,7 @@ export function ImageManagementTab() {
             <ImageIcon className="h-6 w-6 text-amber-600" /> Image Management
           </h2>
           <p className="text-sm text-stone-500 mt-1">
-            Upload or replace each graduate&apos;s graduation (toga) and theme pictures. Uploaded images await
+            Upload each graduate&apos;s formal and theme images. Uploaded images await
             approval before they go live.
           </p>
         </div>
@@ -356,7 +365,7 @@ export function ImageManagementTab() {
           </div>
         ) : (
           <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 content-start">
               {students.map((student: any) => {
                 const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth?.status);
                 return (
@@ -381,7 +390,12 @@ export function ImageManagementTab() {
                           <UserSquare2 size={12} className="text-stone-400 shrink-0" />
                           <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400 truncate">Ref</span>
                         </div>
-                        <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                        <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:border-amber-400"
+                          onClick={() => {
+                            const refUrl = student.reference_photo_url;
+                            if (refUrl) setEnlargedImage(refUrl);
+                          }}
+                        >
                           {student.reference_photo_url ? (
                             <Image unoptimized src={student.reference_photo_url} fill sizes="120px" className="object-cover" alt="Reference" />
                           ) : (
@@ -397,12 +411,14 @@ export function ImageManagementTab() {
                         icon={GraduationCap}
                         image={student.graduation}
                         onUpload={() => openUploadDialog(student, "GRADUATION")}
+                        setEnlargedImage={setEnlargedImage}
                       />
                       <ImageSlot
                         label="Theme"
                         icon={Sparkles}
                         image={student.theme}
                         onUpload={() => openUploadDialog(student, "THEME")}
+                        setEnlargedImage={setEnlargedImage}
                       />
                     </div>
                   </div>
@@ -521,6 +537,24 @@ export function ImageManagementTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+        {/* IMAGE LIGHTBOX MODAL */}
+        <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>
+            <DialogContent className="max-w-4xl w-auto p-1 bg-transparent border-0 shadow-none flex justify-center items-center [&>button]:hidden">
+                <div className="relative w-auto h-auto max-h-[85vh]">
+                    {enlargedImage && (
+                        <Image
+                            unoptimized
+                            src={enlargedImage} 
+                            alt="Enlarged view"
+                            width={1600}
+                            height={2000}
+                            className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                        />
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

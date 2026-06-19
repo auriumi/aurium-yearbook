@@ -62,6 +62,8 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
 
   const loadThread = useCallback(async (id: number) => {
@@ -159,7 +161,7 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
               <Inbox className="h-6 w-6 text-amber-600" /> Image Approvals
             </h2>
             <p className="text-sm text-stone-500 mt-1">
-              Review submitted graduation and theme photos. Discuss in the thread, then approve or reject.
+              Review submitted graduation and theme photos and discuss in the thread to approve or reject request.
             </p>
           </div>
 
@@ -335,10 +337,15 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
                 <p className="text-sm font-bold text-stone-800">{studentName(request.student)}</p>
                 <p className="text-[11px] font-mono text-stone-500 mb-3">{request.student?.student_number}</p>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400 mb-1">Submitted</p>
-                    <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                    <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:border-amber-400"
+                        onClick={() => {
+                          const refUrl = request.photo_url;
+                          if (refUrl) setEnlargedImage(refUrl);
+                        }}
+                    >
                       {request.photo_url ? (
                         <Image unoptimized src={request.photo_url} fill sizes="240px" className="object-cover" alt="submitted" />
                       ) : <div className="absolute inset-0 flex items-center justify-center text-stone-300"><ImageOff size={20} /></div>}
@@ -346,7 +353,12 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
                   </div>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400 mb-1">Reference</p>
-                    <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                    <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100 cursor-pointer hover:border-amber-400"
+                        onClick={() => {
+                          const refUrl = request.reference_photo_url;
+                          if (refUrl) setEnlargedImage(refUrl);
+                        }}
+                    >
                       {request.reference_photo_url ? (
                         <Image unoptimized src={request.reference_photo_url} fill sizes="240px" className="object-cover" alt="reference" />
                       ) : <div className="absolute inset-0 flex items-center justify-center text-stone-300"><ImageOff size={20} /></div>}
@@ -372,8 +384,11 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
                   {comments.map((c) => (
                     c.is_system ? (
                       <div key={c.id} className="flex items-center gap-2 justify-center">
-                        <span className="text-[11px] text-stone-500 italic bg-stone-100 rounded-full px-3 py-1">
-                          {c.body} · {fmtTime(c.created_at)}
+                        <span className={c.body.slice(0, 8) !== "Rejected" 
+                          ? "text-[11px] font-semibold bg-green-100 text-green-800 border-green-200 rounded-full px-3 py-1"
+                          : "text-[11px] bg-red-100 text-red-700 border-red-200 rounded-full px-3 py-1"
+                        }>
+                          {c.body.slice(0, -1)}. {c.author_name} · {fmtTime(c.created_at)}
                         </span>
                       </div>
                     ) : (
@@ -430,6 +445,24 @@ export function ImageApprovalsTab({ isApprover, focusImageId, onConsumeFocus }: 
           ) : (
             <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">Request unavailable.</div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* IMAGE LIGHTBOX MODAL */}
+      <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>
+        <DialogContent className="max-w-4xl w-auto p-1 bg-transparent border-0 shadow-none flex justify-center items-center [&>button]:hidden">
+          <div className="relative w-auto h-auto max-h-[85vh]">
+            {enlargedImage && (
+              <Image
+                unoptimized
+                src={enlargedImage}
+                alt="Enlarged view"
+                width={1600}
+                height={2000}
+                className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

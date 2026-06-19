@@ -1204,7 +1204,6 @@ export function MasterlistTab(props: MasterlistTabProps) {
                 </div>
             </DialogContent>
         </Dialog>
-
     </div>
   );
 }

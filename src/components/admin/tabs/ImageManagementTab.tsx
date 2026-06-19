@@ -82,7 +82,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
         size="sm"
         onClick={onUpload}
         className="w-full mt-1.5 h-7 text-[11px] border-amber-200 text-amber-900 hover:bg-amber-50 hover:text-amber-900"
-        disabled={image?.status === "APPROVED"}
+        disabled={image?.status === "APPROVED" || image?.status === "PENDING"}
       >
         <Camera className="w-3 h-3 mr-1.5" />
         {image ? "Change" : "Upload"}

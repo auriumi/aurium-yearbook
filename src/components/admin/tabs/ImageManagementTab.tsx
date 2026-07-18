@@ -46,6 +46,40 @@ const STATUS_BADGE: Record<string, { label: string; className: string; Icon: Rea
   REJECTED: { label: "Rejected", className: "bg-red-100 text-red-700 border-red-200",         Icon: XCircle },
 };
 
+const IMAGE_REVIEW_BADGE: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
+  MISSING: {
+    label: "Needs Upload",
+    className: "bg-stone-100 text-stone-700 border-stone-200",
+    Icon: ImageIcon,
+  },
+  PENDING: {
+    label: "Pending Review",
+    className: "bg-amber-100 text-amber-800 border-amber-200",
+    Icon: Clock,
+  },
+  REJECTED: {
+    label: "Needs Revision",
+    className: "bg-red-100 text-red-700 border-red-200",
+    Icon: XCircle,
+  },
+  APPROVED: {
+    label: "Photos Approved",
+    className: "bg-green-100 text-green-800 border-green-200",
+    Icon: CheckCircle2,
+  },
+};
+
+function getImageReviewStatus(graduation?: StudentImage | null, theme?: StudentImage | null) {
+  const images = [graduation, theme];
+
+  if (images.some((image) => image?.status === "REJECTED")) return "REJECTED";
+  if (images.some((image) => !image?.photo_url)) return "MISSING";
+  if (images.some((image) => image?.status === "PENDING")) return "PENDING";
+  if (images.every((image) => image?.status === "APPROVED")) return "APPROVED";
+
+  return "MISSING";
+}
+
 function getStudentName(student: any) {
   return `${student.last_name}, ${student.first_name} ${student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} ${student.suffix ?? ""}`.trim();
 }
@@ -105,6 +139,18 @@ function ImageStatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border ${cfg.className}`}>
       <Icon size={10} /> {cfg.label}
+    </span>
+  );
+}
+
+function ImageReviewSummaryBadge({ graduation, theme }: { graduation?: StudentImage | null; theme?: StudentImage | null }) {
+  const status = getImageReviewStatus(graduation, theme);
+  const cfg = IMAGE_REVIEW_BADGE[status];
+  const { Icon } = cfg;
+
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${cfg.className}`}>
+      <Icon className="h-3.5 w-3.5" /> {cfg.label}
     </span>
   );
 }
@@ -648,7 +694,6 @@ export function ImageManagementTab() {
 
             <div className="grid grid-cols-1 gap-6 content-start">
               {students.map((student: any) => {
-                const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth?.status);
                 return (
                   <div key={student.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-[#FDFBF7] shadow-sm">
                     <div className="border-b border-stone-200/70 bg-white/80 p-4">
@@ -663,9 +708,7 @@ export function ImageManagementTab() {
                             <span className="truncate">{student.course}</span>
                           </div>
                         </div>
-                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white ${statusInfo?.color || "bg-stone-400"}`}>
-                          {statusInfo?.label || "Unknown"}
-                        </span>
+                        <ImageReviewSummaryBadge graduation={student.graduation} theme={student.theme} />
                       </div>
                     </div>
 

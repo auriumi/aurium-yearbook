@@ -51,7 +51,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
   };
 
   return (
-    <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'hidden md:flex w-72 h-screen fixed left-0 top-0'} bg-stone-950 text-stone-300 flex-col border-r border-stone-800 shadow-2xl transition-transform`}>
+    <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72' : 'hidden lg:flex w-72 h-screen fixed left-0 top-0'} bg-stone-950 text-stone-300 flex-col border-r border-stone-800 shadow-2xl transition-transform`}>
 
       <div className="p-8 border-b border-stone-800/50 flex items-center justify-between">
         <div className="flex items-center gap-3">

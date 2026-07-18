@@ -168,11 +168,11 @@ export default function AdminDashboard() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-stone-50 flex font-sans relative">
+    <div className="min-h-screen bg-stone-50 flex font-sans relative overflow-x-hidden">
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
-         <div className="fixed inset-0 z-50 md:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
+         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
              <AdminSidebar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -193,13 +193,12 @@ export default function AdminDashboard() {
         onLogout={() => onLogout()}
       />
 
-      {/* FIX APPLIED HERE: md:p-8 was changed to md:px-8 md:pt-4 */}
-      <main className="flex-1 md:ml-72 p-4 md:px-8 md:pt-4 min-h-screen bg-[#FDFBF7]">
+      <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
         
         <AdminDashboardHeader activeTab={activeTab} onOpenMenu={() => setIsMobileMenuOpen(true)} onNavigate={handleNavigate} />
 
         {/* CONTENT AREA */}
-        <div className={`space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'profile' ? 'max-w-7xl mx-auto' : ''}`}>
+        <div className={`space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'profile' ? 'w-full max-w-7xl mx-auto' : ''}`}>
             {/* 1. ORIGINAL ADMIN VERIFICATION (Queue) */}
             {activeTab === "verification" && (
                 <VerificationTab 

@@ -28,7 +28,7 @@ export function AdminDashboardHeader({ activeTab, onOpenMenu, onNavigate }: Admi
   return (
     <header className="flex items-center justify-between mb-8 py-4 border-b border-stone-200/50">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="md:hidden text-stone-500" onClick={onOpenMenu}>
+        <Button variant="ghost" size="icon" className="lg:hidden text-stone-500" onClick={onOpenMenu}>
           <Menu className="h-6 w-6"/>
         </Button>
 

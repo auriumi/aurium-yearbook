@@ -129,7 +129,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
   const uploadLabel = image?.status === "REJECTED" ? "Replace" : image ? "Change" : "Upload";
 
   return (
-    <div className="min-w-0 rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+    <div className="min-w-0 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
@@ -646,7 +646,7 @@ export function ImageManagementTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 content-start xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 content-start">
               {students.map((student: any) => {
                 const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth?.status);
                 return (
@@ -669,8 +669,8 @@ export function ImageManagementTab() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1fr)]">
-                      <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+                    <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_minmax(0,1fr)]">
+                      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
                         <div className="mb-3 flex items-center gap-2">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500">
                             <UserSquare2 size={16} />

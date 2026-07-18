@@ -28,7 +28,7 @@ export async function fetchImageStudents(params: ImageStudentParams) {
           query.append("major", params.major);
           query.append("status", params.status);
           query.append("year", String(params.year));
-          query.append("status", params.missing);
+          query.append("missing", params.missing);
         }
 
         const res = await fetch(`${baseUrl}/api/admin/images/students?${query}`, {

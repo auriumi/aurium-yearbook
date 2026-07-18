@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   Image as ImageIcon, Upload, Loader2, X, Camera, Filter, GraduationCap,
-  BookOpen, ListFilter, ChevronLeft, ChevronRight, Calendar, Sparkles,
+  ListFilter, ChevronLeft, ChevronRight, Sparkles, Calendar,
   CheckCircle2, Clock, XCircle, UserSquare2, Search
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,13 @@ function ImageStatusBadge({ status }: { status: string }) {
   );
 }
 
+function formatImageUpdated(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 interface ImageSlotProps {
   label: string;
   icon: React.ElementType;
@@ -50,6 +57,9 @@ interface ImageSlotProps {
 }
 
 function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: ImageSlotProps) {
+  const canUpload = image?.status !== "APPROVED" && image?.status !== "PENDING";
+  const uploadLabel = image?.status === "REJECTED" ? "Replace" : image ? "Change" : "Upload";
+
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-1.5 mb-1.5">
@@ -75,6 +85,7 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
 
       <div className="mt-1.5 flex items-center justify-between gap-1">
         {image ? <ImageStatusBadge status={image.status} /> : <span className="text-[10px] font-bold text-stone-400 py-0.5">No image provided</span>}
+        {image?.updated_at && <span className="text-[9px] text-stone-400 shrink-0">{formatImageUpdated(image.updated_at)}</span>}
       </div>
 
       <Button
@@ -82,10 +93,10 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
         size="sm"
         onClick={onUpload}
         className="w-full mt-1.5 h-7 text-[11px] border-amber-200 text-amber-900 hover:bg-amber-50 hover:text-amber-900"
-        disabled={image?.status === "APPROVED" || image?.status === "PENDING"}
+        disabled={!canUpload}
       >
         <Camera className="w-3 h-3 mr-1.5" />
-        {image ? "Change" : "Upload"}
+        {uploadLabel}
       </Button>
     </div>
   );
@@ -162,8 +173,15 @@ export function ImageManagementTab() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(file.type)) {
+      toast.error("Please choose a JPG, PNG, or WEBP image.");
+      e.target.value = "";
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size must be less than 5MB");
+      e.target.value = "";
       return;
     }
     setSelectedFile(file);
@@ -285,6 +303,25 @@ export function ImageManagementTab() {
             </Select>
           </div>
 
+          {/* Year */}
+          <div className="w-full xl:w-[120px] shrink-0">
+            <Select value={String(activeYearFilter)} onValueChange={(value) => setActiveYearFilter(Number(value))}>
+              <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
+                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
+                  <Calendar size={16} className="shrink-0" />
+                  <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
+                    <SelectValue placeholder="Year" />
+                  </div>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((year) => (
+                  <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Department */}
           <div className="w-full xl:flex-1 min-w-0">
             <Select value={activeDeptFilter} onValueChange={(val) => { setActiveDeptFilter(val); setActiveCourseFilter("ALL"); setActiveMajorFilter("ALL"); }}>
@@ -320,6 +357,26 @@ export function ImageManagementTab() {
                 <SelectItem value="ALL">All Courses</SelectItem>
                 {availableCourses.map((course: string) => (
                   <SelectItem key={course} value={course}>{course}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Major */}
+          <div className="w-full xl:flex-1 min-w-0">
+            <Select value={activeMajorFilter} onValueChange={setActiveMajorFilter} disabled={activeCourseFilter === "ALL"}>
+              <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
+                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
+                  <GraduationCap size={16} className="shrink-0" />
+                  <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate pr-1">
+                    <SelectValue placeholder={activeCourseFilter === "ALL" ? "Select Course First" : "Major"} />
+                  </div>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Majors</SelectItem>
+                {availableMajors.map((major: string) => (
+                  <SelectItem key={major} value={major}>{major}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -444,7 +501,7 @@ export function ImageManagementTab() {
       {/* hidden file input */}
       <input
         type="file"
-        accept="image/png, image/jpeg, image/jpg"
+        accept="image/png, image/jpeg, image/jpg, image/webp"
         className="hidden"
         ref={fileInputRef}
         onChange={handleFileChange}
@@ -503,7 +560,12 @@ export function ImageManagementTab() {
             >
               <Camera className="w-4 h-4 mr-2" /> {selectedFile ? "Choose Another" : "Choose Image"}
             </Button>
-            <p className="text-[11px] text-stone-400 text-center -mt-2">PNG or JPG, max 5MB.</p>
+            <p className="text-[11px] text-stone-400 text-center -mt-2">JPG, PNG, or WEBP, max 5MB.</p>
+            {selectedFile && (
+              <p className="text-[11px] text-stone-500 text-center truncate">
+                Selected: <span className="font-medium">{selectedFile.name}</span>
+              </p>
+            )}
           </div>
 
           <DialogFooter className="mt-2 flex gap-2">

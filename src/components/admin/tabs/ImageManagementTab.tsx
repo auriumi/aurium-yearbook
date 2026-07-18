@@ -670,7 +670,7 @@ export function ImageManagementTab() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_minmax(0,1fr)]">
-                      <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+                      <div className="self-start rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
                         <div className="mb-3 flex items-center gap-2">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500">
                             <UserSquare2 size={16} />

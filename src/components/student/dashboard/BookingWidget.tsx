@@ -14,10 +14,12 @@ interface BookingWidgetProps {
   bookingList: Schedule[], 
   booking?: Booking,
   idNumber: string;
+  canBook?: boolean;
+  disabledReason?: string;
   onBook: (booking_id: number, period: string) => Promise<void> | void;
 };
 
-export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
+export function BookingWidget({ bookingList, booking, idNumber, canBook = true, disabledReason, onBook }: BookingWidgetProps) {
   const bookingModal = useModalState();
   const confirmationModal = useModalState();
   const [selectedBookingId, setSelectedBookingId] = useState<number>(0);
@@ -26,13 +28,15 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSelectSlot = (booking_id: number, date: string, session: "AM" | "PM", isFull: boolean) => {
-    if (isFull) return;
+    if (isFull || !canBook) return;
     setSelectedBookingId(booking_id);
     setSelectedDate(date);
     setSelectedSession(session);
   };
 
   const handleConfirm = async () => {
+    if (!canBook) return;
+
     if (selectedDate && selectedSession) {
         setIsSubmitting(true);
         try {
@@ -100,17 +104,32 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
             </div>
           </div>
         ) : (
-          // --- INITIAL BOOKING UI ---
           <div className="text-center space-y-4 py-6">
-             <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-amber-600" />
+             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${canBook ? "bg-amber-50" : "bg-red-50"}`}>
+                {canBook ? (
+                  <Calendar className="w-8 h-8 text-amber-600" />
+                ) : (
+                  <AlertTriangle className="w-8 h-8 text-red-600" />
+                )}
              </div>
              <div>
-                 <h3 className="font-bold text-stone-700">No Schedule Selected</h3>
-                 <p className="text-sm text-stone-500 max-w-xs mx-auto">Slots are filling up fast. Book now to secure your spot.</p>
+                 <h3 className="font-bold text-stone-700">
+                  {canBook ? "No Schedule Selected" : "Profile Photo Required"}
+                 </h3>
+                 <p className="text-sm text-stone-500 max-w-xs mx-auto">
+                  {canBook
+                    ? "Slots are filling up fast. Book now to secure your spot."
+                    : disabledReason || "Upload your profile picture before booking your pictorial schedule."}
+                 </p>
              </div>
              
-             <Button className="bg-amber-900 hover:bg-amber-800" onClick={bookingModal.open}>Book a Slot Now</Button>
+             <Button
+              className="bg-amber-900 hover:bg-amber-800 disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none"
+              onClick={bookingModal.open}
+              disabled={!canBook}
+             >
+              {canBook ? "Book a Slot Now" : "Booking Locked"}
+             </Button>
           </div>
         )}
 

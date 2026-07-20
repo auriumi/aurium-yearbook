@@ -37,6 +37,27 @@ export async function fetchSchedules() {
     }
 };
 
+async function readMutationResult(res: Response) {
+    if (res.ok) {
+        return {
+            success: true,
+        };
+    }
+
+    try {
+        const data = await res.json();
+        return {
+            success: false,
+            reason: data.message || data.error || "Request failed.",
+        };
+    } catch {
+        return {
+            success: false,
+            reason: "Request failed.",
+        };
+    }
+}
+
 export async function addBook(booking_id: number, period: string) {
     try {
         const res = await fetch(`${baseUrl}/api/student/book/create`, {
@@ -48,11 +69,14 @@ export async function addBook(booking_id: number, period: string) {
             }),
             credentials: 'include'
         });
-        return res.ok;
+        return readMutationResult(res);
 
     } catch(err) {
         console.error(err);
-        return false;
+        return {
+            success: false,
+            reason: "Unable to connect to the server.",
+        };
     }
 };
 
@@ -67,11 +91,14 @@ export async function updateBook(booking_id: number, booking_day_id: number, per
             }),
             credentials: 'include'
         });
-        return res.ok;
+        return readMutationResult(res);
         
     } catch(err) {
         console.error(err);
-        return false;
+        return {
+            success: false,
+            reason: "Unable to connect to the server.",
+        };
     }
 };
 

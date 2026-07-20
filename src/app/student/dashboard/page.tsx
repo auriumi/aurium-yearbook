@@ -2,7 +2,7 @@
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useCallback, useEffect } from "react";
-import { CheckCircle, Clock, Loader2, LogOut } from "lucide-react"; 
+import { Camera, CalendarCheck, CheckCircle, Clock, Loader2, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StudentHeader } from "@/components/layout/StudentHeader";
 import { ProfileCard } from "@/components/student/dashboard/ProfileCard";
@@ -59,12 +59,17 @@ export default function StudentDashboard() {
     const hasBooking = !!booking;
     if (!user) return;
 
+    if (!user.studentDetail?.photo_url) {
+      toast.error("Please upload your profile picture before booking your pictorial schedule.");
+      return;
+    }
+
     const res = hasBooking
       ? await studentService.updateBook(user.booking[0].id, booking_id, period)
       : await studentService.addBook(booking_id, period);
 
-    if (!res) {
-      toast.error("Something went wrong submitting the book!");
+    if (!res.success) {
+      toast.error(res.reason || "Something went wrong submitting the book!");
     } else {
       toast.success("Successfully booked! Please be on time!");
       fetchStudent(); 
@@ -118,6 +123,10 @@ export default function StudentDashboard() {
     return <YearbookPreview user={user} onClose={previewModal.close} />;
   }
 
+  const hasProfilePhoto = Boolean(user.studentDetail?.photo_url);
+  const hasBooking = Boolean(booking);
+  const bookingDisabledReason = "Upload your profile picture before booking your pictorial schedule.";
+
   return (
     <div className="min-h-screen bg-stone-50 font-sans relative">
       
@@ -145,16 +154,73 @@ export default function StudentDashboard() {
             )}
         </header>
 
+        <section className={`rounded-2xl border p-4 shadow-sm ${
+          hasProfilePhoto
+            ? "border-green-100 bg-green-50/60"
+            : "border-amber-200 bg-amber-50"
+        }`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                hasProfilePhoto ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"
+              }`}>
+                {hasProfilePhoto ? <CheckCircle className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="font-bold text-stone-800">Pictorial readiness</p>
+                <p className="mt-1 text-sm text-stone-600">
+                  {hasProfilePhoto
+                    ? "Your profile photo is on file. You can book or manage your pictorial schedule."
+                    : "Upload your formal profile photo first. Booking stays locked until the photo is submitted."}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:min-w-80">
+              <div className={`rounded-xl border bg-white px-3 py-2 ${
+                hasProfilePhoto ? "border-green-100" : "border-amber-200"
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold text-stone-700">
+                  {hasProfilePhoto ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <Camera className="h-3.5 w-3.5 text-amber-700" />}
+                  Profile Photo
+                </div>
+                <p className="mt-1 text-[11px] text-stone-500">{hasProfilePhoto ? "Submitted" : "Required"}</p>
+              </div>
+              <div className={`rounded-xl border bg-white px-3 py-2 ${
+                hasBooking ? "border-green-100" : "border-stone-200"
+              }`}>
+                <div className="flex items-center gap-2 text-xs font-bold text-stone-700">
+                  {hasBooking ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <CalendarCheck className="h-3.5 w-3.5 text-stone-500" />}
+                  Pictorial Schedule
+                </div>
+                <p className="mt-1 text-[11px] text-stone-500">{hasBooking ? "Booked" : hasProfilePhoto ? "Ready to book" : "Locked"}</p>
+              </div>
+            </div>
+          </div>
+
+          {!hasProfilePhoto && (
+            <a
+              href="#profile-photo-card"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-800"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Go to Photo Upload
+            </a>
+          )}
+        </section>
+
         {/*  2-Column Layout Setup */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <div className="flex flex-col gap-6 lg:col-span-1">
+          <div id="profile-photo-card" className="scroll-mt-24 flex flex-col gap-6 lg:col-span-1">
             <ProfileCard
               fullName={`${user.first_name} ${user.last_name}`}
               idNumber={user.student_number}
               course={user.course}
               photoUrl={user.studentDetail.photo_url ?? ""}
+              requiresPhoto={!hasProfilePhoto}
               onCheckEntry={previewModal.open}
+              onPhotoSaved={fetchStudent}
             />
           </div>
 
@@ -164,6 +230,8 @@ export default function StudentDashboard() {
               bookingList={schedule}
               booking={booking} 
               idNumber={user.student_number}
+              canBook={hasProfilePhoto}
+              disabledReason={bookingDisabledReason}
               onBook={handleBooking}
             />
 

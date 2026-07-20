@@ -19,15 +19,23 @@ interface ProfileCardProps {
   idNumber: string;
   course: string;
   photoUrl: string | null;
+  requiresPhoto?: boolean;
   onCheckEntry: () => void; 
+  onPhotoSaved?: () => Promise<void> | void;
 }
 
-export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry }: ProfileCardProps) {
+export function ProfileCard({ fullName, idNumber, course, photoUrl, requiresPhoto = false, onCheckEntry, onPhotoSaved }: ProfileCardProps) {
   // --- PHOTO UPLOAD STATES & REFS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const initials = fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((name) => name.charAt(0).toUpperCase())
+    .join("") || "ST";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,6 +75,7 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
       }
 
       await studentService.sendPhotoUrl(photo_url);
+      await onPhotoSaved?.();
       
       // Updated success toast to match Koi's instruction about CDN caching delay
       toast.success("Photo uploaded! It may take a few hours to fully reflect on your dashboard.");
@@ -83,7 +92,7 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
   // -----------------------------------------
 
   return (
-    <Card className="md:col-span-1 border-t-4 border-t-amber-900 shadow-sm">
+    <Card className={`md:col-span-1 border-t-4 shadow-sm ${requiresPhoto ? "border-t-red-600 ring-1 ring-red-100" : "border-t-amber-900"}`}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-stone-700">
           <UserCircle className="w-5 h-5 text-amber-700" />Profile
@@ -97,10 +106,14 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
               src={previewUrl ? previewUrl : (photoUrl ?? undefined)} 
               className="object-cover" 
             />
-            <AvatarFallback className="text-4xl bg-stone-100 text-stone-300">JD</AvatarFallback>
+            <AvatarFallback className="text-4xl bg-stone-100 text-stone-300">{initials}</AvatarFallback>
           </Avatar>
           <div className="absolute bottom-0 right-0 bg-white p-1 rounded-full shadow-sm border border-stone-100">
-             <CheckCircle className="w-6 h-6 text-blue-500 fill-white" />
+             {requiresPhoto ? (
+              <Camera className="w-6 h-6 text-red-500 fill-white" />
+             ) : (
+              <CheckCircle className="w-6 h-6 text-blue-500 fill-white" />
+             )}
           </div>
         </div>
         <div>
@@ -108,6 +121,15 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
           <p className="text-sm font-medium text-amber-700 mt-1">{idNumber}</p>
           <p className="text-xs text-stone-500 mt-2 leading-relaxed px-4">{course}</p>
         </div>
+
+        {requiresPhoto && (
+          <div className="w-full rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-left">
+            <p className="text-xs font-bold text-red-700">Photo required before booking</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-red-600">
+              Upload your formal profile photo first so the pictorial team can verify your entry faster.
+            </p>
+          </div>
+        )}
 
         {/* --- HIDDEN FILE INPUT --- */}
         <input 
@@ -147,7 +169,7 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, onCheckEntry
                 onClick={() => fileInputRef.current?.click()} 
               >
                 <Camera className="w-3 h-3 mr-2" /> 
-                {photoUrl ? "Update Formal Photo" : "Upload Formal Photo"}
+                {requiresPhoto ? "Upload Required Photo" : photoUrl ? "Update Formal Photo" : "Upload Formal Photo"}
               </Button>
               
               <p className="text-[12px] text-stone-400 leading-tight px-1">

@@ -19,6 +19,8 @@ export interface Student {
   department: string;
   course: string;
   major: string;
+  graduating_year: number | null;
+  graduation_term: string | null;
   nickname: string;
   suffix: string;
   thesis_title: string;

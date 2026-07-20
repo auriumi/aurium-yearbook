@@ -199,13 +199,11 @@ export default function AuriumLandingPage() {
               </Button>
             </Link>
 
-            {/* TODO: closed
             <Link href="/auth/register">
               <Button className="bg-amber-900 hover:bg-amber-800 text-white shadow-lg shadow-amber-900/20 rounded-full px-6 transition-all hover:scale-105">
                 Pre-Register
               </Button>
             </Link>
-            */}
 
           </div>
 
@@ -286,13 +284,11 @@ export default function AuriumLandingPage() {
             
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
 
-              {/* TODO: closed
               <Link href="/auth/register" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto bg-amber-900 hover:bg-amber-800 text-white px-8 md:px-10 h-14 md:h-16 text-lg rounded-full shadow-xl shadow-amber-900/20 transition-transform hover:-translate-y-1 font-bold">
                   Start Registration
                 </Button>
               </Link>
-              */}
               
               <div className="w-full sm:w-auto">
                 <Link href="#editions" className="block w-full">

@@ -36,6 +36,8 @@ export function useMasterlist() {
   const [activeCourseFilter, setActiveCourseFilter] = useState<string>("ALL"); 
   const [activeMajorFilter, setActiveMajorFilter] = useState<string>("ALL");
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>("ALL"); 
+  const [activeGraduatingYearFilter, setActiveGraduatingYearFilter] = useState<string>("ALL");
+  const [activeGraduationTermFilter, setActiveGraduationTermFilter] = useState<string>("ALL");
   
   // --- APPLIED FILTERS ---
   // This holds the actual payload we send to the API when hitting LOAD
@@ -43,7 +45,9 @@ export function useMasterlist() {
       dept: "ALL",
       course: "ALL",
       major: "ALL",
-      status: "ALL"
+      status: "ALL",
+      graduatingYear: "ALL",
+      graduationTerm: "ALL"
   });
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,7 +82,9 @@ export function useMasterlist() {
         dept: activeDeptFilter, 
         course: activeCourseFilter, 
         major: activeMajorFilter, 
-        status: activeStatusFilter 
+        status: activeStatusFilter,
+        graduatingYear: activeGraduatingYearFilter,
+        graduationTerm: activeGraduationTermFilter
       });
       setAppliedSearchQuery("");
       setSearchQuery("");
@@ -104,6 +110,8 @@ export function useMasterlist() {
           query.append("course", appliedFilters.course);
           query.append("major", appliedFilters.major);
           query.append("status", appliedFilters.status);
+          query.append("graduatingYear", appliedFilters.graduatingYear);
+          query.append("graduationTerm", appliedFilters.graduationTerm);
         }
 
         const res = await fetch(`${baseUrl}/api/admin/masterlist?${query}`, {
@@ -140,6 +148,8 @@ export function useMasterlist() {
     activeCourseFilter, setActiveCourseFilter,
     activeMajorFilter, setActiveMajorFilter,
     activeStatusFilter, setActiveStatusFilter,
+    activeGraduatingYearFilter, setActiveGraduatingYearFilter,
+    activeGraduationTermFilter, setActiveGraduationTermFilter,
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,

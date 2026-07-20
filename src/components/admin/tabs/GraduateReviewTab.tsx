@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText, type LucideIcon } from "lucide-react";
+import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText, CalendarDays, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useGraduateReview } from "@/hooks/useGraduateReview"; 
+import { getGraduationTermLabel } from "@/constants/registration";
 
 interface VerificationTabProps {
   staffUser: any;
@@ -378,6 +379,8 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 </div>
                                                 <InfoField label="Major" value={selectedStudent.major} />
                                                 <InfoField label="ID Number" value={selectedStudent.idNumber || selectedStudent.student_number} />
+                                                <InfoField label="Graduating Year" value={selectedStudent.graduating_year} icon={CalendarDays} />
+                                                <InfoField label="Graduation Term" value={getGraduationTermLabel(selectedStudent.graduation_term)} icon={Clock} />
                                                 <div className="col-span-2 mt-1">
                                                     <InfoField label="Thesis / Capstone Title" value={`${selectedStudent.thesis_title || ''}`} icon={FileText} fullWidth />
                                                 </div>

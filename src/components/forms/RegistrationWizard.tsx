@@ -142,7 +142,7 @@ export default function RegistrationWizard() {
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
   const [gradYear, setGradYear] = useState(String(DEFAULT_GRAD_YEAR));
-  const [gradTerm, setGradTerm] = useState(String(DEFAULT_GRAD_TERM));
+  const [gradTerm, setGradTerm] = useState(DEFAULT_GRAD_TERM);
   const [thesisTitle, setThesisTitle] = useState(""); 
   const [contactNum, setContactNum] = useState("");
   const [email, setEmail] = useState("");
@@ -244,7 +244,7 @@ export default function RegistrationWizard() {
         birthdate: bdate, 
         contact_num: contactNum, 
         grad_year: Number(gradYear),
-        grad_term: Number(gradTerm),
+        grad_term: gradTerm,
         academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: thesisTitle }, 
         ...relation, 
         province: provinceName, 

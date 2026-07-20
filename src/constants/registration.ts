@@ -1,5 +1,19 @@
 export const titleOptions = ["Mr.", "Mrs.", "Ms.", "Dr.", "Atty.", "Engr.", "Arch.", "Prof.", "Rev."];
 
+export const DEFAULT_GRADUATING_YEAR = 2026;
+export const DEFAULT_GRADUATION_TERM = "YEAR_END";
+
+export const graduatingYearOptions = [2026, 2027];
+
+export const graduationTermOptions = [
+  { value: "YEAR_END", label: "Year End" },
+  { value: "MIDYEAR", label: "Midyear" },
+];
+
+export const getGraduationTermLabel = (value?: string | null) => {
+  return graduationTermOptions.find(term => term.value === value)?.label || value || "N/A";
+};
+
 export const departmentOptions = [
   {
     name: "GRADUATE SCHOOL",

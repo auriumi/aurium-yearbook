@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet, Eye, EyeOff, ShieldCheck, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import ExcelJS from "exceljs";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
+import { getGraduationTermLabel, graduatingYearOptions, graduationTermOptions } from "@/constants/registration";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist> & { userRole: string };
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
@@ -24,6 +25,8 @@ const EXPORT_COLUMN_GROUPS = [
     { key: "department",     label: "Department" },
     { key: "course",         label: "Course" },
     { key: "major",          label: "Major" },
+    { key: "graduating_year", label: "Graduating Year" },
+    { key: "graduation_term", label: "Graduation Term" },
     { key: "thesis_title",   label: "Thesis Title" },
     { key: "status",         label: "Status" },
     { key: "created_at",     label: "Date Registered" },
@@ -56,7 +59,7 @@ const EXPORT_COLUMN_GROUPS = [
   ]},
 ];
 
-const DEFAULT_EXPORT_COLUMNS = new Set(["student_number", "first_name", "last_name", "department", "course", "major", "status"]);
+const DEFAULT_EXPORT_COLUMNS = new Set(["student_number", "first_name", "last_name", "department", "course", "major", "graduating_year", "graduation_term", "status"]);
 
 const STATUS_LABELS: Record<string, string> = {
   REGISTERED:     "Registered",
@@ -82,6 +85,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
     activeCourseFilter, setActiveCourseFilter,
     activeStatusFilter, setActiveStatusFilter,
     activeMajorFilter, setActiveMajorFilter,
+    activeGraduatingYearFilter, setActiveGraduatingYearFilter,
+    activeGraduationTermFilter, setActiveGraduationTermFilter,
     currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
@@ -115,6 +120,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const [exportCourseFilter, setExportCourseFilter] = useState("ALL");
   const [exportMajorFilter, setExportMajorFilter] = useState("ALL");
   const [exportStatusFilter, setExportStatusFilter] = useState("ALL");
+  const [exportGraduatingYearFilter, setExportGraduatingYearFilter] = useState("ALL");
+  const [exportGraduationTermFilter, setExportGraduationTermFilter] = useState("ALL");
   const [isExporting, setIsExporting] = useState(false);
 
   // Password Confirm States
@@ -310,6 +317,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
         course: exportCourseFilter,
         major: exportMajorFilter,
         status: exportStatusFilter,
+        graduatingYear: exportGraduatingYearFilter,
+        graduationTerm: exportGraduationTermFilter,
       });
 
       const res = await fetch(`${baseUrl}/api/admin/masterlist/export?${query}`, { credentials: "include" });
@@ -326,6 +335,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
           //this parses ISO date into formal date
           const value =
             k === "status" && typeof v === "string" ? (STATUS_LABELS[v] ?? v) :
+            k === "graduation_term" && typeof v === "string" ? getGraduationTermLabel(v) :
             k === "birth_date" && typeof v === "string" ? v.split("T")[0] : v;
 
           return [header, value];
@@ -436,7 +446,45 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
                 <div className="hidden xl:block text-stone-300 font-medium text-sm px-1 shrink-0">OR</div>
 
-                <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-[70%] justify-end min-w-0">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full xl:w-[72%] justify-end min-w-0">
+
+                    <div className="w-full sm:w-[120px] shrink-0">
+                        <Select value={activeGraduatingYearFilter} onValueChange={setActiveGraduatingYearFilter}>
+                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
+                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
+                                    <CalendarDays size={16} className="shrink-0" />
+                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
+                                        <SelectValue placeholder="Year" />
+                                    </div>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Years</SelectItem>
+                                {graduatingYearOptions.map((year) => (
+                                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="w-full sm:w-[135px] shrink-0">
+                        <Select value={activeGraduationTermFilter} onValueChange={setActiveGraduationTermFilter}>
+                            <SelectTrigger className="h-11 w-full bg-white border-stone-200 shadow-sm">
+                                <div className="flex items-center gap-2 min-w-0 w-full text-stone-600">
+                                    <Clock size={16} className="shrink-0" />
+                                    <div className="flex-1 min-w-0 text-left [&>span]:block [&>span]:truncate">
+                                        <SelectValue placeholder="Term" />
+                                    </div>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Terms</SelectItem>
+                                {graduationTermOptions.map((term) => (
+                                    <SelectItem key={term.value} value={term.value}>{term.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     
                     <div className="w-full sm:w-[130px] shrink-0">
                         <Select value={activeStatusFilter} onValueChange={setActiveStatusFilter}>
@@ -565,6 +613,9 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     <div className="relative z-10 w-full pl-1 pt-3 border-t border-stone-200 flex justify-between items-center gap-2">
                                         <div className="min-w-0 flex-1">
                                             <p className="text-[9px] font-bold text-stone-400 truncate uppercase">{student.course}</p>
+                                            <p className="text-[9px] font-semibold text-amber-700 truncate">
+                                                {student.graduating_year || "No year"} | {getGraduationTermLabel(student.graduation_term)}
+                                            </p>
                                         </div>
                                         <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo?.label || 'Unknown'}</span>
                                     </div>
@@ -731,6 +782,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     </div>
                                     <InfoField label="Program / Course" value={selectedStudent.course} />
                                     <InfoField label="Major" value={selectedStudent.major} />
+                                    <InfoField label="Graduating Year" value={selectedStudent.graduating_year} icon={CalendarDays} />
+                                    <InfoField label="Graduation Term" value={getGraduationTermLabel(selectedStudent.graduation_term)} icon={Clock} />
                                     <div className="col-span-2">
                                         <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.thesis_title}"`} icon={FileText} fullWidth />
                                     </div>
@@ -986,7 +1039,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         <FileSpreadsheet className="w-5 h-5 text-emerald-600" /> Export to Excel
                     </DialogTitle>
                     <DialogDescription className="text-stone-500 text-sm">
-                        Select which columns to include. Active filters (department, course, status) will be applied to the export.
+                        Select which columns to include. Active academic, graduation, and status filters will be applied to the export.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -1035,6 +1088,38 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                 <SelectItem value="ALL" className="text-xs">All Majors</SelectItem>
                                 {exportMajors.map((m: string) => (
                                     <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Graduating Year */}
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Graduating Year</span>
+                        <Select value={exportGraduatingYearFilter} onValueChange={setExportGraduatingYearFilter}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL" className="text-xs">All Years</SelectItem>
+                                {graduatingYearOptions.map((year) => (
+                                    <SelectItem key={year} value={String(year)} className="text-xs">{year}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Graduation Term */}
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Graduation Term</span>
+                        <Select value={exportGraduationTermFilter} onValueChange={setExportGraduationTermFilter}>
+                            <SelectTrigger className="h-8 text-xs border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL" className="text-xs">All Terms</SelectItem>
+                                {graduationTermOptions.map((term) => (
+                                    <SelectItem key={term.value} value={term.value} className="text-xs">{term.label}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

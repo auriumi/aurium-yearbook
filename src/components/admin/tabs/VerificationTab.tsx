@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, ChevronRight, Clock, User, GraduationCap, MapPin, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { getGraduationTermLabel } from "@/constants/registration";
 
 
 import {
@@ -158,6 +159,9 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                         {formatListFullName(student.first_name, student.mid_name, student.last_name)}
                                     </p>
                                     <p className="text-[11px] text-stone-500 font-mono leading-none mt-0.5">{student.student_number || "No ID"}</p>
+                                    <p className="text-[10px] text-amber-700 font-semibold leading-none mt-1">
+                                        {student.graduating_year || "No year"} | {getGraduationTermLabel(student.graduation_term)}
+                                    </p>
                                 </div>
                                 <ChevronRight size={16} className={`shrink-0 ${selectedStudent?.id === student.id ? "text-amber-500" : "text-stone-300"}`} />
                             </button>
@@ -246,6 +250,14 @@ export function VerificationTab({ pendingStudents, currentPage, totalUnverified,
                                     <div>
                                         <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Major</span>
                                         <p className="text-lg font-semibold text-stone-700">{cleanText(selectedStudent.major) || "N/A"}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Graduating Year</span>
+                                        <p className="text-lg font-bold text-stone-800">{selectedStudent.graduating_year || "N/A"}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-1">Graduation Term</span>
+                                        <p className="text-lg font-semibold text-stone-700">{getGraduationTermLabel(selectedStudent.graduation_term)}</p>
                                     </div>
                                 </div>
                             </div>

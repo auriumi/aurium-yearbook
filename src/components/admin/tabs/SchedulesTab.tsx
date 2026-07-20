@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMemo, useState } from "react";
-import { Schedule } from "@/types";
+import { BookingSlot, Schedule } from "@/types";
 import * as adminService from "@/app/admin/adminService"
 import toast from "react-hot-toast";
 
@@ -33,6 +33,36 @@ function isPastDate(dateString: string) {
 
 function byDateDescending(a: Schedule, b: Schedule) {
   return new Date(b.date).getTime() - new Date(a.date).getTime();
+}
+
+function getScheduleSlots(day: Schedule, period: "AM" | "PM") {
+  return (day.slots ?? [])
+    .filter((slot) => slot.period === period)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+}
+
+function getSlotBookedCount(slot: BookingSlot) {
+  return slot.booked_count ?? slot.bookings?.length ?? 0;
+}
+
+function getPeriodCapacity(day: Schedule, period: "AM" | "PM") {
+  const slots = getScheduleSlots(day, period);
+  if (slots.length > 0) {
+    return slots.reduce((total, slot) => total + slot.capacity, 0);
+  }
+
+  return period === "AM" ? day.max_morning_cap : day.max_afternoon_cap;
+}
+
+function getPeriodRoster(day: Schedule, period: "AM" | "PM") {
+  const slotBookings = getScheduleSlots(day, period).flatMap((slot) => slot.bookings ?? []);
+  if (slotBookings.length > 0) return slotBookings;
+
+  return day.bookings.filter((booking) => booking.period === period);
+}
+
+function formatSlotRange(slot: BookingSlot) {
+  return `${slot.start_time} - ${slot.end_time}`;
 }
 
 export function SchedulesTab({ schedules, fetchSchedules, userRole }: ScheduleProp) {
@@ -390,12 +420,12 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                     </thead>
                     <tbody className="divide-y divide-stone-100">
                         {displayedSchedules.map((day: Schedule, idx) => {
-                            const totalBooked = day.bookings.length;
-                            const totalSlots = day.max_morning_cap + day.max_afternoon_cap;
-                            const isFull = totalBooked >= totalSlots;
+                            const totalBooked = getPeriodRoster(day, "AM").length + getPeriodRoster(day, "PM").length;
+                            const totalSlots = getPeriodCapacity(day, "AM") + getPeriodCapacity(day, "PM");
+                            const isFull = totalSlots > 0 && totalBooked >= totalSlots;
 
-                            const amRoster = day.bookings.filter(p => p.period === "AM");
-                            const pmRoster = day.bookings.filter(p => p.period === "PM");
+                            const amRoster = getPeriodRoster(day, "AM");
+                            const pmRoster = getPeriodRoster(day, "PM");
 
                             return (
                                 <tr key={idx} className={!day.is_open ? "opacity-60" : ""}>
@@ -423,8 +453,8 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
 
                                     {/* Morning / Afternoon session cells share the same layout */}
                                     {([
-                                        { label: 'AM' as const, slots: day.max_morning_cap, roster: amRoster, rosterKey: 'morning' as const },
-                                        { label: 'PM' as const, slots: day.max_afternoon_cap, roster: pmRoster, rosterKey: 'afternoon' as const },
+                                        { label: 'AM' as const, slots: getPeriodCapacity(day, "AM"), roster: amRoster, rosterKey: 'morning' as const },
+                                        { label: 'PM' as const, slots: getPeriodCapacity(day, "PM"), roster: pmRoster, rosterKey: 'afternoon' as const },
                                     ]).map(({ label, slots, roster, rosterKey }) => (
                                         <td key={label} className="px-4 py-3">
                                             {slots === 0 ? (
@@ -496,9 +526,9 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
             {displayedSchedules.map((day: Schedule, idx) => {
 
                 // Calculate booked slots for rendering status
-                const totalBooked = day.bookings.length;
-                const totalSlots = day.max_morning_cap + day.max_afternoon_cap;
-                const isFull = totalBooked >= totalSlots;
+                const totalBooked = getPeriodRoster(day, "AM").length + getPeriodRoster(day, "PM").length;
+                const totalSlots = getPeriodCapacity(day, "AM") + getPeriodCapacity(day, "PM");
+                const isFull = totalSlots > 0 && totalBooked >= totalSlots;
 
                 return (
                     // Updated the Card styling to visually dim closed schedules
@@ -561,18 +591,16 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Process morning and afternoon sessions */}
                                 {['AM', 'PM'].map((session) => {
-                                    const is_morning = session === 'AM';
+                                    const period = session as "AM" | "PM";
+                                    const is_morning = period === 'AM';
+                                    const periodSlots = getScheduleSlots(day, period);
 
                                     // Filter students by session period
-                                    const roster = is_morning 
-                                    ? day.bookings.filter(p => p.period === "AM") 
-                                    : day.bookings.filter(p => p.period === "PM");
+                                    const roster = getPeriodRoster(day, period);
                                     
                                     const bookedCount = roster.length;
 
-                                    const slots = is_morning 
-                                    ? day.max_morning_cap 
-                                    : day.max_afternoon_cap;
+                                    const slots = getPeriodCapacity(day, period);
                                     
                                     if (slots === 0) return (
                                         <div key={session} className="flex items-center justify-center p-8 bg-stone-50 rounded-xl border border-dashed border-stone-200 text-stone-400 text-sm italic">
@@ -594,7 +622,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                         size="sm"
                                                         className="h-8 w-8 p-0 text-stone-400 hover:text-amber-700"
                                                         title="Edit Capacity"
-                                                        onClick={() => openCapacityDialog(day.date, session.toUpperCase() as 'AM'|'PM', slots, bookedCount, day.id)}
+                                                        onClick={() => openCapacityDialog(day.date, period, slots, bookedCount, day.id)}
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -611,6 +639,33 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                     <div className={`h-full transition-all duration-500 ${bookedCount >= slots ? "bg-red-500" : is_morning ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${(bookedCount / slots) * 100}%` }}></div>
                                                 </div>
                                             </div>
+
+                                            {periodSlots.length > 0 && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    {periodSlots.map((slot) => {
+                                                        const slotBooked = getSlotBookedCount(slot);
+                                                        const slotPercent = slot.capacity > 0 ? Math.min((slotBooked / slot.capacity) * 100, 100) : 0;
+                                                        const slotFull = slot.capacity > 0 && slotBooked >= slot.capacity;
+
+                                                        return (
+                                                            <div key={slot.id} className="rounded-lg border border-white/80 bg-white p-3 shadow-sm">
+                                                                <div className="flex items-center justify-between gap-2 text-xs">
+                                                                    <span className="font-bold text-stone-700">{formatSlotRange(slot)}</span>
+                                                                    <span className={slotFull ? "font-semibold text-red-600" : "text-stone-500"}>
+                                                                        {slotBooked}/{slot.capacity}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="mt-2 h-1.5 w-full bg-stone-200/70 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full ${slotFull ? "bg-red-500" : is_morning ? "bg-amber-500" : "bg-blue-500"}`}
+                                                                        style={{ width: `${slotPercent}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                             
                                             {/* Action Buttons */}
                                             <div className="flex gap-2 pt-2">

@@ -70,13 +70,28 @@ export interface Booking {
   id: number;
   student_number: number;
   booking_day_id: number;
+  booking_slot_id?: number | null;
   period: 'AM' | 'PM';
   created_at: string;
   booking_day: BookingDay;
+  booking_slot?: BookingSlot | null;
 }
 
 export interface BookingDay {
   date: string;
+}
+
+export interface BookingSlot {
+    id: number;
+    booking_day_id: number;
+    period: 'AM' | 'PM';
+    start_time: string;
+    end_time: string;
+    capacity: number;
+    is_open: boolean;
+    booked_count: number;
+    available_count: number;
+    bookings?: Booking[];
 }
 
 export interface Schedule {
@@ -88,4 +103,5 @@ export interface Schedule {
     max_morning_cap: number;
     max_afternoon_cap: number;
     bookings: Booking[];
+    slots?: BookingSlot[];
 }

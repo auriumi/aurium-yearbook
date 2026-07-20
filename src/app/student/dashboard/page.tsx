@@ -55,13 +55,13 @@ export default function StudentDashboard() {
     fetchSchedules();
   }, [fetchStudent, fetchSchedules]);
 
-  const handleBooking = async (booking_id: number, period: string) => {
+  const handleBooking = async (bookingSlotId: number) => {
     const hasBooking = !!booking;
     if (!user) return;
 
     const res = hasBooking
-      ? await studentService.updateBook(user.booking[0].id, booking_id, period)
-      : await studentService.addBook(booking_id, period);
+      ? await studentService.updateBook(user.booking[0].id, bookingSlotId)
+      : await studentService.addBook(bookingSlotId);
 
     if (!res) {
       toast.error("Something went wrong submitting the book!");

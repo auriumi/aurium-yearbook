@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 
 // SOLID: Importing isolated Step Components and Constants
-import { departmentOptions } from "@/constants/registration";
+import { DEFAULT_GRAD_TERM, DEFAULT_GRAD_YEAR, departmentOptions } from "@/constants/registration";
 import { PersonalStep } from "@/components/registration/PersonalStep";
 import { AddressStep } from "@/components/registration/AddressStep";
 import { AcademicStep } from "@/components/registration/AcademicStep";
@@ -141,6 +141,8 @@ export default function RegistrationWizard() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
+  const [gradYear, setGradYear] = useState(String(DEFAULT_GRAD_YEAR));
+  const [gradTerm, setGradTerm] = useState(String(DEFAULT_GRAD_TERM));
   const [thesisTitle, setThesisTitle] = useState(""); 
   const [contactNum, setContactNum] = useState("");
   const [email, setEmail] = useState("");
@@ -195,7 +197,7 @@ export default function RegistrationWizard() {
       case 2: return selectedProvinceCode !== "" && selectedCityCode !== "" && selectedBarangayCode !== "";
       case 3: 
 
-        const isBaseAcademicValid = selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmailFormat(email);
+        const isBaseAcademicValid = selectedDepartment !== "" && selectedCourse !== "" && selectedMajor !== "" && gradYear !== "" && gradTerm !== "" && thesisTitle.trim() !== "" && contactNum.trim() !== "" && isValidEmailFormat(email);
         
         if (hasUmEmailAccess) {
             return isBaseAcademicValid && isValidEmailFormat(umEmail);
@@ -241,6 +243,8 @@ export default function RegistrationWizard() {
         nickname: nickname, 
         birthdate: bdate, 
         contact_num: contactNum, 
+        grad_year: Number(gradYear),
+        grad_term: Number(gradTerm),
         academics: { department: selectedDepartment, course: selectedCourse, major: selectedMajor, thesis: thesisTitle }, 
         ...relation, 
         province: provinceName, 
@@ -323,12 +327,12 @@ export default function RegistrationWizard() {
                     {/* SOLID PRINCIPLE IN ACTION: Passing Props to Child Components */}
                     {currentStep === 1 && <PersonalStep idNumber={idNumber} setIdNumber={setIdNumber} lname={lname} setLname={setLname} fname={fname} setFname={setFname} mname={mname} setMname={setMname} suffix={suffix} setSuffix={setSuffix} nickname={nickname} setNickname={setNickname} bdate={bdate} setBdate={setBdate} />}
                     {currentStep === 2 && <AddressStep isLoadingProvinces={isLoadingProvinces} provinceList={provinceList} selectedProvinceCode={selectedProvinceCode} handleProvinceChange={handleProvinceChange} isLoadingCities={isLoadingCities} cityList={cityList} selectedCityCode={selectedCityCode} handleCityChange={handleCityChange} isLoadingBarangays={isLoadingBarangays} barangayList={barangayList} selectedBarangayCode={selectedBarangayCode} setSelectedBarangayCode={setSelectedBarangayCode} />}
-                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
+                    {currentStep === 3 && <AcademicStep selectedDepartment={selectedDepartment} handleDepartmentChange={handleDepartmentChange} selectedCourse={selectedCourse} handleCourseChange={handleCourseChange} currentCourses={currentCourses} selectedMajor={selectedMajor} setSelectedMajor={setSelectedMajor} currentMajors={currentMajors} gradYear={gradYear} setGradYear={setGradYear} gradTerm={gradTerm} setGradTerm={setGradTerm} thesisTitle={thesisTitle} setThesisTitle={setThesisTitle} contactNum={contactNum} setContactNum={setContactNum} email={email} setEmail={setEmail} umEmail={umEmail} setUmEmail={setUmEmail} hasUmEmailAccess={hasUmEmailAccess} setHasUmEmailAccess={setHasUmEmailAccess} />}
                     
                     {/* FIXED: Included FamilyStep (Step 4) */}
                     {currentStep === 4 && <FamilyStep useGuardian={useGuardian} setUseGuardian={setUseGuardian} guardianLname={guardianLname} setGuardianLname={setGuardianLname} guardianTitle={guardianTitle} setGuardianTitle={setGuardianTitle} guardianFname={guardianFname} setGuardianFname={setGuardianFname} guardianRel={guardianRel} setGuardianRel={setGuardianRel} fatherLname={fatherLname} setFatherLname={setFatherLname} fatherTitle={fatherTitle} setFatherTitle={setFatherTitle} fatherFname={fatherFname} setFatherFname={setFatherFname} fatherMname={fatherMname} setFatherMname={setFatherMname} fatherSuffix={fatherSuffix} setFatherSuffix={setFatherSuffix} motherLname={motherLname} setMotherLname={setMotherLname} motherTitle={motherTitle} setMotherTitle={setMotherTitle} motherFname={motherFname} setMotherFname={setMotherFname} motherMname={motherMname} setMotherMname={setMotherMname} />}
                     
-                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} thesisTitle={thesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
+                    {currentStep === 5 && <ReviewStep idNumber={idNumber} fname={fname} mname={mname} lname={lname} suffix={suffix} nickname={nickname} formattedBirthdate={formattedBirthdate} barangayName={barangayName} cityName={cityName} provinceName={provinceName} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} selectedMajor={selectedMajor} gradYear={gradYear} gradTerm={gradTerm} thesisTitle={thesisTitle} umEmail={hasUmEmailAccess ? umEmail : "N/A (No Access)"} contactNum={contactNum} email={email} useGuardian={useGuardian} guardianTitle={guardianTitle} guardianFname={guardianFname} guardianLname={guardianLname} guardianRel={guardianRel} fatherTitle={fatherTitle} fatherFname={fatherFname} fatherMname={fatherMname} fatherLname={fatherLname} fatherSuffix={fatherSuffix} motherTitle={motherTitle} motherFname={motherFname} motherMname={motherMname} motherLname={motherLname} reviewConfirmed={reviewConfirmed} setReviewConfirmed={setReviewConfirmed} />}
                     {currentStep === 6 && <PrivacyStep privacyAgreed={privacyAgreed} setPrivacyAgreed={setPrivacyAgreed} />}
                     
                     </motion.div>

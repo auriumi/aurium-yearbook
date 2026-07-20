@@ -3,13 +3,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox"; 
-import { departmentOptions } from "@/constants/registration";
+import { departmentOptions, gradTermOptions, gradYearOptions } from "@/constants/registration";
 import { MailWarning, AlertCircle, CheckCircle2 } from "lucide-react"; 
 
 export const AcademicStep = ({ 
     selectedDepartment, handleDepartmentChange, 
     selectedCourse, handleCourseChange, currentCourses, 
     selectedMajor, setSelectedMajor, currentMajors, 
+    gradYear, setGradYear,
+    gradTerm, setGradTerm,
     thesisTitle, setThesisTitle, 
     contactNum, setContactNum, 
     email, setEmail, 
@@ -50,6 +52,36 @@ export const AcademicStep = ({
               <SelectTrigger className={`w-full h-auto min-h-[50px] py-3 text-left items-center ${selectedMajor === "N/A" ? "bg-gray-100 text-gray-500" : ""}`}><span className="whitespace-normal leading-tight block text-left w-full"><SelectValue placeholder={selectedMajor === "N/A" ? "N/A (Not Applicable)" : "Select Major"} /></span></SelectTrigger>
               <SelectContent className="max-w-[90vw]">{selectedMajor === "N/A" ? (<SelectItem value="N/A">N/A</SelectItem>) : (currentMajors.map((major: any) => (<SelectItem key={major} value={major} className="py-2 whitespace-normal text-left">{major}</SelectItem>)))}</SelectContent>
           </Select>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+              <Label>Graduating Year <span className="text-red-500">*</span></Label>
+              <Select value={gradYear} onValueChange={setGradYear}>
+                  <SelectTrigger className="w-full h-11 text-left">
+                      <SelectValue placeholder="Select Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {gradYearOptions.map((year) => (
+                          <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
+
+          <div className="space-y-2">
+              <Label>Graduation Term <span className="text-red-500">*</span></Label>
+              <Select value={gradTerm} onValueChange={setGradTerm}>
+                  <SelectTrigger className="w-full h-11 text-left">
+                      <SelectValue placeholder="Select Term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {gradTermOptions.map((term) => (
+                          <SelectItem key={term.value} value={String(term.value)}>{term.label}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
       </div>
 
       <div className="space-y-2">

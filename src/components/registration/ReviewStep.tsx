@@ -1,9 +1,10 @@
 // src/components/registration/ReviewStep.tsx
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox"; 
+import { getGradTermLabel } from "@/constants/registration";
 import { UserCircle, ClipboardCheck, MapPin, GraduationCap, Users, Mail, Phone, Calendar, CreditCard } from "lucide-react";
 
-export const ReviewStep = ({ idNumber, fname, mname, lname, suffix, nickname, formattedBirthdate, barangayName, cityName, provinceName, selectedDepartment, selectedCourse, selectedMajor, thesisTitle, umEmail, contactNum, email, useGuardian, guardianTitle, guardianFname, guardianLname, guardianRel, fatherTitle, fatherFname, fatherMname, fatherLname, fatherSuffix, motherTitle, motherFname, motherMname, motherLname, reviewConfirmed, setReviewConfirmed }: any) => (
+export const ReviewStep = ({ idNumber, fname, mname, lname, suffix, nickname, formattedBirthdate, barangayName, cityName, provinceName, selectedDepartment, selectedCourse, selectedMajor, gradYear, gradTerm, thesisTitle, umEmail, contactNum, email, useGuardian, guardianTitle, guardianFname, guardianLname, guardianRel, fatherTitle, fatherFname, fatherMname, fatherLname, fatherSuffix, motherTitle, motherFname, motherMname, motherLname, reviewConfirmed, setReviewConfirmed }: any) => (
   <div className="space-y-8 animate-in fade-in duration-500">
     <div className="bg-stone-50/80 border border-stone-200 rounded-xl p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-stone-200">
@@ -28,6 +29,10 @@ export const ReviewStep = ({ idNumber, fname, mname, lname, suffix, nickname, fo
             <h4 className="flex items-center gap-2 text-sm font-bold text-amber-900 uppercase tracking-wider"><GraduationCap size={16} /> Academic Profile</h4>
             <div className="bg-white p-4 rounded-lg border border-stone-100 shadow-sm space-y-4">
             <div><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">Department</span><span className="text-stone-900 font-bold block mb-2">{selectedDepartment}</span><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">Course & Major</span><span className="text-stone-900 font-bold block">{selectedCourse}</span>{selectedMajor !== "N/A" && <span className="text-amber-700 text-sm font-medium block mt-1">{selectedMajor}</span>}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
+                <div><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">Graduating Year</span><span className="text-stone-900 font-bold">{gradYear || "-"}</span></div>
+                <div><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">Graduation Term</span><span className="text-stone-900 font-bold">{getGradTermLabel(gradTerm)}</span></div>
+            </div>
             <div className="pt-2 border-t border-stone-100 mt-2"><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">Thesis / Capstone Title</span><span className="text-stone-900 font-medium italic">"{thesisTitle}"</span></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
                 <div><span className="block text-[10px] uppercase tracking-wider text-stone-500 font-bold mb-1">UM Student Email</span><div className="flex items-center gap-2 text-blue-700 font-medium break-all"><Mail size={14}/> {umEmail || "-"}</div></div>

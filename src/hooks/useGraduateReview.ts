@@ -173,27 +173,6 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     setIsEditing(false);
   };
 
-  const handlePhotoUpload = async (type: 'grad' | 'creative', file: File) => {
-    try {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        const updateKey = type === 'grad' ? 'photo_grad' : 'photo_creative';
-
-        //TODO: api endpoint
-
-        setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, [updateKey]: result } : g));
-        setSelectedStudent((prev: any) => ({ ...prev, [updateKey]: result }));
-
-        toast.success("Photo uploaded successfully.");
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Photo Upload Error:", error);
-      toast.error("Failed to upload photo. Please check your connection.");
-    }
-  };
-
   const handleFinalize = async () => {
     try {
       const finalizeId = selectedStudent?.student_number;
@@ -227,12 +206,46 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     }
   };
 
+  const handleDiscard = async () => {
+    try {
+      const finalizeId = selectedStudent?.student_number;
+
+      if (!finalizeId) {
+        toast.error("Cannot finalize: student ID is missing.");
+        return;
+      }
+
+      const res = await adminService.handleCancel(selectedStudent.student_number);
+      
+      const updatedStudent = {
+        ...selectedStudent,
+        status: "verified"
+      };
+
+      if (res) {
+        setSelectedStudent(null);
+        await fetchStudents();
+        return toast.success("Registration succesfully discarded!");
+      }
+
+      setStudents(prev => prev.map(g => g.id === selectedStudent.id ? { ...g, status: "verified" } : g));
+      setSelectedStudent(updatedStudent);
+      await fetchStudents();
+      setSelectedStudent(null);
+
+      toast.success("Student successfully verified and finalized.");
+    } catch (error) {
+      console.error("Finalize Error:", error);
+      toast.error("Failed to verify student. Server is currently unavailable.");
+    }
+  };
+
   return {
     searchQuery, setSearchQuery,
     currentPage, setCurrentPage,
     handleSearchClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    isEditing, setIsEditing,
-    handleSaveEdit, handlePhotoUpload, handleFinalize
+    isEditing, setIsEditing, fetchStudents,
+    handleSaveEdit, handleFinalize, handleDiscard
   };
 }

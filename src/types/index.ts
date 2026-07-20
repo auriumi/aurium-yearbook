@@ -75,8 +75,29 @@ export interface Booking {
   booking_day: BookingDay;
 }
 
+export interface BookingSummary {
+  id: number;
+  period: 'AM' | 'PM';
+  created_at: string;
+}
+
 export interface BookingDay {
   date: string;
+  max_morning_cap?: number;
+  max_afternoon_cap?: number;
+  bookings?: BookingSummary[];
+}
+
+export interface ScheduleBooking extends BookingSummary {
+    student_number: number;
+    student?: {
+      first_name?: string;
+      last_name?: string;
+      student_number?: number;
+      studentAuth?: {
+        status?: string;
+      };
+    };
 }
 
 export interface Schedule {
@@ -87,5 +108,5 @@ export interface Schedule {
     curr_afternoon: number;
     max_morning_cap: number;
     max_afternoon_cap: number;
-    bookings: Booking[];
+    bookings: ScheduleBooking[];
 }

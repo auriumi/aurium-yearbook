@@ -23,6 +23,13 @@ export function useImageApprovals(enabled = true) {
 
   useEffect(() => {
     const run = async () => {
+      if (!enabled) {
+        setItems([]);
+        setTotalResults(0);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const res = await fetchApprovals({

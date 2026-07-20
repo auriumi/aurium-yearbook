@@ -48,11 +48,17 @@ export async function addBook(booking_id: number, period: string) {
             }),
             credentials: 'include'
         });
-        return res.ok;
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            return { success: false, reason: data?.reason || data?.error || "Failed to submit booking." };
+        }
+
+        return { success: true };
 
     } catch(err) {
         console.error(err);
-        return false;
+        return { success: false, reason: "Unable to connect to the server." };
     }
 };
 
@@ -67,11 +73,17 @@ export async function updateBook(booking_id: number, booking_day_id: number, per
             }),
             credentials: 'include'
         });
-        return res.ok;
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => null);
+            return { success: false, reason: data?.reason || data?.error || "Failed to update booking." };
+        }
+
+        return { success: true };
         
     } catch(err) {
         console.error(err);
-        return false;
+        return { success: false, reason: "Unable to connect to the server." };
     }
 };
 

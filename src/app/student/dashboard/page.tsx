@@ -63,8 +63,8 @@ export default function StudentDashboard() {
       ? await studentService.updateBook(user.booking[0].id, booking_id, period)
       : await studentService.addBook(booking_id, period);
 
-    if (!res) {
-      toast.error("Something went wrong submitting the book!");
+    if (!res.success) {
+      toast.error(res.reason || "Something went wrong submitting the book!");
     } else {
       toast.success("Successfully booked! Please be on time!");
       fetchStudent(); 

@@ -11,9 +11,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useMemo, useState } from "react";
-import { Schedule } from "@/types";
+import { Schedule, ScheduleBooking } from "@/types";
 import * as adminService from "@/app/admin/adminService"
 import toast from "react-hot-toast";
+import {
+    getHourlyAvailability,
+    getHourlyRoster,
+    getSessionLabel,
+    SESSION_WINDOWS,
+    type BookingPeriod,
+} from "@/lib/bookingSchedule";
 
 interface ScheduleProp {
     schedules: Schedule[];
@@ -35,8 +42,18 @@ function byDateDescending(a: Schedule, b: Schedule) {
   return new Date(b.date).getTime() - new Date(a.date).getTime();
 }
 
+function isPresent(student: ScheduleBooking) {
+  const status = student.student?.studentAuth?.status;
+  return status === "ATTENDED" || status === "FULLY_VERIFIED";
+}
+
+function getPerHourCapacity(period: BookingPeriod, totalCapacity: number) {
+  return Math.ceil(Math.max(0, totalCapacity) / SESSION_WINDOWS[period].length);
+}
+
 export function SchedulesTab({ schedules, fetchSchedules, userRole }: ScheduleProp) {
   const canCreateSchedule = userRole === 'ADMINISTRATOR';
+  const canManageScheduleCapacity = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
 
   // Input states
   const [newDateInput, setNewDateInput] = useState("");
@@ -52,11 +69,18 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
 
   // Capacity override states
   const [isEditCapacityOpen, setIsEditCapacityOpen] = useState(false);
-  const [editingCapacity, setEditingCapacity] = useState<{date: string, session: 'AM'|'PM', value: number, limit: number, id: number } | null>(null);
+  const [editingCapacity, setEditingCapacity] = useState<{date: string, session: BookingPeriod, value: number, limit: number, id: number } | null>(null);
 
   // Roster view states
   const [isRosterOpen, setIsRosterOpen] = useState(false);
-  const [activeRoster, setActiveRoster] = useState<{date: string, session: 'morning' | 'afternoon', students: any[]} | null>(null);
+  const [activeRoster, setActiveRoster] = useState<{
+      date: string;
+      period: BookingPeriod;
+      capacity: number;
+      students: ScheduleBooking[];
+      selectedHourId?: string;
+      selectedHourRange?: string;
+  } | null>(null);
 
   // Toggles between the upcoming schedule list and the read-only history view
   const [showHistory, setShowHistory] = useState(false);
@@ -78,6 +102,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
     const hasInvalidCapacity =
         !editingCapacity ||
         !Number.isFinite(editingCapacity.value) ||
+        !Number.isInteger(editingCapacity.value) ||
         editingCapacity.value < editingCapacity.limit;
 
   // Formats a raw date string into "Month DD" (e.g., "March 03")
@@ -113,8 +138,14 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   const displayedSchedules = showHistory ? pastSchedules : upcomingSchedules;
 
   // Opens the capacity modal and determines initial lock state
-  const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
-    setEditingCapacity({ date, session, value: currentSlots, limit: limit, id: id });
+  const openCapacityDialog = (date: string, session: BookingPeriod, currentSlots: number, bookedCount: number, id: number) => {
+    setEditingCapacity({
+        date,
+        session,
+        value: getPerHourCapacity(session, currentSlots),
+        limit: getPerHourCapacity(session, bookedCount),
+        id,
+    });
     setIsEditCapacityOpen(true);
   };
 
@@ -131,8 +162,15 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   };
   */
 
-  const openRosterDialog = (date: string, session: 'morning' | 'afternoon', students: any[]) => {
-    setActiveRoster({ date, session, students });
+  const openRosterDialog = (
+    date: string,
+    period: BookingPeriod,
+    capacity: number,
+    students: ScheduleBooking[],
+    selectedHourId?: string,
+    selectedHourRange?: string
+  ) => {
+    setActiveRoster({ date, period, capacity, students, selectedHourId, selectedHourRange });
     setIsRosterOpen(true);
   };
 
@@ -173,12 +211,17 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   const executeCapacityUpdate = async () => {
         if (!editingCapacity) return;
 
-        if (!Number.isFinite(editingCapacity.value) || editingCapacity.value < editingCapacity.limit) {
-                toast.error(`Capacity must be at least ${editingCapacity.limit}.`);
+        if (
+            !Number.isFinite(editingCapacity.value) ||
+            !Number.isInteger(editingCapacity.value) ||
+            editingCapacity.value < editingCapacity.limit
+        ) {
+                toast.error(`Students per hour must be a whole number and at least ${editingCapacity.limit}.`);
                 return;
         }
 
-        const nextCapacity = Math.trunc(editingCapacity.value);
+        const nextPerHour = Math.trunc(editingCapacity.value);
+        const nextCapacity = nextPerHour * SESSION_WINDOWS[editingCapacity.session].length;
     
     setIsProcessing(true);
     try {
@@ -189,7 +232,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
         );
         
         if (response.success) {
-            toast.success("Capacity limit updated successfully.");
+            toast.success("Hourly capacity updated successfully.");
             await fetchSchedules();
             setIsEditCapacityOpen(false);
             setEditingCapacity(null);
@@ -258,6 +301,23 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
         setIsProcessing(false);
     }
   };
+
+  const rosterHourGroups = useMemo(() => {
+      if (!activeRoster) return [];
+
+      const groups = getHourlyRoster(activeRoster.period, activeRoster.capacity, activeRoster.students);
+      return activeRoster.selectedHourId
+          ? groups.filter((hour) => hour.id === activeRoster.selectedHourId)
+          : groups;
+  }, [activeRoster]);
+
+  const rosterStudents = useMemo(
+      () => rosterHourGroups.flatMap((hour) => hour.students),
+      [rosterHourGroups]
+  );
+
+  const presentCount = rosterStudents.filter(isPresent).length;
+  const absentCount = rosterStudents.length - presentCount;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 max-w-6xl mx-auto">
@@ -423,9 +483,9 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
 
                                     {/* Morning / Afternoon session cells share the same layout */}
                                     {([
-                                        { label: 'AM' as const, slots: day.max_morning_cap, roster: amRoster, rosterKey: 'morning' as const },
-                                        { label: 'PM' as const, slots: day.max_afternoon_cap, roster: pmRoster, rosterKey: 'afternoon' as const },
-                                    ]).map(({ label, slots, roster, rosterKey }) => (
+                                        { label: 'AM' as BookingPeriod, slots: day.max_morning_cap, roster: amRoster },
+                                        { label: 'PM' as BookingPeriod, slots: day.max_afternoon_cap, roster: pmRoster },
+                                    ]).map(({ label, slots, roster }) => (
                                         <td key={label} className="px-4 py-3">
                                             {slots === 0 ? (
                                                 <span className="text-stone-300 italic text-xs">No schedule</span>
@@ -439,12 +499,12 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                         size="sm"
                                                         className="h-7 w-7 p-0 ml-1 text-stone-400 hover:text-stone-700"
                                                         title="View Roster"
-                                                        onClick={() => openRosterDialog(day.date, rosterKey, roster)}
+                                                        onClick={() => openRosterDialog(day.date, label, slots, roster)}
                                                     >
                                                         <Users className="h-3.5 w-3.5" />
                                                     </Button>
 
-                                                    {!showHistory && (
+                                                    {!showHistory && canManageScheduleCapacity && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
@@ -560,7 +620,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                         <CardContent className="pt-6 bg-white pointer-events-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Process morning and afternoon sessions */}
-                                {['AM', 'PM'].map((session) => {
+                                {(['AM', 'PM'] as BookingPeriod[]).map((session) => {
                                     const is_morning = session === 'AM';
 
                                     // Filter students by session period
@@ -573,6 +633,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                     const slots = is_morning 
                                     ? day.max_morning_cap 
                                     : day.max_afternoon_cap;
+                                    const hourlySlots = getHourlyAvailability(session, slots, bookedCount);
                                     
                                     if (slots === 0) return (
                                         <div key={session} className="flex items-center justify-center p-8 bg-stone-50 rounded-xl border border-dashed border-stone-200 text-stone-400 text-sm italic">
@@ -588,13 +649,13 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                 </h4>
                                                 
                                                 {/* Edit Capacity Button - hidden in history view since past data is read-only */}
-                                                {!showHistory && (
+                                                {!showHistory && canManageScheduleCapacity && (
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-8 w-8 p-0 text-stone-400 hover:text-amber-700"
                                                         title="Edit Capacity"
-                                                        onClick={() => openCapacityDialog(day.date, session.toUpperCase() as 'AM'|'PM', slots, bookedCount, day.id)}
+                                                        onClick={() => openCapacityDialog(day.date, session, slots, bookedCount, day.id)}
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -611,14 +672,36 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                     <div className={`h-full transition-all duration-500 ${bookedCount >= slots ? "bg-red-500" : is_morning ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${(bookedCount / slots) * 100}%` }}></div>
                                                 </div>
                                             </div>
-                                            
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {hourlySlots.map((hour) => (
+                                                    <button
+                                                        key={hour.id}
+                                                        type="button"
+                                                        className="rounded-lg border border-white/80 bg-white/70 p-2 text-left hover:border-amber-300 hover:bg-white transition-colors"
+                                                        onClick={() => openRosterDialog(day.date, session, slots, roster, hour.id, hour.range)}
+                                                    >
+                                                        <div className="flex items-center justify-between gap-2 text-[10px] font-semibold">
+                                                            <span className="text-stone-600 truncate">{hour.shortLabel}</span>
+                                                            <span className={hour.isFull ? "text-red-600" : "text-stone-400"}>{hour.booked}/{hour.capacity}</span>
+                                                        </div>
+                                                        <div className="mt-1 h-1 w-full rounded-full bg-stone-200 overflow-hidden">
+                                                            <div
+                                                                className={`h-full ${hour.isFull ? "bg-red-500" : is_morning ? "bg-amber-500" : "bg-blue-500"}`}
+                                                                style={{ width: `${(hour.booked / hour.capacity) * 100}%` }}
+                                                            />
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+
                                             {/* Action Buttons */}
                                             <div className="flex gap-2 pt-2">
                                                 <Button 
                                                     variant="outline" 
                                                     size="sm" 
                                                     className="flex-1 text-xs bg-white border-stone-200 hover:bg-stone-50 text-stone-600"
-                                                    onClick={() => openRosterDialog(day.date, session === 'AM' ? 'morning' : 'afternoon', roster)}
+                                                    onClick={() => openRosterDialog(day.date, session, slots, roster)}
                                                 >
                                                     <Users className="mr-1.5 h-3.5 w-3.5" /> View Roster
                                                 </Button>
@@ -654,62 +737,86 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                         Session Roster
                     </DialogTitle>
                     <DialogDescription className="mt-1">
-                        Showing students booked for {activeRoster?.date.substring(0,10)} ({activeRoster?.session === 'morning' ? 'Morning' : 'Afternoon'})
+                        Showing students booked for {activeRoster?.date.substring(0,10)} {activeRoster ? `(${getSessionLabel(activeRoster.period)})` : ""}
+                        {activeRoster?.selectedHourRange ? ` - ${activeRoster.selectedHourRange}` : ""}
                     </DialogDescription>
                 </div>
                 
                 <div className="p-6">
                     <Tabs defaultValue="all" className="w-full">
                         <TabsList className="grid w-full grid-cols-3 mb-4">
-                            <TabsTrigger value="all">All ({activeRoster?.students.length})</TabsTrigger>
-                            <TabsTrigger value="attended" className="text-green-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-800">Attended</TabsTrigger>
-                            <TabsTrigger value="pending" className="text-amber-700 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-800">Pending/Missed</TabsTrigger>
+                            <TabsTrigger value="all">All ({rosterStudents.length})</TabsTrigger>
+                            <TabsTrigger value="present" className="text-green-700 data-[state=active]:bg-green-50 data-[state=active]:text-green-800">Present ({presentCount})</TabsTrigger>
+                            <TabsTrigger value="absent" className="text-amber-700 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-800">Absent ({absentCount})</TabsTrigger>
                         </TabsList>
 
-                        {/* Render student list based on selected filter */}
                         {[
                             { value: 'all', filterFn: () => true },
                             {
-                                value: 'attended',
-                                filterFn: (s: any) => {
-                                    const status = s?.student?.studentAuth?.status ?? s?.status;
-                                    return status === 'ATTENDED' || status === 'FULLY_VERIFIED';
-                                },
+                                value: 'present',
+                                filterFn: isPresent,
                             },
                             {
-                                value: 'pending',
-                                filterFn: (s: any) => {
-                                    const status = s?.student?.studentAuth?.status ?? s?.status;
-                                    return status !== 'ATTENDED' && status !== 'FULLY_VERIFIED';
-                                },
+                                value: 'absent',
+                                filterFn: (s: ScheduleBooking) => !isPresent(s),
                             },
-                        ].map(tab => (
-                            <TabsContent key={tab.value} value={tab.value} className="mt-0">
-                                <ScrollArea className="h-[400px] pr-4">
-                                    <div className="space-y-2">
-                                        {activeRoster?.students.filter(tab.filterFn).map((student, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-3 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-sm text-stone-800">{`${student.student.first_name} ${student.student.last_name}`}</span>
-                                                    <span className="text-xs text-stone-400 font-mono">{student.student_number}</span>
+                        ].map(tab => {
+                            const hourGroups = rosterHourGroups
+                                .map((hour) => ({
+                                    ...hour,
+                                    students: hour.students.filter(tab.filterFn),
+                                }))
+                                .filter((hour) => hour.students.length > 0);
+
+                            return (
+                                <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                                    <ScrollArea className="h-[400px] pr-4">
+                                        <div className="space-y-4">
+                                            {hourGroups.map((hour) => (
+                                                <div key={hour.id} className="rounded-xl border border-stone-100 overflow-hidden">
+                                                    <div className="bg-stone-50 px-3 py-2 flex items-center justify-between">
+                                                        <span className="text-xs font-bold text-stone-700">{hour.range}</span>
+                                                        <span className="text-[10px] font-semibold text-stone-400">{hour.students.length}/{hour.capacity}</span>
+                                                    </div>
+                                                    <div className="divide-y divide-stone-100">
+                                                        {hour.students.map((student) => {
+                                                            const present = isPresent(student);
+
+                                                            return (
+                                                                <div key={student.id} className="flex justify-between items-center p-3 hover:bg-stone-50 transition-colors">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-sm text-stone-800">
+                                                                            {`${student.student?.first_name ?? ""} ${student.student?.last_name ?? ""}`.trim() || "Unknown student"}
+                                                                        </span>
+                                                                        <span className="text-xs text-stone-400 font-mono">{student.student_number}</span>
+                                                                    </div>
+
+                                                                    {present ? (
+                                                                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0">
+                                                                            <CheckCircle2 className="w-3 h-3 mr-1"/> Present
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0">
+                                                                            <Clock className="w-3 h-3 mr-1"/> Absent
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
-                                                
-                                                {/* Status Badges */}
-                                                {student.student.studentAuth.status === 'FULLY_VERIFIED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
-                                                {student.student.studentAuth.status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
-                                                {student.student.studentAuth.status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
-                                            </div>
-                                        ))}
-                                        
-                                        {activeRoster?.students.filter(tab.filterFn).length === 0 && (
-                                            <div className="text-center text-stone-400 py-10 text-sm italic">
-                                                No students found in this category.
-                                            </div>
-                                        )}
-                                    </div>
-                                </ScrollArea>
-                            </TabsContent>
-                        ))}
+                                            ))}
+
+                                            {hourGroups.length === 0 && (
+                                                <div className="text-center text-stone-400 py-10 text-sm italic">
+                                                    No students found in this category.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                            );
+                        })}
                     </Tabs>
                 </div>
             </DialogContent>
@@ -719,18 +826,20 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
         <Dialog open={isEditCapacityOpen} onOpenChange={setIsEditCapacityOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Modify Session Capacity</DialogTitle>
+                    <DialogTitle>Modify Hourly Capacity</DialogTitle>
                     <DialogDescription>
-                        Updating the limit for {editingCapacity?.session === 'AM' ? 'Morning' : 'Afternoon'} session on {formatModalDate(editingCapacity?.date)}.
+                        Updating students per hour for {editingCapacity?.session === 'AM' ? 'Morning' : 'Afternoon'} session on {formatModalDate(editingCapacity?.date)}.
                     </DialogDescription>
                 </DialogHeader>
                 
                 {editingCapacity && (
                     <div className="py-4 space-y-3">
-                         <Label>New Capacity Limit</Label>
+                         <Label>Students Per Hour</Label>
                          <div className="flex gap-3">
                              <Input 
                                 type="number" 
+                                min={editingCapacity.limit}
+                                step={1}
                                 value={Number.isFinite(editingCapacity.value) ? editingCapacity.value : ""} 
                                 onChange={(e) => setEditingCapacity({
                                     ...editingCapacity, 
@@ -740,8 +849,16 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                             />
                          </div>
                           <p className="text-sm text-stone-500">
-                              Cannot be lower than the number of booked students:{" "}  
-                              <span className="font-bold">{editingCapacity?.limit}</span>
+                              This applies the same quantity to all {SESSION_WINDOWS[editingCapacity.session].length} hours.
+                              Minimum per hour right now: <span className="font-bold">{editingCapacity.limit}</span>.
+                          </p>
+                          <p className="text-xs text-stone-400">
+                              Total {editingCapacity.session} capacity after save:{" "}
+                              <span className="font-semibold">
+                                  {Number.isFinite(editingCapacity.value)
+                                      ? Math.trunc(editingCapacity.value) * SESSION_WINDOWS[editingCapacity.session].length
+                                      : 0}
+                              </span>
                           </p>
                     </div>
                 )}
@@ -753,7 +870,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                         disabled={isProcessing || hasInvalidCapacity}
                         className="bg-amber-600 hover:bg-amber-700"
                     >
-                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Updating...</> : "Confirm Update"}
+                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Updating...</> : "Apply to Every Hour"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

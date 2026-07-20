@@ -1,6 +1,32 @@
 //Auth Module (Login)
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
+type ErrorBody = {
+    error?: string;
+    message?: string;
+    reason?: string;
+};
+
+async function readErrorReason(res: Response) {
+    try {
+        const contentType = res.headers.get("content-type") || "";
+
+        if (contentType.includes("application/json")) {
+            const body = await res.json() as ErrorBody | string;
+
+            if (typeof body === "string") {
+                return body;
+            }
+
+            return body.reason || body.error || body.message || "";
+        }
+
+        return await res.text();
+    } catch {
+        return "";
+    }
+}
+
 export async function handleLogin(id: string, pass: string, captcha_token: string, is_admin?: boolean) {
     try {
         const res = await fetch(`${baseUrl}/api/auth/login`, {
@@ -16,6 +42,8 @@ export async function handleLogin(id: string, pass: string, captcha_token: strin
         });
 
         if (!res.ok) {
+            const serverReason = await readErrorReason(res);
+
             if (res.status == 401) {
                 return {
                     success: false,
@@ -30,9 +58,16 @@ export async function handleLogin(id: string, pass: string, captcha_token: strin
                 }
             } 
 
+            if (res.status == 400) {
+                return {
+                    success: false,
+                    reason: serverReason || "Invalid login request."
+                }
+            }
+
             return {
                 success: false,
-                reason: "Something went wrong in the server."
+                reason: serverReason || "Something went wrong in the server."
             }
         }
 

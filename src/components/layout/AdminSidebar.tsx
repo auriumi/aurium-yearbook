@@ -74,11 +74,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         <div className="my-2 border-t border-stone-800/50"></div>
 
-        {/* Verification Queue — ADMINISTRATOR and MODERATOR */}
-        {canAccessVerification && (
-          <NavItem id="verification" label="Verification Queue" icon={Users} activeTab={activeTab} onSelect={handleSelect} />
-        )}
-
         {/* Graduate Verification — ADMINISTRATOR and MODERATOR */}
         {canAccessVerification && (
           <NavItem id="graduate-review" label="Graduate Verification" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />

@@ -435,6 +435,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             }
                         </div>
 
+                        <Button variant="outline" className="px-6" onClick={() => handleCancel()}>Cancel</Button>
                         <Button 
                           onClick={handleFinalize} 
                           disabled={isEditing}
@@ -443,7 +444,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                           {selectedStudent.status === 'verified' ? (
                             <><CheckCircle2 size={16} className="mr-2"/> Verified Final</>
                           ) : (
-                            <><Save size={16} className="mr-2"/> Final Submit</>
+                            <><Save size={16} className="mr-2"/> Submit </>
                           )}
                         </Button>
                     </CardFooter>

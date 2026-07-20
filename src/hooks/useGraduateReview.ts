@@ -19,20 +19,33 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await adminService.fv_getPaginatedStudents(currentPage);
+      let res;
+
+      if (appliedSearchQuery) {
+        res = await adminService.fv_getStudentById(appliedSearchQuery);
+      } else {
+        res = await adminService.fv_getPaginatedStudents(currentPage);
+      }
+
       if (!res.success) {
         setStudents([]);
         return [] as Student[];
       }
 
-      if (res.data.students.length === 0) {
+      const studentsData = Array.isArray(res.data.students)
+        ? res.data.students
+        : res.data.student
+          ? [res.data.student]
+          : [];
+
+      if (studentsData.length === 0) {
         setStudents([]);
         return [] as Student[];
       }
 
-      setStudents(res.data.students);
+      setStudents(studentsData);
       setTotalResults(res.data.total_students);
-      return res.data.students as Student[];
+      return studentsData as Student[];
 
     } catch (error) {
       console.error("Failed to fetch students:", error);
@@ -41,7 +54,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [appliedSearchQuery, currentPage]);
 
   useEffect(() => {
     fetchStudents();

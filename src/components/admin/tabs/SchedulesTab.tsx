@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { BookingSlot, Schedule } from "@/types";
 import * as adminService from "@/app/admin/adminService"
 import toast from "react-hot-toast";
+import { formatBookingSlotRange } from "@/lib/utils";
 
 interface ScheduleProp {
     schedules: Schedule[];
@@ -62,7 +63,7 @@ function getPeriodRoster(day: Schedule, period: "AM" | "PM") {
 }
 
 function formatSlotRange(slot: BookingSlot) {
-  return `${slot.start_time} - ${slot.end_time}`;
+  return formatBookingSlotRange(slot);
 }
 
 export function SchedulesTab({ schedules, fetchSchedules, userRole }: ScheduleProp) {

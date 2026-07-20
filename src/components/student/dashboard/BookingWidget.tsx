@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Booking, BookingSlot, Schedule } from "@/types";
 import { useModalState } from "@/hooks/useModalState";
+import { formatBookingSlotRange } from "@/lib/utils";
 
 interface BookingWidgetProps {
   bookingList: Schedule[];
@@ -36,7 +37,7 @@ function formatShortScheduleDate(date: string) {
 
 function formatTimeRange(slot?: Pick<BookingSlot, "start_time" | "end_time" | "period"> | null) {
   if (!slot) return "";
-  return `${slot.start_time} - ${slot.end_time} ${slot.period}`;
+  return formatBookingSlotRange(slot);
 }
 
 function getSlotBookedCount(slot: BookingSlot) {
@@ -53,8 +54,8 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
   const bookingSlotLabel = booking?.booking_slot
     ? formatTimeRange(booking.booking_slot)
     : booking?.period === "AM"
-      ? "Morning Session (8:00 - 12:00)"
-      : "Afternoon Session (13:00 - 17:00)";
+      ? "Morning Session (8:00 AM - 12:00 PM)"
+      : "Afternoon Session (1:00 PM - 5:00 PM)";
 
   const handleSelectSlot = (slot: BookingSlot, date: string) => {
     const booked = getSlotBookedCount(slot);

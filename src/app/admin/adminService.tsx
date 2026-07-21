@@ -226,6 +226,23 @@ export const fv_getPaginatedStudents = async (page: number) => {
     }
 };
 
+export const fv_getStudentById = async (student_id: string) => {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/finalize/${student_id}`, {
+             credentials: 'include' 
+        });
+
+        if (!res.ok) throw new Error("API Error");
+
+        const data = await res.json();
+
+        return { success: true, data };
+    } catch (err) {
+        console.error(err);
+        return { success: false };
+    }
+};
+
 export async function fv_updateStudent(studentId: number, type: string, data: any) {
     try {
         const res = await fetch(`${baseUrl}/api/admin/finalize/${studentId}?type=${type}`, {

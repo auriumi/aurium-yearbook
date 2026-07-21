@@ -21,8 +21,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import toast from "react-hot-toast";
 
 import { useGraduateReview } from "@/hooks/useGraduateReview"; 
+import * as adminService from "@/app/admin/adminService";
 
 interface VerificationTabProps {
   staffUser: any;
@@ -55,10 +57,10 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const {
     searchQuery, setSearchQuery,
     currentPage, setCurrentPage,
-    handleSearchClick, handleSearchKeyDown,
+    handleSearchClick, handleSearchKeyDown, handleDiscard,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
     isEditing, setIsEditing,
-    handleSaveEdit, handlePhotoUpload, handleFinalize,
+    handleSaveEdit, handleFinalize,
   } = useGraduateReview(staffUser, selectedStudent, setSelectedStudent);
 
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
@@ -427,25 +429,24 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isEditing} className="h-9 px-4 text-xs border-stone-300 text-stone-600 hover:bg-white hover:text-amber-700 bg-white rounded-lg">
                                 <Edit3 size={14} className="mr-1.5"/> Edit Info
                             </Button>
-                            {/*
-                            <Button variant="secondary" onClick={() => setIsPhotoModalOpen(true)} className="h-9 px-4 text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200 shadow-sm rounded-lg">
-                                <ImageIcon size={14} className="mr-1.5"/> Manage Photos
-                            </Button>
-                            */
-                            }
-                        </div>
+                          </div>
 
-                        <Button 
-                          onClick={handleFinalize} 
-                          disabled={isEditing}
-                          className={`h-10 px-8 text-sm font-bold shadow-md rounded-xl transition-all hover:scale-105 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-[#7a3b1a] hover:bg-[#5a2a12] shadow-[#7a3b1a]/20'}`}
-                        >
-                          {selectedStudent.status === 'verified' ? (
-                            <><CheckCircle2 size={16} className="mr-2"/> Verified Final</>
-                          ) : (
-                            <><Save size={16} className="mr-2"/> Final Submit</>
-                          )}
-                        </Button>
+                          {/*TODO: add confirmation dialog*/} 
+                          <CardFooter className="p-5 flex justify-end gap-3 shrink-0">
+                              <Button variant="outline" className="px-6 hover:border-red-500 hover:text-red-500" onClick={() => handleDiscard()}>Discard</Button>
+                              <Button
+                                  onClick={handleFinalize}
+                                  disabled={isEditing}
+                                  className={`h-10 px-8 text-sm font-bold shadow-md rounded-xl transition-all hover:scale-105 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-[#7a3b1a] hover:bg-[#5a2a12] shadow-[#7a3b1a]/20'}`}
+                              >
+                                  {selectedStudent.status === 'verified' ? (
+                                      <><CheckCircle2 size={16} className="mr-2" /> Verified Final</>
+                                  ) : (
+                                      <><Save size={16} className="mr-1" /> Submit </>
+                                  )}
+                              </Button>
+
+                          </CardFooter>
                     </CardFooter>
                 </Card>
             ) : (
@@ -474,164 +475,6 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-
-        <AlertDialog open={showPhotoSaveConfirm} onOpenChange={setShowPhotoSaveConfirm}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Update Photos?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will replace any existing graduation or creative photos for this student.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { setShowPhotoSaveConfirm(false); setIsPhotoModalOpen(false); }} className="bg-green-600 hover:bg-green-700">Confirm Upload</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
-        {/* 100% PERFECT MATCH POLAROID PHOTO MANAGER MODAL (Preserved untouched) */}
-        <Dialog open={isPhotoModalOpen} onOpenChange={setIsPhotoModalOpen}>
-            <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 overflow-hidden bg-white border-0 shadow-2xl flex flex-col rounded-3xl">
-                
-                <div className="px-8 py-5 border-b border-stone-100 bg-white flex justify-center items-center shrink-0 z-20 relative">
-                    <div className="flex flex-col items-center text-center mt-2">
-                        <div className="flex items-center gap-2 text-stone-800 mb-1">
-                            <ImageIcon size={18} className="text-amber-500" />
-                            <DialogTitle className="text-xl font-black tracking-widest uppercase font-serif">Studio Photo Manager</DialogTitle>
-                        </div>
-                        <DialogDescription className="text-stone-500 font-medium text-xs">
-                            Verify the reference and upload the official high-resolution yearbook portraits.
-                        </DialogDescription>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setIsPhotoModalOpen(false)} className="absolute right-6 top-6 rounded-full h-10 w-10 bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors">
-                        <X size={20}/>
-                    </Button>
-                </div>
-                
-                <div className="flex-1 overflow-x-auto overflow-y-auto bg-[#f9f8f6] relative custom-scrollbar">
-                    <div className="flex items-center justify-center min-w-max min-h-full p-8 md:p-12 gap-8 md:gap-12">
-                        
-                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
-                            <div className="text-center mb-4 space-y-1">
-                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Reference</h4>
-                                <h3 className="text-[15px] font-black text-stone-800">Pre-Registration Photo</h3>
-                            </div>
-                            <div 
-                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
-                                onClick={() => {
-                                    const refUrl = selectedStudent.studentDetail.photo_url || "https://github.com/shadcn.png";
-                                    if (refUrl) setEnlargedImage(refUrl);
-                                }}
-                            >
-                                <div className="w-full aspect-[4/5] bg-stone-100 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
-                                    {selectedStudent?.studentDetail?.photo_url ? (
-                                        <>
-                                            <Image unoptimized src={selectedStudent.studentDetail.photo_url || "https://github.com/shadcn.png"} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Reference" />
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
-                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Search size={14}/> Enlarge</div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-300">
-                                            <User size={64} className="mb-3 opacity-20"/>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="w-full mt-5 mb-2 px-2 text-center">
-                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.studentDetail?.photo_url ? 'bg-green-500' : 'bg-stone-200'}`}></div>
-                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.studentDetail?.photo_url ? 'text-green-600' : 'text-stone-400'}`}>
-                                        {selectedStudent?.studentDetail?.photo_url ? 'Uploaded ✓' : 'No Reference'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
-                            <div className="text-center mb-4 space-y-1">
-                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Official</h4>
-                                <h3 className="text-[15px] font-black text-stone-800">Graduation (Toga) Photo</h3>
-                            </div>
-                            <div 
-                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
-                                onClick={() => gradPhotoRef.current?.click()}
-                            >
-                                <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
-                                    {selectedStudent?.photo_grad ? (
-                                        <>
-                                            <Image unoptimized src={selectedStudent.photo_grad} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Graduation" />
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
-                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 hover:bg-stone-100 transition-colors border-2 border-dashed border-stone-300 rounded-[1.2rem] m-0 p-0 absolute inset-0">
-                                            <Upload size={36} className="mb-3 opacity-50"/>
-                                            <span className="text-sm font-bold">Click to Upload</span>
-                                        </div>
-                                    )}
-                                    <input type="file" ref={gradPhotoRef} className="hidden" accept="image/*" onChange={(e) => {
-                                        if(e.target.files?.[0]) handlePhotoUpload('grad', e.target.files[0]);
-                                    }}/>
-                                </div>
-                                <div className="w-full mt-5 mb-2 px-2 text-center">
-                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo_grad ? 'bg-green-500' : 'bg-stone-200'}`}></div>
-                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo_grad ? 'text-green-600' : 'text-stone-400'}`}>
-                                        {selectedStudent?.photo_grad ? 'Uploaded ✓' : 'Action Required'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col items-center w-[280px] md:w-[320px] shrink-0">
-                            <div className="text-center mb-4 space-y-1">
-                                <h4 className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Official</h4>
-                                <h3 className="text-[15px] font-black text-stone-800">Creative / Theme Photo</h3>
-                            </div>
-                            <div 
-                                className="w-full bg-white p-4 rounded-[1.5rem] shadow-xl border border-stone-100 flex flex-col group cursor-pointer hover:-translate-y-1 transition-transform duration-300"
-                                onClick={() => creativePhotoRef.current?.click()}
-                            >
-                                <div className="w-full aspect-[4/5] bg-stone-50 rounded-[1.2rem] overflow-hidden relative border border-stone-200">
-                                    {selectedStudent?.photo_creative ? (
-                                        <>
-                                            <Image unoptimized src={selectedStudent.photo_creative} width={800} height={1000} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Creative" />
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity duration-300">
-                                                <div className="bg-white/90 text-stone-800 text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm shadow-xl flex items-center gap-2"><Camera size={14}/> Change</div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 hover:bg-stone-100 transition-colors border-2 border-dashed border-stone-300 rounded-[1.2rem] m-0 p-0 absolute inset-0">
-                                            <Upload size={36} className="mb-3 opacity-50"/>
-                                            <span className="text-sm font-bold">Click to Upload</span>
-                                        </div>
-                                    )}
-                                    <input type="file" ref={creativePhotoRef} className="hidden" accept="image/*" onChange={(e) => {
-                                         if(e.target.files?.[0]) handlePhotoUpload('creative', e.target.files[0]);
-                                    }}/>
-                                </div>
-                                <div className="w-full mt-5 mb-2 px-2 text-center">
-                                    <div className={`h-1.5 w-full rounded-full mb-3 ${selectedStudent?.photo_creative ? 'bg-green-500' : 'bg-stone-200'}`}></div>
-                                    <span className={`text-[11px] font-black uppercase tracking-widest ${selectedStudent?.photo_creative ? 'text-green-600' : 'text-stone-400'}`}>
-                                        {selectedStudent?.photo_creative ? 'Uploaded ✓' : 'Action Required'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <DialogFooter className="bg-white p-5 border-t border-stone-100 flex justify-center items-center shrink-0 z-20">
-                    <div className="flex items-center justify-center w-full gap-6">
-                        <Button variant="ghost" onClick={() => setIsPhotoModalOpen(false)} className="text-stone-500 font-bold hover:bg-stone-50 h-11 px-6">Discard Changes</Button>
-                        <Button onClick={() => setShowPhotoSaveConfirm(true)} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-10 shadow-lg shadow-green-600/20 rounded-xl h-11">
-                            <Save size={18} className="mr-2"/> Save Studio Photos
-                        </Button>
-                    </div>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
 
         {/* IMAGE LIGHTBOX MODAL */}
         <Dialog open={!!enlargedImage} onOpenChange={(open) => !open && setEnlargedImage(null)}>

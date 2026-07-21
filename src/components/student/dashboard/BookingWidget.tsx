@@ -15,6 +15,8 @@ interface BookingWidgetProps {
   bookingList: Schedule[];
   booking?: Booking;
   idNumber: string;
+  canBook?: boolean;
+  disabledReason?: string;
   onBook: (bookingSlotId: number) => Promise<void> | void;
 }
 
@@ -35,7 +37,7 @@ function formatShortScheduleDate(date: string) {
   });
 }
 
-function formatTimeRange(slot?: Pick<BookingSlot, "start_time" | "end_time" | "period"> | null) {
+function formatTimeRange(slot?: Pick<BookingSlot, "start_time" | "end_time"> | null) {
   if (!slot) return "";
   return formatBookingSlotRange(slot);
 }
@@ -44,30 +46,34 @@ function getSlotBookedCount(slot: BookingSlot) {
   return slot.booked_count ?? slot.bookings?.length ?? 0;
 }
 
-export function BookingWidget({ bookingList, booking, idNumber, onBook }: BookingWidgetProps) {
+function getBookingSlotLabel(booking: Booking) {
+  if (booking.booking_slot) {
+    return formatTimeRange(booking.booking_slot);
+  }
+
+  return booking.period === "AM"
+    ? "Morning Session (8:00 AM - 12:00 PM)"
+    : "Afternoon Session (1:00 PM - 5:00 PM)";
+}
+
+export function BookingWidget({ bookingList, booking, idNumber, canBook = true, disabledReason, onBook }: BookingWidgetProps) {
   const bookingModal = useModalState();
   const confirmationModal = useModalState();
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<BookingSlot | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const bookingSlotLabel = booking?.booking_slot
-    ? formatTimeRange(booking.booking_slot)
-    : booking?.period === "AM"
-      ? "Morning Session (8:00 AM - 12:00 PM)"
-      : "Afternoon Session (1:00 PM - 5:00 PM)";
-
   const handleSelectSlot = (slot: BookingSlot, date: string) => {
     const booked = getSlotBookedCount(slot);
     const isFull = booked >= slot.capacity || slot.available_count <= 0 || !slot.is_open;
-    if (isFull) return;
+    if (isFull || !canBook) return;
 
     setSelectedDate(date);
     setSelectedSlot(slot);
   };
 
   const handleConfirm = async () => {
-    if (!selectedSlot) return;
+    if (!selectedSlot || !canBook) return;
 
     setIsSubmitting(true);
     try {
@@ -108,7 +114,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
               </h3>
               <p className="text-stone-600 font-medium flex items-center justify-center md:justify-start gap-2">
                 <Clock className="w-4 h-4 text-amber-700" />
-                {bookingSlotLabel}
+                {getBookingSlotLabel(booking)}
               </p>
               <p className="text-xs text-stone-400 italic mt-2 mb-4 md:mb-0">Present this QR to the attendance officer.</p>
             </div>
@@ -127,15 +133,31 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
           </div>
         ) : (
           <div className="text-center space-y-4 py-6">
-            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-amber-600" />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${canBook ? "bg-amber-50" : "bg-red-50"}`}>
+              {canBook ? (
+                <Calendar className="w-8 h-8 text-amber-600" />
+              ) : (
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              )}
             </div>
             <div>
-              <h3 className="font-bold text-stone-700">No Schedule Selected</h3>
-              <p className="text-sm text-stone-500 max-w-xs mx-auto">Slots are filling up fast. Book now to secure your spot.</p>
+              <h3 className="font-bold text-stone-700">
+                {canBook ? "No Schedule Selected" : "Profile Photo Required"}
+              </h3>
+              <p className="text-sm text-stone-500 max-w-xs mx-auto">
+                {canBook
+                  ? "Slots are filling up fast. Book now to secure your spot."
+                  : disabledReason || "Upload your profile picture before booking your pictorial schedule."}
+              </p>
             </div>
 
-            <Button className="bg-amber-900 hover:bg-amber-800" onClick={bookingModal.open}>Book a Slot Now</Button>
+            <Button
+              className="bg-amber-900 hover:bg-amber-800 disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none"
+              onClick={bookingModal.open}
+              disabled={!canBook}
+            >
+              {canBook ? "Book a Slot Now" : "Booking Locked"}
+            </Button>
           </div>
         )}
 
@@ -174,12 +196,12 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                               key={slot.id}
                               type="button"
                               onClick={() => handleSelectSlot(slot, day.date)}
-                              disabled={isFull}
+                              disabled={isFull || !canBook}
                               className={`relative border rounded-lg p-3 text-left transition-all ${
                                 isSelected
                                   ? "ring-2 ring-amber-600 border-amber-600 bg-amber-50"
                                   : "hover:border-amber-300 bg-white"
-                              } ${isFull ? "opacity-50 cursor-not-allowed bg-stone-100" : ""}`}
+                              } ${(isFull || !canBook) ? "opacity-50 cursor-not-allowed bg-stone-100" : ""}`}
                             >
                               <div className="flex justify-between items-start gap-2 mb-2">
                                 <div>
@@ -210,7 +232,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
                   </span>
                 ) : "Please select an hourly slot"}
               </div>
-              <Button onClick={confirmationModal.open} disabled={!selectedSlot} className="bg-amber-900 w-full sm:w-auto">
+              <Button onClick={confirmationModal.open} disabled={!selectedSlot || !canBook} className="bg-amber-900 w-full sm:w-auto">
                 {booking ? "Confirm New Schedule" : "Submit Schedule"}
               </Button>
             </DialogFooter>
@@ -230,7 +252,7 @@ export function BookingWidget({ bookingList, booking, idNumber, onBook }: Bookin
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={confirmationModal.close} disabled={isSubmitting}>Cancel</Button>
-              <Button onClick={handleConfirm} disabled={isSubmitting} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
+              <Button onClick={handleConfirm} disabled={isSubmitting || !canBook} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isSubmitting ? "Booking..." : "Yes, Finalize"}
               </Button>

@@ -24,6 +24,7 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<Student | null>(null);
   const [schedule, setSchedule] = useState<Schedule[]>([]);
   const [booking, setBooking] = useState<Booking>();
+  const [loadError, setLoadError] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const previewModal = useModalState();
   const logoutModal = useModalState();
@@ -32,12 +33,23 @@ export default function StudentDashboard() {
     try {
       const res = await studentService.getStudentProfile(); 
 
-      const hasBooking = res.booking.length > 0 ? res.booking[0] : null;
-      if (hasBooking) setBooking(hasBooking);
+      if (!res || !Array.isArray(res.booking)) {
+        setUser(null);
+        setBooking(undefined);
+        setLoadError("Unable to load your student dashboard. Please sign in again or try later.");
+        return;
+      }
+
+      const hasBooking = res.booking.length > 0 ? res.booking[0] : undefined;
+      setBooking(hasBooking);
 
       setUser(res);
+      setLoadError("");
     } catch(err) {
       console.error(err);
+      setUser(null);
+      setBooking(undefined);
+      setLoadError("Unable to load your student dashboard. Please sign in again or try later.");
     }
   }, []);
 
@@ -113,8 +125,33 @@ export default function StudentDashboard() {
   if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center font-sans">
-        <Loader2 className="h-10 w-10 animate-spin text-amber-600 mb-4" />
-        <p className="text-stone-500 font-medium animate-pulse">Loading your dashboard...</p>
+        {loadError ? (
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
+            <p className="font-bold text-stone-800">Dashboard unavailable</p>
+            <p className="mt-2 text-sm leading-relaxed text-stone-500">{loadError}</p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={fetchStudent}
+                className="flex-1 rounded-lg border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/auth/login")}
+                className="flex-1 rounded-lg bg-amber-900 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-800"
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <Loader2 className="h-10 w-10 animate-spin text-amber-600 mb-4" />
+            <p className="text-stone-500 font-medium animate-pulse">Loading your dashboard...</p>
+          </>
+        )}
       </div>
     );
   }

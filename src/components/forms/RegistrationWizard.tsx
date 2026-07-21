@@ -259,7 +259,18 @@ export default function RegistrationWizard() {
         body: JSON.stringify(body) 
       });
 
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      const responseBody = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        if (res.status === 409 && responseBody?.code === "DUPLICATE_REGISTRATION") {
+          toast.error(responseBody.message || "Duplicate submission detected. Your Student ID Number already has a pre-registration entry.");
+          return;
+        }
+
+        toast.error(responseBody?.message || responseBody?.reason || responseBody?.error || "Unable to submit your pre-registration. Please try again later.");
+        return;
+      }
+
       toast.success("Information has been submitted succesfully!");
       setShowRegistrationConfirmation(true);
 

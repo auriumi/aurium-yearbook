@@ -96,6 +96,26 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
   const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [pendingGraduateAction, setPendingGraduateAction] = useState<"discard" | "submit" | null>(null);
+  const [isGraduateActionSubmitting, setIsGraduateActionSubmitting] = useState(false);
+
+  const selectedGraduateName = selectedStudent
+    ? [selectedStudent.last_name || selectedStudent.lname, selectedStudent.first_name || selectedStudent.fname].filter(Boolean).join(", ")
+    : "";
+
+  const graduateActionCopy = pendingGraduateAction === "discard"
+    ? {
+        title: "Discard Graduate Entry?",
+        description: "This will remove this student from the graduate verification queue. Please confirm only if this entry should not proceed to final verification.",
+        confirmLabel: "Yes, Discard",
+        confirmClassName: "bg-red-600 hover:bg-red-700",
+      }
+    : {
+        title: "Submit Graduate Verification?",
+        description: "This will submit the selected student for final graduate verification. Please make sure the details are already reviewed before continuing.",
+        confirmLabel: "Yes, Submit",
+        confirmClassName: "bg-[#7a3b1a] hover:bg-[#5a2a12]",
+      };
 
   const onSaveInfoClick = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,6 +127,22 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
         handleSaveEdit(formRef.current);
     }
     setShowInfoSaveConfirm(false);
+  };
+
+  const handleConfirmGraduateAction = async () => {
+    if (!pendingGraduateAction || !selectedStudent) return;
+
+    setIsGraduateActionSubmitting(true);
+    try {
+        if (pendingGraduateAction === "discard") {
+            await handleDiscard();
+        } else {
+            await handleFinalize();
+        }
+        setPendingGraduateAction(null);
+    } finally {
+        setIsGraduateActionSubmitting(false);
+    }
   };
 
   return (
@@ -431,11 +467,16 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                             </Button>
                           </div>
 
-                          {/*TODO: add confirmation dialog*/} 
                           <CardFooter className="p-5 flex justify-end gap-3 shrink-0">
-                              <Button variant="outline" className="px-6 hover:border-red-500 hover:text-red-500" onClick={() => handleDiscard()}>Discard</Button>
                               <Button
-                                  onClick={handleFinalize}
+                                  variant="outline"
+                                  className="px-6 hover:border-red-500 hover:text-red-500"
+                                  onClick={() => setPendingGraduateAction("discard")}
+                              >
+                                  Discard
+                              </Button>
+                              <Button
+                                  onClick={() => setPendingGraduateAction("submit")}
                                   disabled={isEditing}
                                   className={`h-10 px-8 text-sm font-bold shadow-md rounded-xl transition-all hover:scale-105 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-[#7a3b1a] hover:bg-[#5a2a12] shadow-[#7a3b1a]/20'}`}
                               >
@@ -472,6 +513,43 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={confirmSaveInfo} className="bg-amber-600 hover:bg-amber-700">Confirm Save</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+            open={!!pendingGraduateAction}
+            onOpenChange={(open) => {
+                if (!open && !isGraduateActionSubmitting) setPendingGraduateAction(null);
+            }}
+        >
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{graduateActionCopy.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {selectedGraduateName ? (
+                            <>
+                                You are about to process <strong>{selectedGraduateName}</strong>
+                                {selectedStudent?.student_number || selectedStudent?.idNumber ? ` (${selectedStudent?.student_number || selectedStudent?.idNumber})` : ""}.{" "}
+                            </>
+                        ) : null}
+                        {graduateActionCopy.description}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isGraduateActionSubmitting}>Cancel</AlertDialogCancel>
+                    <Button
+                        onClick={handleConfirmGraduateAction}
+                        disabled={isGraduateActionSubmitting}
+                        className={graduateActionCopy.confirmClassName}
+                    >
+                        {isGraduateActionSubmitting ? (
+                            <>
+                                <Loader2 size={16} className="mr-2 animate-spin" />
+                                Processing...
+                            </>
+                        ) : graduateActionCopy.confirmLabel}
+                    </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

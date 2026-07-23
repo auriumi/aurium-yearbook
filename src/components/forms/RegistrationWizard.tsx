@@ -263,7 +263,7 @@ export default function RegistrationWizard() {
 
       if (!res.ok) {
         if (res.status === 409 && responseBody?.code === "DUPLICATE_REGISTRATION") {
-          toast.error(responseBody.message || "Duplicate submission detected. Your Student ID Number already has a pre-registration entry.");
+          toast.error(responseBody.message || "This ID number has already been registered. Please contact us if this is incorrect.");
           return;
         }
 

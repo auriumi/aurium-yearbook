@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import ExcelJS from "exceljs";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
@@ -75,6 +76,53 @@ const EXPORT_STATUS_OPTIONS = [
   { value: "5",   label: "Fully Verified",color: "bg-green-600" },
 ];
 
+type CorrectionCategory = "personal" | "academic" | "contact" | "family";
+
+const CORRECTION_CATEGORY_LABELS: Record<CorrectionCategory, string> = {
+  personal: "Personal",
+  academic: "Academic",
+  contact: "Contact",
+  family: "Family",
+};
+
+const CORRECTION_FIELDS: Record<CorrectionCategory, { key: string; label: string; source?: "studentDetail"; multiline?: boolean }[]> = {
+  personal: [
+    { key: "first_name", label: "First Name" },
+    { key: "last_name", label: "Last Name" },
+    { key: "mid_name", label: "Middle Name" },
+    { key: "suffix", label: "Suffix" },
+    { key: "nickname", label: "Nickname" },
+  ],
+  academic: [
+    { key: "course", label: "Course" },
+    { key: "major", label: "Major" },
+    { key: "thesis", label: "Thesis / Capstone Title", multiline: true },
+  ],
+  contact: [
+    { key: "barangay", label: "Barangay", source: "studentDetail" },
+    { key: "city", label: "City / Municipality", source: "studentDetail" },
+    { key: "province", label: "Province", source: "studentDetail" },
+    { key: "contact_num", label: "Contact Number", source: "studentDetail" },
+    { key: "personal_email", label: "Personal Email" },
+    { key: "school_email", label: "School Email" },
+  ],
+  family: [
+    { key: "fathers_title", label: "Father's Title", source: "studentDetail" },
+    { key: "fathers_name", label: "Father's Name", source: "studentDetail" },
+    { key: "mothers_title", label: "Mother's Title", source: "studentDetail" },
+    { key: "mothers_name", label: "Mother's Name", source: "studentDetail" },
+    { key: "guardians_title", label: "Guardian's Title", source: "studentDetail" },
+    { key: "guardians_name", label: "Guardian's Name", source: "studentDetail" },
+  ],
+};
+
+function getCorrectionValue(student: any, field: { key: string; source?: "studentDetail" }) {
+  if (!student) return "";
+  if (field.key === "thesis") return student.thesis_title || "";
+  if (field.source === "studentDetail") return student.studentDetail?.[field.key] || "";
+  return student[field.key] || "";
+}
+
 export function MasterlistTab(props: MasterlistTabProps) {
   const {
     searchQuery, setSearchQuery, selectedStudent, setSelectedStudent,
@@ -91,6 +139,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const canSendOtp = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
   const canDeleteStudent = userRole === 'ADMINISTRATOR';
   const canExport = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
+  const canRequestCorrection = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   
@@ -124,6 +173,12 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const [passwordError, setPasswordError] = useState("");
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
+  // Student-confirmed correction request states
+  const [showCorrectionDialog, setShowCorrectionDialog] = useState(false);
+  const [correctionCategory, setCorrectionCategory] = useState<CorrectionCategory>("personal");
+  const [correctionValues, setCorrectionValues] = useState<Record<string, string>>({});
+  const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
+
   const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE) || 1;
 
   const getPageNumbers = () => {
@@ -140,6 +195,57 @@ export function MasterlistTab(props: MasterlistTabProps) {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString; 
       return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+  };
+
+  const buildCorrectionValues = (category: CorrectionCategory) => {
+      return Object.fromEntries(
+          CORRECTION_FIELDS[category].map((field) => [field.key, String(getCorrectionValue(selectedStudent, field) ?? "")])
+      );
+  };
+
+  const openCorrectionDialog = () => {
+      setCorrectionCategory("personal");
+      setCorrectionValues(buildCorrectionValues("personal"));
+      setShowCorrectionDialog(true);
+  };
+
+  const handleCorrectionCategoryChange = (category: CorrectionCategory) => {
+      setCorrectionCategory(category);
+      setCorrectionValues(buildCorrectionValues(category));
+  };
+
+  const handleSubmitCorrectionRequest = async () => {
+      if (!selectedStudent) return;
+
+      const changedPayload = Object.fromEntries(
+          CORRECTION_FIELDS[correctionCategory]
+              .map((field) => {
+                  const currentValue = String(getCorrectionValue(selectedStudent, field) ?? "").trim();
+                  const nextValue = String(correctionValues[field.key] ?? "").trim();
+                  return [field.key, currentValue === nextValue ? undefined : nextValue];
+              })
+              .filter(([, value]) => value !== undefined)
+      );
+
+      if (Object.keys(changedPayload).length === 0) {
+          toast.error("No correction changes detected.");
+          return;
+      }
+
+      setIsSubmittingCorrection(true);
+      try {
+          const res = await adminService.fv_requestStudentCorrection(selectedStudent.student_number, correctionCategory, changedPayload);
+
+          if (!res.success) {
+              toast.error(res.reason || "Unable to send correction request.");
+              return;
+          }
+
+          toast.success("Correction request sent to the student's email for confirmation.");
+          setShowCorrectionDialog(false);
+      } finally {
+          setIsSubmittingCorrection(false);
+      }
   };
 
   const handleDeleteRecord = async () => {
@@ -773,6 +879,18 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                             <Mail className="w-4 h-4 mr-2" /> Manage Emails & OTP
                                         </Button>
                                     </div>
+                                    {canRequestCorrection && selectedStudent.studentAuth?.status === "FULLY_VERIFIED" && (
+                                        <div className="mt-3">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={openCorrectionDialog}
+                                                className="w-full text-amber-700 border-amber-200 hover:bg-amber-50 hover:text-amber-800 transition-colors"
+                                            >
+                                                <ShieldCheck className="w-4 h-4 mr-2" /> Request Data Correction
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -823,6 +941,79 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         </div>
                     </>
                 )}
+            </DialogContent>
+        </Dialog>
+
+        {/* STUDENT-CONFIRMED DATA CORRECTION DIALOG */}
+        <Dialog open={showCorrectionDialog} onOpenChange={setShowCorrectionDialog}>
+            <DialogContent className="max-w-2xl p-6 bg-white rounded-xl shadow-2xl border-amber-100">
+                <DialogHeader className="mb-2">
+                    <DialogTitle className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-amber-600" /> Request Data Correction
+                    </DialogTitle>
+                    <DialogDescription className="text-stone-500 text-sm">
+                        Propose changes for a fully verified student. The record will update only after the student confirms through email.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-5">
+                    <div className="rounded-lg border border-amber-100 bg-amber-50/70 p-3 text-xs text-amber-900 leading-relaxed">
+                        Student confirmation is required because this data is already marked as final for the yearbook.
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Section</Label>
+                        <Select value={correctionCategory} onValueChange={(value) => handleCorrectionCategoryChange(value as CorrectionCategory)}>
+                            <SelectTrigger className="w-full border-stone-200 bg-white focus:ring-amber-500/20 focus:border-amber-500">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(CORRECTION_CATEGORY_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto pr-1">
+                        {CORRECTION_FIELDS[correctionCategory].map((field) => (
+                            <div key={field.key} className={field.multiline ? "space-y-1.5 md:col-span-2" : "space-y-1.5"}>
+                                <Label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{field.label}</Label>
+                                {field.multiline ? (
+                                    <Textarea
+                                        value={correctionValues[field.key] ?? ""}
+                                        onChange={(e) => setCorrectionValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                                        className="min-h-24 bg-stone-50 border-stone-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm"
+                                    />
+                                ) : (
+                                    <Input
+                                        value={correctionValues[field.key] ?? ""}
+                                        onChange={(e) => setCorrectionValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                                        className="bg-stone-50 border-stone-200 focus:border-amber-500 focus:ring-amber-500/20 text-sm"
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-2 border-t border-stone-100">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowCorrectionDialog(false)}
+                            disabled={isSubmittingCorrection}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmitCorrectionRequest}
+                            disabled={isSubmittingCorrection}
+                            className="bg-amber-700 hover:bg-amber-800 text-white"
+                        >
+                            {isSubmittingCorrection ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                            Send Confirmation Email
+                        </Button>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
 

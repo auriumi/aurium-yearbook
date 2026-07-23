@@ -74,7 +74,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     const dataByCategory: { [category: string]: { [key: string]: any } } = {};
 
     const fieldCategories: { [key: string]: string } = {
-        first_name: "personal", last_name: "personal", mid_name: "personal", suffix: "personal", nickname: "personal",
+        first_name: "personal", last_name: "personal", mid_name: "personal", suffix: "personal", nickname: "personal", birth_date: "personal",
         course: "academic", major: "academic", thesis: "academic",
         barangay: "contact", city: "contact", province: "contact",
       contact_num: "contact", school_email: "contact", personal_email: "contact",
@@ -84,7 +84,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
     };
 
     const formMapping: { [key: string]: string } = {
-        fname: "first_name", lname: "last_name", mname: "mid_name", suffix: "suffix", nickname: "nickname",
+        fname: "first_name", lname: "last_name", mname: "mid_name", suffix: "suffix", nickname: "nickname", birthDate: "birth_date",
         course: "course", major: "major", thesis: "thesis",
         barangay: "barangay", city: "city", province: "province",
       contactNum: "contact_num", schoolEmail: "school_email", personalEmail: "personal_email",
@@ -93,7 +93,18 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         guardians_title: "guardians_title", guardian: "guardians_name",
     };
 
-    const normalizeValue = (value: unknown) => String(value ?? "").trim();
+    const normalizeValue = (value: unknown, dataKey?: string) => {
+      const normalized = String(value ?? "").trim();
+      if (dataKey !== "birth_date" || !normalized) return normalized;
+
+      const datePart = normalized.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+      if (datePart) return datePart;
+
+      const date = new Date(normalized);
+      if (isNaN(date.getTime())) return normalized;
+
+      return date.toISOString().split("T")[0];
+    };
 
     const getCurrentValue = (dataKey: string) => {
       if (selectedStudent && dataKey in selectedStudent) {
@@ -113,8 +124,8 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
         continue;
       }
 
-      const submittedValue = normalizeValue(formData.get(formKey));
-      const currentValue = normalizeValue(getCurrentValue(dataKey));
+      const submittedValue = normalizeValue(formData.get(formKey), dataKey);
+      const currentValue = normalizeValue(getCurrentValue(dataKey), dataKey);
       const category = fieldCategories[dataKey];
 
       if (!category || submittedValue === currentValue) {

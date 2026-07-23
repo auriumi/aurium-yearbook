@@ -273,8 +273,6 @@ export default function StudentLoginPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    
-                                    {/* TODO: hide for now, this not functional as of yet..
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="password">Password</Label>
                                         <button 
@@ -285,7 +283,6 @@ export default function StudentLoginPage() {
                                             Forgot password?
                                         </button>
                                     </div>
-                                    */}
 
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-3 h-5 w-5 text-stone-400" />
@@ -342,7 +339,7 @@ export default function StudentLoginPage() {
                         </CardFooter>
                         <CardFooter className="justify-center pb-4">
                             <p className="text-sm text-stone-500">
-                                Forgot your passowrd?{' '} 
+                                Need more help?{' '}
                                 <Link href="https://www.facebook.com/AuriumYearbook" className="font-bold text-amber-700 hover:underline"> 
                                     Contact us here
                                 </Link>

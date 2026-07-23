@@ -22,10 +22,10 @@ const faqCategories = [
         q: "Can I log in using my email address?",
         a: "Yes. The system accepts either your Student ID Number (e.g., 2022-00123) OR your registered personal Email address to access the portal."
       },
-      {
+    {
         q: "I forgot my password. How do I reset it?",
-        a: "Use the 'Forgot Password' link on the login page. The system will automatically generate a 6-digit verification code and send it to your registered email. You will need this code to set a new password."
-      },
+        a: "Use the 'Forgot Password' link on the login page. Enter your Student ID or registered email, then check your email for the secure reset link. The link expires shortly for account safety."
+    },
       {
         q: "I'm getting a 'Username or Email Already Exists' error during registration.",
         a: "This means you likely already have an account from a previous session or academic year. Instead of registering again, please try logging in or using the 'Forgot Password' feature."

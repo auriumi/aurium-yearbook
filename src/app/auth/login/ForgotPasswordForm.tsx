@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import toast from "react-hot-toast";
+import * as loginService from "./loginService";
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
@@ -15,22 +16,31 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [resetInput, setResetInput] = useState("");
 
-  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetInput) {
+    const identifier = resetInput.trim();
+
+    if (!identifier) {
         toast.error("Please enter your ID or Email.");
         return;
     }
 
     setIsLoading(true);
 
-    // @Koi: Diri isalpak ang API para sa Forgot Password (send OTP/Link)
-    setTimeout(() => {
-        setIsLoading(false);
-        toast.success("Password reset instructions sent to your UM Email!");
+    try {
+        const res = await loginService.requestPasswordReset(identifier);
+
+        if (!res.success) {
+            toast.error(res.reason);
+            return;
+        }
+
+        toast.success(res.reason);
         setResetInput("");
-        onBack(); // Balik sa login UI inig human
-    }, 1500);
+        onBack();
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -49,21 +59,21 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
             </div>
             <CardTitle className="text-xl font-serif font-bold text-amber-950">Forgot Password</CardTitle>
             <CardDescription className="text-stone-500">
-                Enter your Student ID or UM Email and we'll send you instructions to reset your password.
+                Enter your Student ID or registered email. If it matches an account, we'll send a secure reset link.
             </CardDescription>
         </CardHeader>
 
         <CardContent>
             <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="resetInput">Student ID or UM Email</Label>
+                    <Label htmlFor="resetInput">Student ID or Registered Email</Label>
                     <div className="relative">
                         <User className="absolute left-3 top-3 h-5 w-5 text-stone-400" />
                         <Input 
                             id="resetInput"
                             value={resetInput}
                             onChange={(e) => setResetInput(e.target.value)}
-                            placeholder="e.g. 149449" 
+                            placeholder="e.g. 149449 or name@email.com"
                             className="pl-10 bg-stone-50 border-stone-200 text-stone-800 focus:border-amber-500 focus:ring-amber-500/20 h-11" 
                             required
                         />

@@ -24,7 +24,7 @@ export default function ScannerPage() {
     errorMessage,
     isCameraActive, setIsCameraActive,
     currentSessionKey, setCurrentSessionKey,
-    selectedSession,
+    selectedScheduleLabel,
     setFilter,
     displayedList,
     totalStudents,
@@ -32,7 +32,8 @@ export default function ScannerPage() {
     pendingCount,
     handleManualSubmit,
     handleQrScan,
-    SESSION_OPTIONS
+    SESSION_OPTIONS,
+    isLoadingDB
   } = useScanner();
 
   return (
@@ -54,18 +55,18 @@ export default function ScannerPage() {
             <div className="w-full sm:w-64 pointer-events-auto">
                 <Select value={currentSessionKey} onValueChange={setCurrentSessionKey}>
                     <SelectTrigger className="w-full bg-stone-900 border-stone-700 text-amber-400 font-bold">
-                        <SelectValue placeholder="Select Session" />
+                        <SelectValue placeholder="Select schedule" />
                     </SelectTrigger>
                     <SelectContent className="bg-stone-900 border-stone-700 text-stone-200">
                     {SESSION_OPTIONS.length > 0 ? (
                         SESSION_OPTIONS.map(opt => (
-                            <SelectItem key={`${opt.date}-${opt.session}`} value={`${opt.date}-${opt.session}`}>
+                            <SelectItem key={opt.key} value={opt.key}>
                                 {opt.label}
                             </SelectItem>
                         ))
                     ) : (
                         <SelectItem value="loading" disabled>
-                            Loading sessions...
+                            {isLoadingDB ? "Loading schedules..." : "No schedule slots available"}
                         </SelectItem>
                     )}
                 </SelectContent>
@@ -121,8 +122,7 @@ export default function ScannerPage() {
                             {scanResult === 'success' && scannedStudent && (
                                 <div className="absolute inset-0 z-30 bg-stone-900/90 flex flex-col items-center justify-center animate-in zoom-in-95 duration-200 p-4 text-center">
                                     <Avatar className="w-24 h-24 border-4 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.6)] mb-4">
-                                        {/* FIXED: Added "as any" to bypass TypeScript error for photoUrl */}
-                                        <AvatarImage src={(scannedStudent as any).photoUrl ?? undefined} className="object-cover" />
+                                        <AvatarImage src={scannedStudent.photo ?? undefined} className="object-cover" />
                                         {/* Dynamic fallback initial based on the student's name */}
                                         <AvatarFallback>{scannedStudent.name ? scannedStudent.name.charAt(0).toUpperCase() : "S"}</AvatarFallback>
                                     </Avatar>
@@ -172,8 +172,9 @@ export default function ScannerPage() {
                         className="bg-stone-900 border-stone-700 text-white h-14 pl-10 text-lg font-mono placeholder:text-stone-600 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all rounded-xl shadow-inner"
                         value={scanInput}
                         onChange={(e) => setScanInput(e.target.value)}
+                        disabled={!currentSessionKey}
                     />
-                    <Button type="submit" className="absolute right-2 top-2 bottom-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg">
+                    <Button type="submit" disabled={!currentSessionKey} className="absolute right-2 top-2 bottom-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg">
                         Enter
                     </Button>
                 </form>
@@ -189,7 +190,7 @@ export default function ScannerPage() {
         {/* Stats Header */}
         <div className="p-6 bg-stone-900 border-b border-stone-800 shrink-0">
             <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-                <ListFilter className="w-5 h-5 text-amber-500"/> Attendance: {selectedSession} Session
+                <ListFilter className="w-5 h-5 text-amber-500"/> Attendance: {selectedScheduleLabel}
             </h3>
             <div className="grid grid-cols-3 gap-2">
                 <div className="bg-stone-800 p-3 rounded-lg border border-stone-700 text-center">
@@ -231,8 +232,7 @@ export default function ScannerPage() {
                         }`}
                     >
                         <Avatar className={`h-10 w-10 border-2 ${student.status === 'attended' ? 'border-green-500' : 'border-stone-700'}`}>
-                            {/* FIXED: Added "as any" to bypass TypeScript error for photoUrl */}
-                            <AvatarImage src={(student as any).photoUrl ?? undefined} className="object-cover" />
+                            <AvatarImage src={student.photo ?? undefined} className="object-cover" />
                             {/* Dynamic fallback initial based on the student's name */}
                             <AvatarFallback className="bg-stone-800 text-stone-400">
                                 {student.name ? student.name.charAt(0).toUpperCase() : "S"}
@@ -263,7 +263,7 @@ export default function ScannerPage() {
 
                 {displayedList.length === 0 && (
                     <div className="text-center py-12 text-stone-500 text-sm">
-                        No students found for this filter.
+                        {SESSION_OPTIONS.length === 0 ? "No schedule slots available." : "No students found for this filter."}
                     </div>
                 )}
             </div>

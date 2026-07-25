@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import * as adminService from "@/app/admin/adminService"; 
+import { formatClockTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 // --- SOUND ASSETS ---
@@ -16,6 +17,7 @@ export interface StudentRecord {
   schedule: {
       date: string;
       session: "AM" | "PM";
+      slotId?: number;
   };
 }
 
@@ -23,6 +25,7 @@ interface ScheduleBooking {
     id: number;
     student_number: number;
     booking_day_id: number;
+    booking_slot_id?: number | null;
     period: "AM" | "PM";
     created_at: string;
     student?: {
@@ -36,6 +39,17 @@ interface ScheduleBooking {
     };
 }
 
+interface ScheduleSlot {
+    id: number;
+    booking_day_id: number;
+    period: "AM" | "PM";
+    start_time: string;
+    end_time: string;
+    capacity: number;
+    is_open: boolean;
+    bookings?: ScheduleBooking[];
+}
+
 interface ScheduleDay {
     id: number;
     date: string;
@@ -43,6 +57,50 @@ interface ScheduleDay {
     max_morning_cap: number;
     max_afternoon_cap: number;
     bookings?: ScheduleBooking[];
+    slots?: ScheduleSlot[];
+}
+
+interface SessionOption {
+    key: string;
+    label: string;
+    date: string;
+    session: "AM" | "PM";
+    slotId?: number;
+    startTime: string;
+    bookings: ScheduleBooking[];
+}
+
+function formatScheduleDate(dateString: string) {
+    const [year, month, day] = dateString.substring(0, 10).split("-").map(Number);
+    const date = Number.isInteger(year) && Number.isInteger(month) && Number.isInteger(day)
+        ? new Date(year, month - 1, day)
+        : new Date(dateString);
+
+    return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+    });
+}
+
+function withoutPeriod(time: string, period: string) {
+    return time.endsWith(` ${period}`) ? time.slice(0, -period.length - 1) : time;
+}
+
+function getPeriod(time: string) {
+    return time.endsWith(" AM") ? "AM" : time.endsWith(" PM") ? "PM" : "";
+}
+
+function formatCompactTimeRange(startTime: string, endTime: string) {
+    const start = formatClockTime(startTime);
+    const end = formatClockTime(endTime);
+    const startPeriod = getPeriod(start);
+    const endPeriod = getPeriod(end);
+
+    if (startPeriod && startPeriod === endPeriod) {
+        return `${withoutPeriod(start, startPeriod)} - ${end}`;
+    }
+
+    return `${start} - ${end}`;
 }
 
 export function useScanner() {
@@ -59,10 +117,6 @@ export function useScanner() {
   const [isLoadingDB, setIsLoadingDB] = useState(false);
   
   const [filter, setFilter] = useState<"all" | "attended" | "pending">("all");
-
-  // Extract selected date and session from the key (e.g., "2026-03-15-AM")
-  const selectedDate = currentSessionKey ? currentSessionKey.substring(0, 10) : "";
-  const selectedSession = currentSessionKey ? currentSessionKey.substring(11) as "AM" | "PM" : "AM";
 
   const loadSchedules = useCallback(async () => {
       try {
@@ -85,22 +139,68 @@ export function useScanner() {
   }, []);
 
   const sessionOptions = useMemo(() => {
-      const options: {label: string, date: string, session: "AM"|"PM"}[] = [];
+      const options: SessionOption[] = [];
 
       schedules.forEach((day) => {
           const dayDate = day.date?.substring(0, 10);
           if (!dayDate) return;
 
+          const slots = [...(day.slots ?? [])]
+              .filter((slot) => slot.capacity > 0)
+              .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+          if (slots.length > 0) {
+              slots.forEach((slot) => {
+                  options.push({
+                      key: `slot-${slot.id}`,
+                      label: `${formatScheduleDate(day.date)}, ${formatCompactTimeRange(slot.start_time, slot.end_time)}`,
+                      date: dayDate,
+                      session: slot.period,
+                      slotId: slot.id,
+                      startTime: slot.start_time,
+                      bookings: slot.bookings ?? [],
+                  });
+              });
+
+              return;
+          }
+
           if (day.max_morning_cap > 0) {
-              options.push({ label: `${dayDate} - Morning (AM)`, date: dayDate, session: "AM" });
+              options.push({
+                  key: `${dayDate}-AM`,
+                  label: `${formatScheduleDate(day.date)}, Morning Session`,
+                  date: dayDate,
+                  session: "AM",
+                  startTime: "08:00",
+                  bookings: (day.bookings ?? []).filter((booking) => booking.period === "AM"),
+              });
           }
           if (day.max_afternoon_cap > 0) {
-              options.push({ label: `${dayDate} - Afternoon (PM)`, date: dayDate, session: "PM" });
+              options.push({
+                  key: `${dayDate}-PM`,
+                  label: `${formatScheduleDate(day.date)}, Afternoon Session`,
+                  date: dayDate,
+                  session: "PM",
+                  startTime: "13:00",
+                  bookings: (day.bookings ?? []).filter((booking) => booking.period === "PM"),
+              });
           }
       });
 
-      return options;
+      return options.sort((a, b) => {
+          const dateCompare = a.date.localeCompare(b.date);
+          if (dateCompare !== 0) return dateCompare;
+          return a.startTime.localeCompare(b.startTime);
+      });
   }, [schedules]);
+
+  const selectedOption = useMemo(
+      () => sessionOptions.find((option) => option.key === currentSessionKey) ?? null,
+      [currentSessionKey, sessionOptions]
+  );
+  const selectedDate = selectedOption?.date ?? "";
+  const selectedSession = selectedOption?.session ?? "AM";
+  const selectedScheduleLabel = selectedOption?.label ?? "No schedule selected";
 
   // --- INITIALIZATION: FETCH AVAILABLE SCHEDULES ---
   useEffect(() => {
@@ -108,24 +208,29 @@ export function useScanner() {
   }, [loadSchedules]);
 
   useEffect(() => {
-      if (!currentSessionKey && sessionOptions.length > 0) {
-          const firstOption = sessionOptions[0];
-          setCurrentSessionKey(`${firstOption.date}-${firstOption.session}`);
+      if (sessionOptions.length === 0) {
+          if (currentSessionKey) {
+              setCurrentSessionKey("");
+          }
+          return;
+      }
+
+      if (!currentSessionKey || !sessionOptions.some((option) => option.key === currentSessionKey)) {
+          setCurrentSessionKey(sessionOptions[0].key);
       }
   }, [currentSessionKey, sessionOptions]);
 
   // --- BUILD ROSTER FROM FETCHED SCHEDULE BOOKINGS ---
   useEffect(() => {
-      if (!selectedDate || !selectedSession) return;
-
-      const targetDay = schedules.find((day) => day.date?.startsWith(selectedDate));
-      const bookings = targetDay?.bookings ?? [];
-      const sessionBookings = bookings.filter((booking) => booking.period === selectedSession);
+      if (!selectedOption) {
+          setLocalStudentDB([]);
+          return;
+      }
 
       const seenStudentIds = new Set<string>();
       const formattedRoster: StudentRecord[] = [];
 
-      sessionBookings.forEach((booking) => {
+      selectedOption.bookings.forEach((booking) => {
           const studentIdStr = String(booking.student_number);
           
           if (!seenStudentIds.has(studentIdStr)) {
@@ -143,13 +248,17 @@ export function useScanner() {
                   photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
                   status,
                   timeIn: status === "attended" ? "Checked In" : undefined,
-                  schedule: { date: selectedDate, session: selectedSession }
+                  schedule: {
+                      date: selectedOption.date,
+                      session: selectedOption.session,
+                      slotId: selectedOption.slotId,
+                  }
               });
           }
       });
 
       setLocalStudentDB(formattedRoster);
-  }, [schedules, selectedDate, selectedSession]);
+  }, [selectedOption]);
 
   // --- AUDIO PLAYER HELPER ---
   const playAudio = useCallback((type: "success" | "error") => {
@@ -175,7 +284,7 @@ export function useScanner() {
   // --- CORE SCAN LOGIC (Live Backend Interaction) ---
   const processScan = async (idToScan: string) => {
         const normalizedId = idToScan?.trim();
-        if (!normalizedId || !currentSessionKey) return;
+        if (!normalizedId) return;
 
     // UI Reset Helper
     const triggerReset = () => {
@@ -186,12 +295,20 @@ export function useScanner() {
         }, 3000);
     };
 
+    if (!selectedOption) {
+        setScanResult("error");
+        setErrorMessage("Please select a schedule first.");
+        playAudio("error");
+        triggerReset();
+        return;
+    }
+
     const studentRecord = localStudentDB.find(s => s.id === normalizedId);
 
     // ERROR 1: ID not found in the current roster
     if (!studentRecord) {
         setScanResult("error");
-        setErrorMessage("ID not registered for this specific session.");
+        setErrorMessage("ID not scheduled for this time slot.");
         setScannedStudent({ id: normalizedId, name: "Unknown ID", status: "pending", schedule: { date: selectedDate, session: selectedSession }});
         playAudio("error"); 
         triggerReset(); 
@@ -275,6 +392,7 @@ export function useScanner() {
     isCameraActive, setIsCameraActive,
     currentSessionKey, setCurrentSessionKey,
     selectedSession,
+    selectedScheduleLabel,
     filter, setFilter,
     displayedList,
     totalStudents,

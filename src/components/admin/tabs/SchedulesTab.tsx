@@ -46,6 +46,12 @@ type OverrideSlotOption = {
   isFull: boolean;
 };
 
+type ActiveRoster = {
+  date: string;
+  label: string;
+  students: RosterBooking[];
+};
+
 function isPastDate(dateString: string) {
   const scheduleDate = new Date(dateString);
   scheduleDate.setHours(0, 0, 0, 0);
@@ -68,6 +74,10 @@ function getScheduleSlots(day: Schedule, period: "AM" | "PM") {
 
 function getSlotBookedCount(slot: BookingSlot) {
   return slot.booked_count ?? slot.bookings?.length ?? 0;
+}
+
+function getSlotRoster(slot: BookingSlot) {
+  return (slot.bookings ?? []) as RosterBooking[];
 }
 
 function getPeriodCapacity(day: Schedule, period: "AM" | "PM") {
@@ -130,7 +140,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
 
   // Roster view states
   const [isRosterOpen, setIsRosterOpen] = useState(false);
-  const [activeRoster, setActiveRoster] = useState<{date: string, session: 'morning' | 'afternoon', students: RosterBooking[]} | null>(null);
+  const [activeRoster, setActiveRoster] = useState<ActiveRoster | null>(null);
 
   // Moderator booking override states
   const [isOverrideOpen, setIsOverrideOpen] = useState(false);
@@ -243,8 +253,8 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   };
   */
 
-  const openRosterDialog = (date: string, session: 'morning' | 'afternoon', students: RosterBooking[]) => {
-    setActiveRoster({ date, session, students });
+  const openRosterDialog = (date: string, label: string, students: RosterBooking[]) => {
+    setActiveRoster({ date, label, students });
     setIsRosterOpen(true);
   };
 
@@ -548,12 +558,48 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
 
                                     {/* Morning / Afternoon session cells share the same layout */}
                                     {([
-                                        { label: 'AM' as const, slots: getPeriodCapacity(day, "AM"), roster: amRoster, rosterKey: 'morning' as const },
-                                        { label: 'PM' as const, slots: getPeriodCapacity(day, "PM"), roster: pmRoster, rosterKey: 'afternoon' as const },
-                                    ]).map(({ label, slots, roster, rosterKey }) => (
+                                        { label: 'AM' as const, slots: getPeriodCapacity(day, "AM"), roster: amRoster, rosterLabel: "Morning Session", periodSlots: getScheduleSlots(day, "AM") },
+                                        { label: 'PM' as const, slots: getPeriodCapacity(day, "PM"), roster: pmRoster, rosterLabel: "Afternoon Session", periodSlots: getScheduleSlots(day, "PM") },
+                                    ]).map(({ label, slots, roster, rosterLabel, periodSlots }) => (
                                         <td key={label} className="px-4 py-3">
                                             {slots === 0 ? (
                                                 <span className="text-stone-300 italic text-xs">No schedule</span>
+                                            ) : periodSlots.length > 0 ? (
+                                                <div className="space-y-1.5">
+                                                    {periodSlots.map((slot) => {
+                                                        const slotRoster = getSlotRoster(slot);
+                                                        const slotFull = slot.capacity > 0 && slotRoster.length >= slot.capacity;
+
+                                                        return (
+                                                            <button
+                                                                key={slot.id}
+                                                                type="button"
+                                                                title={`View students for ${formatSlotRange(slot)}`}
+                                                                onClick={() => openRosterDialog(day.date, formatSlotRange(slot), slotRoster)}
+                                                                className="flex w-full items-center justify-between gap-2 rounded-md border border-stone-100 bg-white px-2 py-1.5 text-left transition-colors hover:border-amber-200 hover:bg-amber-50"
+                                                            >
+                                                                <span className="text-[11px] font-medium text-stone-600">{formatSlotRange(slot)}</span>
+                                                                <span className={`text-[11px] font-semibold ${slotFull ? "text-red-600" : "text-stone-500"}`}>
+                                                                    {slotRoster.length}/{slot.capacity}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+
+                                                    {!showHistory && (
+                                                        <div className="pt-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 w-7 p-0 text-stone-400 hover:text-amber-700"
+                                                                title="Edit Capacity"
+                                                                onClick={() => openCapacityDialog(day.date, label, slots, roster.length, day.id)}
+                                                            >
+                                                                <Edit3 className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <div className="flex items-center gap-1">
                                                     <span className={`font-medium ${roster.length >= slots ? "text-red-600" : "text-stone-700"}`}>{roster.length}</span>
@@ -564,7 +610,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                         size="sm"
                                                         className="h-7 w-7 p-0 ml-1 text-stone-400 hover:text-stone-700"
                                                         title="View Roster"
-                                                        onClick={() => openRosterDialog(day.date, rosterKey, roster)}
+                                                        onClick={() => openRosterDialog(day.date, rosterLabel, roster)}
                                                     >
                                                         <Users className="h-3.5 w-3.5" />
                                                     </Button>
@@ -738,16 +784,26 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                             {periodSlots.length > 0 && (
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     {periodSlots.map((slot) => {
+                                                        const slotRoster = getSlotRoster(slot);
                                                         const slotBooked = getSlotBookedCount(slot);
                                                         const slotPercent = slot.capacity > 0 ? Math.min((slotBooked / slot.capacity) * 100, 100) : 0;
                                                         const slotFull = slot.capacity > 0 && slotBooked >= slot.capacity;
 
                                                         return (
-                                                            <div key={slot.id} className="rounded-lg border border-white/80 bg-white p-3 shadow-sm">
+                                                            <button
+                                                                key={slot.id}
+                                                                type="button"
+                                                                title={`View students for ${formatSlotRange(slot)}`}
+                                                                onClick={() => openRosterDialog(day.date, formatSlotRange(slot), slotRoster)}
+                                                                className="rounded-lg border border-white/80 bg-white p-3 text-left shadow-sm transition-all hover:border-amber-200 hover:bg-white hover:shadow-md"
+                                                            >
                                                                 <div className="flex items-center justify-between gap-2 text-xs">
                                                                     <span className="font-bold text-stone-700">{formatSlotRange(slot)}</span>
-                                                                    <span className={slotFull ? "font-semibold text-red-600" : "text-stone-500"}>
-                                                                        {slotBooked}/{slot.capacity}
+                                                                    <span className="flex items-center gap-1">
+                                                                        <Users className="h-3 w-3 text-stone-400" />
+                                                                        <span className={slotFull ? "font-semibold text-red-600" : "text-stone-500"}>
+                                                                            {slotBooked}/{slot.capacity}
+                                                                        </span>
                                                                     </span>
                                                                 </div>
                                                                 <div className="mt-2 h-1.5 w-full bg-stone-200/70 rounded-full overflow-hidden">
@@ -756,7 +812,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                                         style={{ width: `${slotPercent}%` }}
                                                                     />
                                                                 </div>
-                                                            </div>
+                                                            </button>
                                                         );
                                                     })}
                                                 </div>
@@ -768,7 +824,7 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                                                     variant="outline" 
                                                     size="sm" 
                                                     className="flex-1 text-xs bg-white border-stone-200 hover:bg-stone-50 text-stone-600"
-                                                    onClick={() => openRosterDialog(day.date, session === 'AM' ? 'morning' : 'afternoon', roster)}
+                                                    onClick={() => openRosterDialog(day.date, session === 'AM' ? 'Morning Session' : 'Afternoon Session', roster)}
                                                 >
                                                     <Users className="mr-1.5 h-3.5 w-3.5" /> View Roster
                                                 </Button>
@@ -801,10 +857,10 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                 <div className="p-6 border-b border-stone-100 bg-stone-50/50">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <Users className="text-amber-600 h-5 w-5"/> 
-                        Session Roster
+                        Schedule Roster
                     </DialogTitle>
                     <DialogDescription className="mt-1">
-                        Showing students booked for {activeRoster?.date.substring(0,10)} ({activeRoster?.session === 'morning' ? 'Morning' : 'Afternoon'})
+                        Showing students booked for {activeRoster ? `${formatScheduleDate(activeRoster.date)} - ${activeRoster.label}` : "this schedule"}
                     </DialogDescription>
                 </div>
                 

@@ -56,17 +56,19 @@ export default function StudentDashboard() {
   }, [fetchStudent, fetchSchedules]);
 
   const handleBooking = async (bookingSlotId: number) => {
-    const hasBooking = !!booking;
     if (!user) return;
+
+    if (booking) {
+      toast.error("Your pictorial schedule is already confirmed. Please contact the committee if you need help.");
+      return;
+    }
 
     if (!user.studentDetail?.photo_url) {
       toast.error("Please upload your profile picture before booking your pictorial schedule.");
       return;
     }
 
-    const res = hasBooking
-      ? await studentService.updateBook(user.booking[0].id, bookingSlotId)
-      : await studentService.addBook(bookingSlotId);
+    const res = await studentService.addBook(bookingSlotId);
 
     if (!res.success) {
       toast.error(res.reason || "Something went wrong submitting the book!");
@@ -170,7 +172,9 @@ export default function StudentDashboard() {
                 <p className="font-bold text-stone-800">Pictorial readiness</p>
                 <p className="mt-1 text-sm text-stone-600">
                   {hasProfilePhoto
-                    ? "Your profile photo is on file. You can book or manage your pictorial schedule."
+                    ? hasBooking
+                      ? "Your pictorial schedule is confirmed and final. Please be present on time."
+                      : "Your profile photo is on file. You can book your pictorial schedule once."
                     : "Upload your formal profile photo first. Booking stays locked until the photo is submitted."}
                 </p>
               </div>
@@ -193,7 +197,7 @@ export default function StudentDashboard() {
                   {hasBooking ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <CalendarCheck className="h-3.5 w-3.5 text-stone-500" />}
                   Pictorial Schedule
                 </div>
-                <p className="mt-1 text-[11px] text-stone-500">{hasBooking ? "Booked" : hasProfilePhoto ? "Ready to book" : "Locked"}</p>
+                <p className="mt-1 text-[11px] text-stone-500">{hasBooking ? "Final" : hasProfilePhoto ? "Ready to book" : "Locked"}</p>
               </div>
             </div>
           </div>

@@ -178,6 +178,36 @@ export async function updateScheduleCapacity(booking_id: number, session: string
     }
 }
 
+export async function overrideStudentBooking(studentNumber: string | number, booking_slot_id: number) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/book/override/${encodeURIComponent(String(studentNumber))}`, {
+            method: 'PATCH',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ booking_slot_id }),
+            credentials: 'include'
+        });
+
+        let body: any = null;
+        try {
+            body = await res.json();
+        } catch {
+            body = null;
+        }
+
+        if (!res.ok) {
+            return {
+                success: false,
+                reason: body?.reason || "Failed to override the student's booking."
+            };
+        }
+
+        return { success: true };
+    } catch(err) {
+        console.error("Server error: ", err);
+        return { success: false, reason: "Cannot connect to the server at the moment" };
+    }
+}
+
 export async function overrideStudentScheduleByNumber(studentNumber: string | number) {
     try {
         const res = await fetch(

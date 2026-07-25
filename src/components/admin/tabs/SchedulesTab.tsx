@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Edit3, Calendar, Hash, Users, CheckCircle2, Clock, Loader2, Lock, Unlock, LayoutGrid, List } from "lucide-react";
+import { Plus, Edit3, Calendar, Users, CheckCircle2, Clock, Loader2, Lock, Unlock, LayoutGrid, List, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,30 @@ interface ScheduleProp {
     fetchSchedules: () => Promise<void>;
     userRole: string;
 }
+
+type RosterBooking = {
+  id: number;
+  student_number: number;
+  booking_slot_id?: number | null;
+  period: "AM" | "PM";
+  student?: {
+    first_name?: string;
+    last_name?: string;
+    student_number?: number;
+    studentAuth?: {
+      status?: string;
+    };
+  };
+};
+
+type OverrideSlotOption = {
+  day: Schedule;
+  slot: BookingSlot;
+  booked: number;
+  available: number;
+  isCurrent: boolean;
+  isFull: boolean;
+};
 
 function isPastDate(dateString: string) {
   const scheduleDate = new Date(dateString);
@@ -66,8 +90,32 @@ function formatSlotRange(slot: BookingSlot) {
   return formatBookingSlotRange(slot);
 }
 
+function formatScheduleDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getRosterStudentName(booking: RosterBooking | null) {
+  const firstName = booking?.student?.first_name ?? "";
+  const lastName = booking?.student?.last_name ?? "";
+  return `${firstName} ${lastName}`.trim() || "Selected student";
+}
+
+function getRosterStudentNumber(booking: RosterBooking | null) {
+  return booking?.student_number ?? booking?.student?.student_number ?? null;
+}
+
+function getRosterStatus(booking: RosterBooking) {
+  return booking.student?.studentAuth?.status ?? "";
+}
+
 export function SchedulesTab({ schedules, fetchSchedules, userRole }: ScheduleProp) {
   const canCreateSchedule = userRole === 'ADMINISTRATOR';
+  const canOverrideBookings = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
 
   // Input states
   const [newDateInput, setNewDateInput] = useState("");
@@ -76,18 +124,19 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   const [newPmCapacity, setNewPmCapacity] = useState(50);
   const [isAddDateOpen, setIsAddDateOpen] = useState(false);
 
-  // Student override states
-  const [manualStudentId, setManualStudentId] = useState("");
-  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
-  const [activeAddStudentSession] = useState<{date: string, session: 'am'|'pm'} | null>(null);
-
   // Capacity override states
   const [isEditCapacityOpen, setIsEditCapacityOpen] = useState(false);
   const [editingCapacity, setEditingCapacity] = useState<{date: string, session: 'AM'|'PM', value: number, limit: number, id: number } | null>(null);
 
   // Roster view states
   const [isRosterOpen, setIsRosterOpen] = useState(false);
-  const [activeRoster, setActiveRoster] = useState<{date: string, session: 'morning' | 'afternoon', students: any[]} | null>(null);
+  const [activeRoster, setActiveRoster] = useState<{date: string, session: 'morning' | 'afternoon', students: RosterBooking[]} | null>(null);
+
+  // Moderator booking override states
+  const [isOverrideOpen, setIsOverrideOpen] = useState(false);
+  const [isOverrideConfirmOpen, setIsOverrideConfirmOpen] = useState(false);
+  const [overrideTarget, setOverrideTarget] = useState<RosterBooking | null>(null);
+  const [selectedOverrideSlotId, setSelectedOverrideSlotId] = useState<number | null>(null);
 
   // Toggles between the upcoming schedule list and the read-only history view
   const [showHistory, setShowHistory] = useState(false);
@@ -142,6 +191,38 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   }, [schedules]);
 
   const displayedSchedules = showHistory ? pastSchedules : upcomingSchedules;
+  const overrideSlotGroups = useMemo(() => {
+      const currentSlotId = overrideTarget?.booking_slot_id ?? null;
+
+      return [...schedules]
+          .filter((day) => day.is_open && !isPastDate(day.date))
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .map((day) => {
+              const slots = [...(day.slots ?? [])]
+                  .filter((slot) => slot.capacity > 0)
+                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                  .map((slot): OverrideSlotOption => {
+                      const booked = getSlotBookedCount(slot);
+                      const available = Math.max(slot.capacity - booked, 0);
+                      const isCurrent = currentSlotId === slot.id;
+                      return {
+                          day,
+                          slot,
+                          booked,
+                          available,
+                          isCurrent,
+                          isFull: available <= 0 || !slot.is_open,
+                      };
+                  });
+
+              return { day, slots };
+          })
+          .filter((group) => group.slots.length > 0);
+  }, [schedules, overrideTarget?.booking_slot_id]);
+
+  const selectedOverrideSlot = overrideSlotGroups
+      .flatMap((group) => group.slots)
+      .find((option) => option.slot.id === selectedOverrideSlotId) ?? null;
 
   // Opens the capacity modal and determines initial lock state
   const openCapacityDialog = (date: string, session: 'AM'|'PM', currentSlots: number, limit: number, id: number) => {
@@ -162,9 +243,22 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
   };
   */
 
-  const openRosterDialog = (date: string, session: 'morning' | 'afternoon', students: any[]) => {
+  const openRosterDialog = (date: string, session: 'morning' | 'afternoon', students: RosterBooking[]) => {
     setActiveRoster({ date, session, students });
     setIsRosterOpen(true);
+  };
+
+  const resetOverrideState = () => {
+    setOverrideTarget(null);
+    setSelectedOverrideSlotId(null);
+    setIsOverrideOpen(false);
+    setIsOverrideConfirmOpen(false);
+  };
+
+  const openOverrideDialog = (booking: RosterBooking) => {
+    setOverrideTarget(booking);
+    setSelectedOverrideSlotId(null);
+    setIsOverrideOpen(true);
   };
 
   // Handles adding a new schedule date
@@ -235,35 +329,35 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
     }
   };
 
-  /* Processes the server request to manually assign a student to a schedule
-  const executeStudentOverride = async () => {
-    if (!manualStudentId || !activeAddStudentSession) return;
+  const executeBookingOverride = async () => {
+    if (!overrideTarget || !selectedOverrideSlotId) return;
+
+    const studentNumber = getRosterStudentNumber(overrideTarget);
+    if (!studentNumber) {
+        toast.error("Student number is missing.");
+        return;
+    }
 
     setIsProcessing(true);
     try {
-        const response = await adminService.overrideStudentSchedule(
-            activeAddStudentSession.date,
-            activeAddStudentSession.session,
-            manualStudentId
-        );
+        const response = await adminService.overrideStudentBooking(studentNumber, selectedOverrideSlotId);
 
         if (response.success) {
-            alert("Student schedule override applied successfully.");
+            toast.success("Student booking updated successfully.");
             await fetchSchedules();
-            setIsAddStudentOpen(false);
-            setManualStudentId("");
-            setActiveAddStudentSession(null);
+            setIsRosterOpen(false);
+            setActiveRoster(null);
+            resetOverrideState();
         } else {
-            alert(response.reason || "Failed to apply student override.");
+            toast.error(response.reason || "Failed to override student booking.");
         }
     } catch (error) {
-        console.error("Student override error:", error);
-        alert("Unable to communicate with the server. Please check your connection.");
+        console.error("Student booking override error:", error);
+        toast.error("Unable to communicate with the server. Please check your connection.");
     } finally {
         setIsProcessing(false);
     }
   };
-  */
 
   // Processes the server request to lock a specific schedule date
   const executeCloseSchedule = async () => {
@@ -743,19 +837,35 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
                             <TabsContent key={tab.value} value={tab.value} className="mt-0">
                                 <ScrollArea className="h-[400px] pr-4">
                                     <div className="space-y-2">
-                                        {activeRoster?.students.filter(tab.filterFn).map((student, idx) => (
-                                            <div key={idx} className="flex justify-between items-center p-3 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-sm text-stone-800">{`${student.student.first_name} ${student.student.last_name}`}</span>
-                                                    <span className="text-xs text-stone-400 font-mono">{student.student_number}</span>
+                                        {activeRoster?.students.filter(tab.filterFn).map((student, idx) => {
+                                            const status = getRosterStatus(student);
+                                            const canMoveStudent = canOverrideBookings && !showHistory && status !== 'ATTENDED' && status !== 'FULLY_VERIFIED';
+
+                                            return (
+                                                <div key={idx} className="flex flex-col gap-3 p-3 rounded-xl border border-stone-100 hover:bg-stone-50 transition-colors sm:flex-row sm:items-center sm:justify-between">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-sm text-stone-800">{getRosterStudentName(student)}</span>
+                                                        <span className="text-xs text-stone-400 font-mono">{getRosterStudentNumber(student)}</span>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        {status === 'FULLY_VERIFIED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
+                                                        {status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
+                                                        {status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
+                                                        {canMoveStudent && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 border-amber-200 bg-white text-xs text-amber-800 hover:bg-amber-50"
+                                                                onClick={() => openOverrideDialog(student)}
+                                                            >
+                                                                Override
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                
-                                                {/* Status Badges */}
-                                                {student.student.studentAuth.status === 'FULLY_VERIFIED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
-                                                {student.student.studentAuth.status === 'ATTENDED' && <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0"><CheckCircle2 className="w-3 h-3 mr-1"/> Attended</Badge>}
-                                                {student.student.studentAuth.status === 'BOOKED' && <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>}
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                         
                                         {activeRoster?.students.filter(tab.filterFn).length === 0 && (
                                             <div className="text-center text-stone-400 py-10 text-sm italic">
@@ -815,35 +925,123 @@ export function SchedulesTab({ schedules, fetchSchedules, userRole }: SchedulePr
             </DialogContent>
         </Dialog>
 
-        {/* --- MODAL: ADD STUDENT MANUALLY --- */}
-        <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
-            <DialogContent>
+        {/* --- MODAL: OVERRIDE STUDENT BOOKING --- */}
+        <Dialog
+            open={isOverrideOpen}
+            onOpenChange={(open) => {
+                setIsOverrideOpen(open);
+                if (!open && !isOverrideConfirmOpen) {
+                    resetOverrideState();
+                }
+            }}
+        >
+            <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>Add Student Override</DialogTitle>
+                    <DialogTitle>Override Student Booking</DialogTitle>
                     <DialogDescription>
-                        Manually assigning a student to the {activeAddStudentSession?.session === 'am' ? 'Morning' : 'Afternoon'} session on {formatModalDate(activeAddStudentSession?.date)}.
+                        Move this student only after the committee approves a valid schedule-change request.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2 py-2">
-                    <Label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Student ID Number</Label>
-                    <div className="relative">
-                        <Hash className="absolute left-3 top-3 h-4 w-4 text-stone-400" />
-                        <Input 
-                            placeholder="e.g. 142478" 
-                            value={manualStudentId} 
-                            onChange={(e) => setManualStudentId(e.target.value)} 
-                            className="pl-9"
-                        />
-                    </div>  
+
+                <div className="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm">
+                    <p className="font-bold text-stone-800">{getRosterStudentName(overrideTarget)}</p>
+                    <p className="mt-1 text-xs text-stone-600">ID Number: {getRosterStudentNumber(overrideTarget)}</p>
+                    <p className="mt-2 text-xs text-amber-800">
+                        The selected booking will replace the student's current confirmed schedule.
+                    </p>
                 </div>
+
+                <ScrollArea className="h-[380px] pr-4">
+                    <div className="space-y-4 py-2">
+                        {overrideSlotGroups.length === 0 && (
+                            <div className="rounded-lg border border-dashed border-stone-200 p-6 text-center text-sm italic text-stone-400">
+                                No open future slots are available.
+                            </div>
+                        )}
+
+                        {overrideSlotGroups.map(({ day, slots }) => (
+                            <div key={day.id} className="space-y-3 rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+                                <h4 className="font-bold text-stone-700">{formatScheduleDate(day.date)}</h4>
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {slots.map((option) => {
+                                        const isSelected = selectedOverrideSlotId === option.slot.id;
+                                        const isDisabled = option.isCurrent || option.isFull;
+
+                                        return (
+                                            <button
+                                                key={option.slot.id}
+                                                type="button"
+                                                disabled={isDisabled}
+                                                onClick={() => setSelectedOverrideSlotId(option.slot.id)}
+                                                className={`rounded-lg border bg-white p-3 text-left transition-all ${
+                                                    isSelected
+                                                        ? "border-amber-600 bg-amber-50 ring-2 ring-amber-600"
+                                                        : "hover:border-amber-300"
+                                                } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-stone-700">{formatSlotRange(option.slot)}</p>
+                                                        <p className="mt-1 text-xs text-stone-500">
+                                                            {option.available} slot{option.available === 1 ? "" : "s"} left
+                                                        </p>
+                                                    </div>
+                                                    {option.isCurrent && (
+                                                        <Badge className="bg-stone-100 text-stone-600 hover:bg-stone-100">Current</Badge>
+                                                    )}
+                                                    {!option.isCurrent && option.isFull && (
+                                                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Full</Badge>
+                                                    )}
+                                                    {isSelected && <CheckCircle2 className="h-4 w-4 shrink-0 text-amber-700" />}
+                                                </div>
+                                                <p className="mt-2 text-[10px] text-stone-500">{option.booked}/{option.slot.capacity} Taken</p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddStudentOpen(false)} disabled={isProcessing}>Cancel</Button>
-                    <Button 
-                        onClick={() => {}} //TODO: executeStudentOverride 
-                        disabled={isProcessing}
-                        className="bg-amber-600 hover:bg-amber-700"
+                    <Button variant="outline" onClick={resetOverrideState} disabled={isProcessing}>Cancel</Button>
+                    <Button
+                        onClick={() => setIsOverrideConfirmOpen(true)}
+                        disabled={!selectedOverrideSlot || isProcessing}
+                        className="bg-amber-700 hover:bg-amber-800"
                     >
-                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Processing...</> : "Confirm Override"}
+                        Review Override
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isOverrideConfirmOpen} onOpenChange={setIsOverrideConfirmOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-amber-700">
+                        <AlertTriangle className="h-5 w-5" />
+                        Confirm Booking Override
+                    </DialogTitle>
+                    <DialogDescription>
+                        This will move <strong>{getRosterStudentName(overrideTarget)}</strong> to:
+                        <span className="mt-2 block font-bold text-stone-800">
+                            {selectedOverrideSlot ? `${formatScheduleDate(selectedOverrideSlot.day.date)} - ${formatSlotRange(selectedOverrideSlot.slot)}` : ""}
+                        </span>
+                        <span className="mt-3 block text-stone-600">
+                            Use this only after the student's reason has been approved by the committee.
+                        </span>
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOverrideConfirmOpen(false)} disabled={isProcessing}>Cancel</Button>
+                    <Button
+                        onClick={executeBookingOverride}
+                        disabled={isProcessing || !selectedOverrideSlot}
+                        className="bg-amber-700 hover:bg-amber-800"
+                    >
+                        {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Updating...</> : "Confirm Override"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

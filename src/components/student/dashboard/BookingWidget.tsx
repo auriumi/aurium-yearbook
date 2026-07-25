@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Calendar, CheckCircle, Clock, Loader2 } from "lucide-react";
+import { AlertTriangle, Calendar, CheckCircle, Clock, Loader2, Lock } from "lucide-react";
 import QRCode from "react-qr-code";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,7 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
         </CardTitle>
         {!booking && (
           <CardDescription>
-            Select an hourly slot for your official yearbook photoshoot.
+            Select carefully. Once confirmed, your pictorial schedule is final.
           </CardDescription>
         )}
       </CardHeader>
@@ -116,7 +116,15 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
                 <Clock className="w-4 h-4 text-amber-700" />
                 {getBookingSlotLabel(booking)}
               </p>
-              <p className="text-xs text-stone-400 italic mt-2 mb-4 md:mb-0">Present this QR to the attendance officer.</p>
+              <div className="mt-3 mb-4 md:mb-0 rounded-lg border border-green-100 bg-white px-3 py-2 text-xs text-stone-600">
+                <p className="flex items-start gap-2">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-700" />
+                  <span>
+                    This schedule is final and can no longer be changed from your portal. Please contact the committee if you need help.
+                  </span>
+                </p>
+              </div>
+              <p className="text-xs text-stone-400 italic">Present this QR to the attendance officer.</p>
             </div>
 
             <div className="flex flex-col items-center gap-2 bg-white p-4 rounded-lg border border-stone-200 shadow-sm shrink-0">
@@ -164,7 +172,7 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
         <Dialog open={bookingModal.isOpen} onOpenChange={bookingModal.setIsOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>{booking ? "Change Schedule" : "Select Pictorial Schedule"}</DialogTitle>
+              <DialogTitle>Select Pictorial Schedule</DialogTitle>
               <DialogDescription>Choose an available hour. Each hour has its own capacity limit.</DialogDescription>
             </DialogHeader>
 
@@ -233,7 +241,7 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
                 ) : "Please select an hourly slot"}
               </div>
               <Button onClick={confirmationModal.open} disabled={!selectedSlot || !canBook} className="bg-amber-900 w-full sm:w-auto">
-                {booking ? "Confirm New Schedule" : "Submit Schedule"}
+                Submit Final Schedule
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -244,9 +252,12 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-5 h-5" /> Final Confirmation</DialogTitle>
               <DialogDescription className="pt-2">
-                {booking ? "You are about to re-book and override your previous schedule with:" : "You are about to book:"}
+                You are about to book your final pictorial schedule:
                 <span className="font-bold text-stone-800 block mt-1 text-lg">
                   {selectedDate ? formatScheduleDate(selectedDate) : ""} {selectedSlot ? `- ${formatTimeRange(selectedSlot)}` : ""}
+                </span>
+                <span className="block mt-3 text-sm text-stone-600">
+                  Once confirmed, you cannot change this schedule from your portal.
                 </span>
               </DialogDescription>
             </DialogHeader>
@@ -254,7 +265,7 @@ export function BookingWidget({ bookingList, booking, idNumber, canBook = true, 
               <Button variant="outline" onClick={confirmationModal.close} disabled={isSubmitting}>Cancel</Button>
               <Button onClick={handleConfirm} disabled={isSubmitting || !canBook} className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2">
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isSubmitting ? "Booking..." : "Yes, Finalize"}
+                {isSubmitting ? "Booking..." : "Yes, Confirm Final Schedule"}
               </Button>
             </DialogFooter>
           </DialogContent>

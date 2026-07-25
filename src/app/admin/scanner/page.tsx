@@ -126,7 +126,7 @@ export default function ScannerPage() {
                                         {/* Dynamic fallback initial based on the student's name */}
                                         <AvatarFallback>{scannedStudent.name ? scannedStudent.name.charAt(0).toUpperCase() : "S"}</AvatarFallback>
                                     </Avatar>
-                                    <h2 className="text-3xl font-black text-green-400 tracking-widest drop-shadow-md">VERIFIED</h2>
+                                    <h2 className="text-3xl font-black text-green-400 tracking-widest drop-shadow-md">ATTENDED</h2>
                                     <p className="text-xl font-bold text-white mt-2 truncate max-w-full">{scannedStudent.name}</p>
                                     <p className="text-stone-400 font-mono text-lg">{scannedStudent.id}</p>
                                 </div>

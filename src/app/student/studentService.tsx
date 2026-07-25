@@ -79,27 +79,6 @@ export async function addBook(booking_slot_id: number) {
     }
 };
 
-export async function updateBook(booking_id: number, booking_slot_id: number) {
-    try {
-        const res = await fetch(`${baseUrl}/api/student/book/update/${booking_id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                booking_slot_id
-            }),
-            credentials: 'include'
-        });
-        return readMutationResult(res);
-        
-    } catch(err) {
-        console.error(err);
-        return {
-            success: false,
-            reason: "Unable to connect to the server.",
-        };
-    }
-};
-
 export async function saveSolicitations(
     sponsors: Array<{ type: "PERSON" | "COMPANY"; name: string; title: string }>
 ) {

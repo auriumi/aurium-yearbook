@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useImageManagement } from "@/hooks/useImageManagement";
 import { getImageUploadUrl, saveImageUrl, type YearbookImageType } from "@/app/admin/imageService";
 import { uploadToR2 } from "@/app/student/studentService";
+import { getStudentStatusLabel, getStudentStatusStep } from "@/constants/studentStatus";
 import toast from "react-hot-toast";
 
 interface StudentImage {
@@ -277,7 +278,7 @@ export function ImageManagementTab() {
                   <SelectItem key={step.id} value={step.id.toString()}>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${step.color}`}></div>
-                      {step.label}
+                      {step.displayLabel}
                     </div>
                   </SelectItem>
                 ))}
@@ -348,7 +349,8 @@ export function ImageManagementTab() {
           <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 content-start">
               {students.map((student: any) => {
-                const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth?.status);
+                const statusInfo = getStudentStatusStep(student.studentAuth?.status);
+                const statusLabel = getStudentStatusLabel(student.studentAuth?.status);
                 return (
                   <div key={student.id} className="bg-[#FDFBF7] p-4 rounded-xl border border-stone-200 flex flex-col">
                     {/* student header */}
@@ -357,7 +359,7 @@ export function ImageManagementTab() {
                         <p className="font-bold text-stone-800 text-sm truncate pr-1">
                           {student.last_name}, {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.suffix}
                         </p>
-                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo?.color || "bg-stone-400"}`} title={statusInfo?.label || "Unknown"}></div>
+                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo?.color || "bg-stone-400"}`} title={statusLabel}></div>
                       </div>
                       <p className="text-[11px] font-mono text-stone-500 mt-0.5">{student.student_number}</p>
                       <p className="text-[9px] font-bold text-stone-400 truncate uppercase mt-0.5">{student.course}</p>

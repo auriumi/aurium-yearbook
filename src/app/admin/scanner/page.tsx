@@ -249,7 +249,7 @@ export default function ScannerPage() {
                         <div>
                             {student.status === 'attended' ? (
                                 <div className="text-right">
-                                    <Badge className="bg-green-600 hover:bg-green-600 text-[10px] px-2 h-5">Verified</Badge>
+                                    <Badge className="bg-green-600 hover:bg-green-600 text-[10px] px-2 h-5">Attended</Badge>
                                     <p className="text-[10px] text-green-400/70 font-mono mt-1">{student.timeIn}</p>
                                 </div>
                             ) : (

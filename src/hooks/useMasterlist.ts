@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { departmentOptions as ACADEMIC_CONFIG } from "@/constants/registration";
-import { STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
+import { ACTIVE_STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
@@ -143,6 +143,6 @@ export function useMasterlist() {
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     students, totalResults, isLoading, ITEMS_PER_PAGE,
-    DEPARTMENT_ORDER, STATUS_STEPS: STUDENT_STATUS_STEPS, ACADEMIC_CONFIG
+    DEPARTMENT_ORDER, STATUS_STEPS: ACTIVE_STUDENT_STATUS_STEPS, ACADEMIC_CONFIG
   };
 }

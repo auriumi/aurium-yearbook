@@ -281,7 +281,7 @@ export async function fv_finalizeStudent(studentId: string | number) {
         if (!res.ok) {
             return {
                 success: false,
-                reason: responseData?.reason || "Failed to finalize student"
+                reason: responseData?.reason || "Failed to verify student"
             };
         }
 

@@ -142,7 +142,7 @@ export function useScanner() {
                   name: fullName,
                   photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
                   status,
-                  timeIn: status === "attended" ? "Logged In" : undefined,
+                  timeIn: status === "attended" ? "Checked In" : undefined,
                   schedule: { date: selectedDate, session: selectedSession }
               });
           }

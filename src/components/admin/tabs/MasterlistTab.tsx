@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import ExcelJS from "exceljs";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
+import { ACTIVE_STUDENT_STATUS_STEPS, getStudentStatusLabel, getStudentStatusStep } from "@/constants/studentStatus";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist> & { userRole: string };
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
@@ -58,21 +59,13 @@ const EXPORT_COLUMN_GROUPS = [
 
 const DEFAULT_EXPORT_COLUMNS = new Set(["student_number", "first_name", "last_name", "department", "course", "major", "status"]);
 
-const STATUS_LABELS: Record<string, string> = {
-  REGISTERED:     "Registered",
-  APPROVED:       "Approved",
-  BOOKED:         "Booked",
-  ATTENDED:       "Attended",
-  FULLY_VERIFIED: "Fully Verified",
-};
-
 const EXPORT_STATUS_OPTIONS = [
   { value: "ALL", label: "All Statuses",  color: null },
-  { value: "1",   label: "Registered",    color: "bg-stone-500" },
-  { value: "2",   label: "Approved",      color: "bg-blue-500" },
-  { value: "3",   label: "Booked",        color: "bg-orange-500" },
-  { value: "4",   label: "Attended",      color: "bg-purple-500" },
-  { value: "5",   label: "Fully Verified",color: "bg-green-600" },
+  ...ACTIVE_STUDENT_STATUS_STEPS.map((step) => ({
+    value: step.id.toString(),
+    label: step.displayLabel,
+    color: step.color,
+  })),
 ];
 
 export function MasterlistTab(props: MasterlistTabProps) {
@@ -325,7 +318,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
           //this parses ISO date into formal date
           const value =
-            k === "status" && typeof v === "string" ? (STATUS_LABELS[v] ?? v) :
+            k === "status" && typeof v === "string" ? getStudentStatusLabel(v) :
             k === "birth_date" && typeof v === "string" ? v.split("T")[0] : v;
 
           return [header, value];
@@ -395,7 +388,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         <BookOpen className="h-6 w-6 text-amber-600"/> Masterlist Database
                     </h2>
                     <p className="text-sm text-stone-500 mt-1">
-                        Secure repository of verified graduates. Monitoring all students from Registration to Final Verification.
+                        Secure repository of verified graduates. Monitoring students from registration through attendance.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -454,7 +447,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     <SelectItem key={step.id} value={step.id.toString()}>
                                         <div className="flex items-center gap-2">
                                             <div className={`w-2 h-2 rounded-full ${step.color}`}></div>
-                                            {step.label}
+                                            {step.displayLabel}
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -543,7 +536,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
                 <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[300px] content-start">
                         {students.map((student: any) => {
-                            const statusInfo = STATUS_STEPS.find((s: any) => s.label === student.studentAuth.status);
+                            const statusInfo = getStudentStatusStep(student.studentAuth.status);
+                            const statusLabel = getStudentStatusLabel(student.studentAuth.status);
                             return (
                                 <div 
                                     key={student.id} 
@@ -557,7 +551,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                             <p className="font-bold text-stone-800 group-hover:text-amber-800 transition-colors text-sm truncate pr-2">
                                                 {student.last_name}, {student.first_name} {student.mid_name?.charAt(0) ? `${student.mid_name.charAt(0)}.` : ""} {student.suffix}
                                             </p>
-                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo?.color || 'bg-stone-400'} shadow-sm`} title={statusInfo?.label || 'Unknown'}></div>
+                                            <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${statusInfo?.color || 'bg-stone-400'} shadow-sm`} title={statusLabel}></div>
                                         </div>
                                         <p className="text-[11px] font-mono text-stone-500 mt-1">{student.student_number}</p>
                                     </div>
@@ -566,7 +560,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         <div className="min-w-0 flex-1">
                                             <p className="text-[9px] font-bold text-stone-400 truncate uppercase">{student.course}</p>
                                         </div>
-                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusInfo?.label || 'Unknown'}</span>
+                                        <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wide bg-stone-100 px-2 py-1 rounded-md shrink-0">{statusLabel}</span>
                                     </div>
                                 </div>
                             )
@@ -786,7 +780,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             
                             <div className="space-y-0 relative pl-2">
                                 {STATUS_STEPS.map((step: any, index: number) => {
-                                    const studentStatusItem = STATUS_STEPS.find((s: any) => s.label === selectedStudent.studentAuth?.status);
+                                    const studentStatusItem = getStudentStatusStep(selectedStudent.studentAuth?.status);
                                     const currentStatusId = studentStatusItem ? studentStatusItem.id : 1;
                                     const isDone = step.id <= currentStatusId;
                                     const isCurrent = step.id === currentStatusId;
@@ -807,7 +801,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                             
                                             <div>
                                                 <span className={`text-xs font-bold block leading-tight ${isDone ? 'text-stone-800' : 'text-stone-400'}`}>
-                                                    {step.label}
+                                                    {step.displayLabel}
                                                 </span>
                                                 {isCurrent && (
                                                     <span className="text-[9px] text-amber-700 font-bold uppercase tracking-wider mt-1 block bg-amber-100 px-1.5 py-0.5 rounded w-fit">

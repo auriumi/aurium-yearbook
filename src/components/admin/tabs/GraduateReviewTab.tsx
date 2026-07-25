@@ -106,13 +106,13 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
   const graduateActionCopy = pendingGraduateAction === "discard"
     ? {
         title: "Discard Graduate Entry?",
-        description: "This will remove this student from the graduate verification queue. Please confirm only if this entry should not proceed to final verification.",
+        description: "This will remove this student from the graduate verification queue. Please confirm only if this entry should not proceed.",
         confirmLabel: "Yes, Discard",
         confirmClassName: "bg-red-600 hover:bg-red-700",
       }
     : {
         title: "Submit Graduate Verification?",
-        description: "This will submit the selected student for final graduate verification. Please make sure the details are already reviewed before continuing.",
+        description: "This will verify the selected registration and send the student's portal access. Please make sure the details are already reviewed before continuing.",
         confirmLabel: "Yes, Submit",
         confirmClassName: "bg-[#7a3b1a] hover:bg-[#5a2a12]",
       };
@@ -167,7 +167,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                     </Badge>
                 </div>
                 <p className="text-[9px] text-stone-500 leading-snug">
-                    Secure repository of verified graduates. Monitoring from Registration to Final Verification.
+                    Secure repository of verified graduates. Monitoring from registration to verified access.
                 </p>
                 <div className="flex gap-2 mt-1">
                     <div className="relative flex-1 min-w-0">
@@ -266,7 +266,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                     <div className="p-3 px-5 bg-white border-b border-stone-200 flex justify-between items-center text-xs shadow-sm z-10 shrink-0">
                         <div className="flex items-center gap-4">
                             <Badge variant={selectedStudent.status === 'verified' ? 'default' : 'outline'} className={`px-3 py-0.5 text-[9px] font-bold ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-600 text-white' : 'text-stone-500 border-stone-300'}`}>
-                                {selectedStudent.status === 'verified' ? 'VERIFIED FINAL' : 'PENDING REVIEW'}
+                                {selectedStudent.status === 'verified' ? 'VERIFIED' : 'PENDING REVIEW'}
                             </Badge>
                             <span className="h-3 w-[1px] bg-stone-300"></span>
                             <div className="flex items-center gap-1 font-mono text-stone-500 text-[10px]">
@@ -481,7 +481,7 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                   className={`h-10 px-8 text-sm font-bold shadow-md rounded-xl transition-all hover:scale-105 ${selectedStudent.status === 'verified' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-[#7a3b1a] hover:bg-[#5a2a12] shadow-[#7a3b1a]/20'}`}
                               >
                                   {selectedStudent.status === 'verified' ? (
-                                      <><CheckCircle2 size={16} className="mr-2" /> Verified Final</>
+                                      <><CheckCircle2 size={16} className="mr-2" /> Verified</>
                                   ) : (
                                       <><Save size={16} className="mr-1" /> Submit </>
                                   )}

@@ -178,7 +178,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       const finalizeId = selectedStudent?.student_number;
 
       if (!finalizeId) {
-        toast.error("Cannot finalize: student ID is missing.");
+        toast.error("Cannot verify: student ID is missing.");
         return;
       }
 
@@ -199,9 +199,9 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       await fetchStudents();
       setSelectedStudent(null);
 
-      toast.success("Student successfully verified and finalized.");
+      toast.success("Student successfully verified.");
     } catch (error) {
-      console.error("Finalize Error:", error);
+      console.error("Verify Error:", error);
       toast.error("Failed to verify student. Server is currently unavailable.");
     }
   };
@@ -211,7 +211,7 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       const finalizeId = selectedStudent?.student_number;
 
       if (!finalizeId) {
-        toast.error("Cannot finalize: student ID is missing.");
+        toast.error("Cannot discard: student ID is missing.");
         return;
       }
 
@@ -233,9 +233,9 @@ export function useGraduateReview(staffUser: any, selectedStudent: any, setSelec
       await fetchStudents();
       setSelectedStudent(null);
 
-      toast.success("Student successfully verified and finalized.");
+      toast.success("Student successfully verified.");
     } catch (error) {
-      console.error("Finalize Error:", error);
+      console.error("Discard Error:", error);
       toast.error("Failed to verify student. Server is currently unavailable.");
     }
   };

@@ -126,6 +126,7 @@ export default function StudentDashboard() {
   const hasProfilePhoto = Boolean(user.studentDetail?.photo_url);
   const hasBooking = Boolean(booking);
   const bookingDisabledReason = "Upload your profile picture before booking your pictorial schedule.";
+  const isVerifiedGraduate = ["APPROVED", "BOOKED", "ATTENDED", "FULLY_VERIFIED"].includes(user.studentAuth?.status ?? "");
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans relative">
@@ -143,7 +144,7 @@ export default function StudentDashboard() {
                 <h1 className="text-3xl font-serif font-bold text-stone-800">Graduate Dashboard</h1>
                 <p className="text-stone-500 mt-2">Welcome to the official University of Mindanao Yearbook Portal.</p>
             </div>
-            {user && user.studentAuth?.status === 'FULLY_VERIFIED' ? (
+            {isVerifiedGraduate ? (
                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100 px-3 py-1 text-sm border-green-200 gap-1">
                     <CheckCircle className="w-3 h-3" /> Verified Graduate
                 </Badge>

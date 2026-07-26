@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { departmentOptions as ACADEMIC_CONFIG } from "@/constants/registration";
-import { STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
+import { ACTIVE_STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
 import { fetchImageStudents } from "@/app/admin/imageService";
 
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
@@ -147,6 +147,6 @@ export function useImageManagement() {
     students, totalResults, isLoading, ITEMS_PER_PAGE,
     handleLoadClick, handleSearchClick, handleSearchKeyDown, refresh,
     DEPARTMENT_ORDER, YEAR_OPTIONS, MISSING_OPTIONS,
-    STATUS_STEPS: STUDENT_STATUS_STEPS, ACADEMIC_CONFIG,
+    STATUS_STEPS: ACTIVE_STUDENT_STATUS_STEPS, ACADEMIC_CONFIG,
   };
 }

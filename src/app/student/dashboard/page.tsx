@@ -126,7 +126,7 @@ export default function StudentDashboard() {
   const hasProfilePhoto = Boolean(user.studentDetail?.photo_url);
   const hasBooking = Boolean(booking);
   const bookingDisabledReason = "Upload your profile picture before booking your pictorial schedule.";
-  const isVerifiedGraduate = ["APPROVED", "BOOKED", "ATTENDED", "FULLY_VERIFIED"].includes(user.studentAuth?.status ?? "");
+  const isVerifiedGraduate = ["FULLY_VERIFIED", "BOOKED", "ATTENDED"].includes(user.studentAuth?.status ?? "");
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans relative">

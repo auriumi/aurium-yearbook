@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import ExcelJS from "exceljs";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
-import { ACTIVE_STUDENT_STATUS_STEPS, getStudentStatusLabel, getStudentStatusStep } from "@/constants/studentStatus";
+import { ACTIVE_STUDENT_STATUS_STEPS, getStudentStatusFlowOrder, getStudentStatusLabel, getStudentStatusStep } from "@/constants/studentStatus";
 
 type MasterlistTabProps = ReturnType<typeof useMasterlist> & { userRole: string };
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
@@ -780,10 +780,9 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             
                             <div className="space-y-0 relative pl-2">
                                 {STATUS_STEPS.map((step: any, index: number) => {
-                                    const studentStatusItem = getStudentStatusStep(selectedStudent.studentAuth?.status);
-                                    const currentStatusId = studentStatusItem ? studentStatusItem.id : 1;
-                                    const isDone = step.id <= currentStatusId;
-                                    const isCurrent = step.id === currentStatusId;
+                                    const currentStatusOrder = getStudentStatusFlowOrder(selectedStudent.studentAuth?.status);
+                                    const isDone = step.flowOrder <= currentStatusOrder;
+                                    const isCurrent = step.flowOrder === currentStatusOrder;
                                     
                                     return (
                                         <div key={step.id} className="flex gap-3 relative pb-8 last:pb-0 group">

@@ -20,7 +20,8 @@ export const departmentOptions = [
     courses: [
       { name: "MASTER OF ARTS IN EDUCATION (MAED)", majors: ["EDUCATIONAL MANAGEMENT", "GUIDANCE & COUNSELING", "PHYSICAL EDUCATION", "TEACHING ENGLISH", "TEACHING MATHEMATICS", "TEACHING SCIENCE"] },
       { name: "MASTER IN BUSINESS ADMINISTRATION", majors: [] },
-      { name: "MASTER IN MANAGEMENT", majors: [] }
+      { name: "MASTER IN MANAGEMENT", majors: [] },
+      { name: "MPA (MASTER OF PUBLIC ADMINISTRATION)", majors: [] }
     ]
   },
   {

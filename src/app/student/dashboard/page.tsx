@@ -173,8 +173,8 @@ export default function StudentDashboard() {
                 <p className="mt-1 text-sm text-stone-600">
                   {hasProfilePhoto
                     ? hasBooking
-                      ? "Your pictorial schedule is confirmed and final. Please be present on time."
-                      : "Your profile photo is on file. You can book your pictorial schedule once."
+                      ? "Your booking session is active. Please be on time."
+                      : "Please choose your preferred date and time for your photoshoot."
                     : "Upload your formal profile photo first. Booking stays locked until the photo is submitted."}
                 </p>
               </div>

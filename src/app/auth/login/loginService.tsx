@@ -104,7 +104,9 @@ function evaluateLoginLimitState(
         return { allowed: false, waitMs: state.lockedUntil - now };
     }
 
-    const recentAttempts = state.attempts.filter((attempt) => now - attempt < LOGIN_WINDOW_MS);
+    const recentAttempts = state.attempts
+        .filter((attempt) => now - attempt < LOGIN_WINDOW_MS)
+        .sort((a, b) => a - b);
     const lastAttemptAt = state.lastAttemptAt ?? 0;
 
     if (lastAttemptAt && now - lastAttemptAt < LOGIN_MIN_GAP_MS) {
@@ -120,7 +122,6 @@ function evaluateLoginLimitState(
         allowed: true,
         state: {
             attempts: recentAttempts,
-            lockedUntil: state.lockedUntil && state.lockedUntil > now ? state.lockedUntil : undefined,
             lastAttemptAt,
         },
     };
@@ -229,7 +230,7 @@ export async function handleLogin(id: string, pass: string, captcha_token: strin
         clearLoginAttempts(id, is_admin);
         return {
             success: true,
-            reason: "Succesfully logged in!",
+            reason: "Successfully logged in!",
             is_new: body.is_new
         }
 
@@ -237,7 +238,7 @@ export async function handleLogin(id: string, pass: string, captcha_token: strin
         console.error(err);
         return {
             success: false,
-            reason: "Cannot connect to the server at the moment. Please try agian later"
+            reason: "Cannot connect to the server at the moment. Please try again later"
         }
     }
 };
@@ -269,7 +270,7 @@ export async function handleUpdatePass(new_pass: string) {
         console.error(err);
         return {
             success: false,
-            reason: "Cannot connect to the server at the moment. Please try agian later"
+            reason: "Cannot connect to the server at the moment. Please try again later"
         }
     }
 };

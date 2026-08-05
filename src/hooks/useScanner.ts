@@ -31,8 +31,9 @@ interface ScheduleBooking {
     student?: {
         first_name?: string;
         last_name?: string;
-        photo_url?: string;
-        photoUrl?: string;
+        studentDetail?: {
+            photo_url?: string | null;
+        } | null;
         studentAuth?: {
             status?: string;
         };
@@ -241,11 +242,12 @@ export function useScanner() {
               const fullName = `${firstName} ${lastName}`.trim() || "Unknown Student";
               const rawStatus = booking.student?.studentAuth?.status;
               const status: StudentRecord["status"] = rawStatus === "ATTENDED" ? "attended" : "pending";
+              const photoUrl = booking.student?.studentDetail?.photo_url || undefined;
 
               formattedRoster.push({
                   id: studentIdStr,
                   name: fullName,
-                  photo: booking.student?.photo_url || booking.student?.photoUrl || "https://github.com/shadcn.png",
+                  photo: photoUrl,
                   status,
                   timeIn: status === "attended" ? "Checked In" : undefined,
                   schedule: {

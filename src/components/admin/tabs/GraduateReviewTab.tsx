@@ -80,6 +80,16 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
       return date.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
   };
 
+  const formatDateInputValue = (dateString?: string) => {
+      if (!dateString || dateString === "N/A") return "";
+      const datePart = dateString.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+      if (datePart) return datePart;
+
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "";
+      return date.toISOString().split("T")[0];
+  };
+
   // Helper function to combine Prefix, Name, and Suffix dynamically
   const formatParentName = (prefix?: string, name?: string, suffix?: string) => {
       if (!name || name === "N/A" || name.trim() === "") return "N/A";
@@ -309,6 +319,17 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Last Name</Label><Input name="lname" defaultValue={selectedStudent.lname || selectedStudent.last_name} className="h-9 text-sm"/></div>
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Middle Name</Label><Input name="mname" defaultValue={selectedStudent.mname || selectedStudent.mid_name} className="h-9 text-sm"/></div>
                                                 <div className="space-y-1.5"><Label className="text-stone-500 font-bold text-[10px] uppercase">Suffix</Label><Input name="suffix" defaultValue={selectedStudent.suffix} className="h-9 text-sm"/></div>
+                                                <div className="space-y-1.5">
+                                                    <Label className="text-stone-500 font-bold text-[10px] uppercase">Birthdate</Label>
+                                                    <Input
+                                                        name="birthDate"
+                                                        type="date"
+                                                        min="1950-01-01"
+                                                        max="2012-12-31"
+                                                        defaultValue={formatDateInputValue(selectedStudent.details?.birthdate || selectedStudent.studentDetail?.birth_date)}
+                                                        className="h-9 text-sm"
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="space-y-1.5 pt-2"><Label className="text-stone-500 font-bold text-[10px] uppercase">Nickname</Label><Input name="nickname" defaultValue={selectedStudent.nickname} className="h-9 text-sm"/></div>
                                         </TabsContent>

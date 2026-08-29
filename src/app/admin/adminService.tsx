@@ -294,6 +294,27 @@ export async function fv_updateStudent(studentId: number, type: string, data: an
     }
 }
 
+export async function fv_requestStudentCorrection(studentId: number, type: string, data: any) {
+    try {
+        const res = await fetch(`${baseUrl}/api/admin/finalize/${studentId}/correction?type=${type}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+            credentials: 'include'
+        });
+        const responseData = await res.json();
+
+        if (!res.ok) {
+            return { success: false, reason: responseData.reason || "Something went wrong" };
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error(err);
+        return { success: false, reason: "Cannot connect to the server at the moment" };
+    }
+}
+
 export async function fv_finalizeStudent(studentId: string | number) {
     try {
         const res = await fetch(`${baseUrl}/api/admin/finalize?id=${encodeURIComponent(String(studentId))}`, {

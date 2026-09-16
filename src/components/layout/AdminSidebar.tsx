@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useSidebar } from "@/hooks/useSidebar";
 import { Admin } from "@/types";
+import { informationWorkspacePreviewEnabled } from '@/features/graduate-information/preview';
 
 interface SidebarProps {
   activeTab: string;
@@ -83,6 +84,9 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         {/* Masterlist — all roles */}
         <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />
+        {informationWorkspacePreviewEnabled && canAccessVerification && (
+          <NavItem id="information-workspace" label="Information Workspace" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />
+        )}
 
         {/* Image Management — ADMINISTRATOR and MODERATOR */}
         {canManageImages && (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Users, Calendar, BookOpen, User, LogOut,
+  Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
   ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, ClipboardCheck, type LucideIcon
 } from "lucide-react";
@@ -21,6 +21,7 @@ interface SidebarProps {
   setIsOpen?: (open: boolean) => void;
   user: Admin | null;
   onLogout: () => void;
+  canCheckRac?: boolean;
 }
 
 interface NavItemProps {
@@ -43,7 +44,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
   );
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false }: SidebarProps) {
   const { canAccessVerification, canAccessSchedules, canManageImages, canApproveImages, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
@@ -81,6 +82,8 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         )}
 
         <div className="my-2 px-3 text-[10px] font-bold uppercase tracking-widest text-stone-600 mt-4">Review & Notes</div>
+
+        {canCheckRac && <NavItem id="rac-verification" label="RAC/SAO Verification" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />}
 
         {/* Masterlist — all roles */}
         <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />

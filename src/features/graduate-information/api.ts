@@ -7,6 +7,25 @@ export type InformationStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPRO
   'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
 export type Verification = 'UNCHECKED' | 'NOT_LISTED' | 'VERIFIED';
 
+export interface EditableProfile {
+  firstName: string | null; middleName: string | null; lastName: string | null;
+  suffix: string | null; nickname: string | null; birthDate: string | null;
+  department: string | null; program: string | null; major: string | null;
+  thesisTitle: string | null; contactNumber: string | null;
+  province: string | null; city: string | null; barangay: string | null;
+  mothersName: string | null; mothersTitle: string | null;
+  fathersName: string | null; fathersTitle: string | null;
+  guardiansName: string | null; guardiansTitle: string | null;
+}
+
+export type EditableProfileField = keyof EditableProfile;
+export const editableProfileFields: EditableProfileField[] = [
+  'firstName', 'middleName', 'lastName', 'suffix', 'nickname', 'birthDate',
+  'department', 'program', 'major', 'thesisTitle', 'contactNumber',
+  'province', 'city', 'barangay', 'mothersName', 'mothersTitle',
+  'fathersName', 'fathersTitle', 'guardiansName', 'guardiansTitle',
+];
+
 export interface InformationFilters {
   year: number;
   term: GraduationTerm;
@@ -57,6 +76,10 @@ export interface InformationDetail {
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];
+  draft: {
+    revisionId: number; version: number; before: EditableProfile; after: EditableProfile;
+    changedFields: EditableProfileField[]; savedAt: string;
+  } | null;
   verification: { outcome: 'VERIFIED'; checkedAt: string; sourceVersion: string };
   profile: {
     studentNumber: number;
@@ -120,4 +143,13 @@ export async function getInformationDetail(reviewId: number, signal?: AbortSigna
     credentials: 'include', cache: 'no-store', signal,
   });
   return readResponse<InformationDetail>(response);
+}
+
+export async function saveInformationDraft(reviewId: number, expectedVersion: number, changes: Partial<EditableProfile>, operationId: string) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/draft`, {
+    method: 'PATCH', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, operationId, changes }),
+  });
+  return readResponse<{ success: true; changed: boolean; version: number; revisionId: number | null }>(response);
 }

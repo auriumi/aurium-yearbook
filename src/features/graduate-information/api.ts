@@ -102,6 +102,20 @@ export interface InformationDetail {
   };
 }
 
+export type InformationQcDecision = 'APPROVE' | 'REJECT' | 'FORWARD';
+
+export interface InformationDecisionEvent {
+  id: number;
+  track_version: number;
+  revision_id: number;
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'APPROVED_QC' | 'REJECTED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  from_stage: InformationStage;
+  to_stage: InformationStage;
+  note: string | null;
+  created_at: string;
+  actor: { first_name: string; last_name: string };
+}
+
 async function readResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload || payload.success !== true) {
@@ -161,4 +175,21 @@ export async function submitInformationReview(reviewId: number, expectedVersion:
     body: JSON.stringify({ expectedVersion, revisionId, operationId }),
   });
   return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: 'SUBMITTED_QC' }>(response);
+}
+
+export async function decideInformationQc(reviewId: number, expectedVersion: number, revisionId: number,
+  operationId: string, decision: InformationQcDecision, reason: string | null) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/qc-decision`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId, decision, reason }),
+  });
+  return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: InformationStage }>(response);
+}
+
+export async function getInformationDecisionHistory(reviewId: number, signal?: AbortSignal) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/decision-events`, {
+    credentials: 'include', cache: 'no-store', signal,
+  });
+  return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
 }

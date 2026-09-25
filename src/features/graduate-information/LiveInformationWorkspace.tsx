@@ -12,7 +12,7 @@ import { InformationProfileDialog } from './InformationProfileDialog';
 import { InformationFiltersPanel } from './InformationFiltersPanel';
 import { InformationRecords } from './InformationRecords';
 
-const queues: { value: InformationQueue; label: string }[] = [
+const proofreaderQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
@@ -22,12 +22,21 @@ const queues: { value: InformationQueue; label: string }[] = [
   { value: 'REJECTED_MODERATOR', label: 'Rejected by Moderator' },
 ];
 
+const qcQueues: { value: InformationQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' },
+  { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
+  { value: 'REJECTED_QC', label: 'Rejected by QC' },
+  { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'COMPLETED', label: 'Completed' },
+];
+
 const initialFilters: InformationFilters = {
   year: new Date().getFullYear(), term: 'END_YEAR', department: '', program: '', major: '',
   search: '', queue: 'ALL', page: 1,
 };
 
-export function LiveInformationWorkspace() {
+export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' }) {
+  const queues = role === 'qc' ? qcQueues : proofreaderQueues;
   const [filters, setFilters] = useState(initialFilters);
   const [searchInput, setSearchInput] = useState('');
   const [list, setList] = useState<InformationList | null>(null);
@@ -47,7 +56,6 @@ export function LiveInformationWorkspace() {
   }, [searchInput]);
 
   useEffect(() => {
-    setReviewId(null);
     const controller = new AbortController();
     setLoading(true);
     setList(null);
@@ -76,6 +84,7 @@ export function LiveInformationWorkspace() {
   }, [year, term, department, program]);
 
   function changeFilter(patch: Partial<InformationFilters>) {
+    setReviewId(null);
     setFilters(previous => ({ ...previous, ...patch, page: 1 }));
   }
 
@@ -99,7 +108,9 @@ export function LiveInformationWorkspace() {
   return <section className="space-y-5" aria-label="Graduate information workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate information</h2>
-      <p className="mt-1 text-sm text-stone-600">Browse the assigned graduate records. Open a review queue to inspect one complete profile.</p>
+      <p className="mt-1 text-sm text-stone-600">{role === 'qc'
+        ? 'Review submitted profiles and their changes before sending approved records to the moderator.'
+        : 'Browse the assigned graduate records. Open a review queue to inspect one complete profile.'}</p>
     </div>
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
@@ -127,12 +138,13 @@ export function LiveInformationWorkspace() {
       <InformationRecords list={list} queue={filters.queue} queueLabel={queueLabel} onOpenProfile={openProfile} />
 
       <div className="flex items-center justify-between gap-3">
-        <Button variant="outline" disabled={filters.page <= 1} onClick={() => setFilters(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</Button>
+        <Button variant="outline" disabled={filters.page <= 1} onClick={() => { setReviewId(null); setFilters(previous => ({ ...previous, page: previous.page - 1 })); }}>Previous</Button>
         <span className="text-sm text-stone-600">Page {filters.page} of {totalPages}</span>
-        <Button variant="outline" disabled={filters.page >= totalPages} onClick={() => setFilters(previous => ({ ...previous, page: previous.page + 1 }))}>Next</Button>
+        <Button variant="outline" disabled={filters.page >= totalPages} onClick={() => { setReviewId(null); setFilters(previous => ({ ...previous, page: previous.page + 1 })); }}>Next</Button>
       </div>
     </>}
 
-    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)} returnFocusRef={returnFocusRef} />
+    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)}
+      onChanged={() => setRefresh(value => value + 1)} returnFocusRef={returnFocusRef} />
   </section>;
 }

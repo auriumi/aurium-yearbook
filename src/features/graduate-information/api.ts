@@ -153,3 +153,12 @@ export async function saveInformationDraft(reviewId: number, expectedVersion: nu
   });
   return readResponse<{ success: true; changed: boolean; version: number; revisionId: number | null }>(response);
 }
+
+export async function submitInformationReview(reviewId: number, expectedVersion: number, revisionId: number, operationId: string) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/submission`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId }),
+  });
+  return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: 'SUBMITTED_QC' }>(response);
+}

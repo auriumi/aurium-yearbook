@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { useSidebar } from "@/hooks/useSidebar";
 import { Admin } from "@/types";
-import { informationWorkspacePreviewEnabled } from '@/features/graduate-information/preview';
 
 interface SidebarProps {
   activeTab: string;
@@ -22,6 +21,7 @@ interface SidebarProps {
   user: Admin | null;
   onLogout: () => void;
   canCheckRac?: boolean;
+  canReviewInformation?: boolean;
 }
 
 interface NavItemProps {
@@ -44,7 +44,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
   );
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false }: SidebarProps) {
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false }: SidebarProps) {
   const { canAccessVerification, canAccessSchedules, canManageImages, canApproveImages, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
@@ -87,7 +87,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         {/* Masterlist — all roles */}
         <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />
-        {informationWorkspacePreviewEnabled && canAccessVerification && (
+        {canReviewInformation && (
           <NavItem id="information-workspace" label="Information Workspace" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
 

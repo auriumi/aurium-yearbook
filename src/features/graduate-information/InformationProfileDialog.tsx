@@ -1,12 +1,20 @@
 'use client';
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { getInformationDetail, type InformationDetail } from './api';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  editableProfileFields, getInformationDetail, saveInformationDraft,
+  type EditableProfile, type InformationDetail,
+} from './api';
+import { InformationEditor } from './InformationEditor';
 
-type Field = [label: string, value: string | number | null | undefined];
+type Field = [label: string, value: string | number | null | undefined, changed?: boolean];
 
 const stageLabels: Record<InformationDetail['informationStage'], string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -24,12 +32,30 @@ function fullName(profile: InformationDetail['profile']) {
     `Graduate ${profile.studentNumber}`;
 }
 
+function canonicalValues(detail: InformationDetail): EditableProfile {
+  const profile = detail.profile;
+  return {
+    firstName: profile.firstName, middleName: profile.middleName, lastName: profile.lastName,
+    suffix: profile.suffix, nickname: profile.nickname, birthDate: profile.birthDate,
+    department: profile.department, program: profile.program, major: profile.major,
+    thesisTitle: profile.thesisTitle, contactNumber: profile.contactNumber,
+    province: profile.province, city: profile.city, barangay: profile.barangay,
+    mothersName: profile.mothersName, mothersTitle: profile.mothersTitle,
+    fathersName: profile.fathersName, fathersTitle: profile.fathersTitle,
+    guardiansName: profile.guardiansName, guardiansTitle: profile.guardiansTitle,
+  };
+}
+
+function editableValues(detail: InformationDetail): EditableProfile {
+  return detail.draft ? { ...detail.draft.after } : canonicalValues(detail);
+}
+
 function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
   return <section className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
     <h3 className="text-base font-semibold text-stone-900">{title}</h3>
     <dl className="mt-4 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-      {fields.map(([label, value]) => <div key={label} className="min-w-0">
-        <dt className="text-xs font-medium text-stone-500">{label}</dt>
+      {fields.map(([label, value, changed]) => <div key={label} className={`min-w-0 ${changed ? 'rounded-lg bg-amber-50 p-2 ring-1 ring-amber-200' : ''}`}>
+        <dt className="text-xs font-medium text-stone-500">{label}{changed && <span className="ml-2 text-amber-800">Edited</span>}</dt>
         <dd className="mt-1 break-words text-sm leading-6 text-stone-800">{display(value)}</dd>
       </div>)}
     </dl>
@@ -37,7 +63,8 @@ function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
 }
 
 function Profile({ detail }: { detail: InformationDetail }) {
-  const profile = detail.profile;
+  const profile = detail.draft ? { ...detail.profile, ...detail.draft.after } : detail.profile;
+  const changed = (field: keyof EditableProfile) => !!detail.draft && detail.draft.after[field] !== detail.profile[field];
   const session = profile.record.photoSession;
   return <div className="space-y-4">
     <section className="flex flex-wrap items-start gap-5 rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
@@ -57,27 +84,28 @@ function Profile({ detail }: { detail: InformationDetail }) {
       </div>
     </section>
 
+    {detail.draft && detail.informationStage !== 'LOCKED' && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Saved draft · Changes are not in the live graduate record until final moderator approval.</p>}
     <div className="grid gap-4 xl:grid-cols-2">
       <FieldGroup title="Personal information" fields={[
-        ['First name', profile.firstName], ['Middle name', profile.middleName],
-        ['Last name', profile.lastName], ['Suffix', profile.suffix],
-        ['Nickname', profile.nickname], ['Date of birth', profile.birthDate],
+        ['First name', profile.firstName, changed('firstName')], ['Middle name', profile.middleName, changed('middleName')],
+        ['Last name', profile.lastName, changed('lastName')], ['Suffix', profile.suffix, changed('suffix')],
+        ['Nickname', profile.nickname, changed('nickname')], ['Date of birth', profile.birthDate, changed('birthDate')],
       ]} />
       <FieldGroup title="Academic information" fields={[
-        ['Department', profile.department], ['Course / program', profile.program],
-        ['Major', profile.major], ['Graduation year', profile.graduationYear],
+        ['Department', profile.department, changed('department')], ['Course / program', profile.program, changed('program')],
+        ['Major', profile.major, changed('major')], ['Graduation year', profile.graduationYear],
         ['Graduation term', profile.graduationTerm === 'END_YEAR' ? 'End year' : 'Mid year'],
-        ['Thesis / capstone title', profile.thesisTitle],
+        ['Thesis / capstone title', profile.thesisTitle, changed('thesisTitle')],
       ]} />
       <FieldGroup title="Contact and address" fields={[
         ['School email', profile.schoolEmail], ['Personal email', profile.personalEmail],
-        ['Mobile number', profile.contactNumber], ['Province', profile.province],
-        ['City / municipality', profile.city], ['Barangay', profile.barangay],
+        ['Mobile number', profile.contactNumber, changed('contactNumber')], ['Province', profile.province, changed('province')],
+        ['City / municipality', profile.city, changed('city')], ['Barangay', profile.barangay, changed('barangay')],
       ]} />
       <FieldGroup title="Parents and guardian" fields={[
-        ['Mother’s name', profile.mothersName], ['Mother’s title', profile.mothersTitle],
-        ['Father’s name', profile.fathersName], ['Father’s title', profile.fathersTitle],
-        ['Guardian’s name', profile.guardiansName], ['Guardian’s title', profile.guardiansTitle],
+        ['Mother’s name', profile.mothersName, changed('mothersName')], ['Mother’s title', profile.mothersTitle, changed('mothersTitle')],
+        ['Father’s name', profile.fathersName, changed('fathersName')], ['Father’s title', profile.fathersTitle, changed('fathersTitle')],
+        ['Guardian’s name', profile.guardiansName, changed('guardiansName')], ['Guardian’s title', profile.guardiansTitle, changed('guardiansTitle')],
       ]} />
     </div>
 
@@ -109,11 +137,23 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
   const [request, setRequest] = useState<{
     reviewId: number; detail?: InformationDetail; error?: string;
   } | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draftValues, setDraftValues] = useState<EditableProfile | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [discardAction, setDiscardAction] = useState<'close' | 'cancel' | null>(null);
+  const pendingSave = useRef<{ fingerprint: string; operationId: string } | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
     setRequest({ reviewId });
+    setEditing(false);
+    setDraftValues(null);
+    setSaveError('');
+    setNotice('');
+    pendingSave.current = null;
     getInformationDetail(reviewId, controller.signal)
       .then(result => { if (!controller.signal.aborted) setRequest({ reviewId, detail: result }); })
       .catch(cause => {
@@ -124,8 +164,66 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
     return () => controller.abort();
   }, [reviewId]);
   const current = request?.reviewId === reviewId ? request : null;
+  const detail = current?.detail;
+  const baseline = detail ? editableValues(detail) : null;
+  const dirty = !!draftValues && !!baseline && editableProfileFields.some(field => draftValues[field] !== baseline[field]);
 
-  return <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) onClose(); }}>
+  function requestClose(action: 'close' | 'cancel') {
+    if (saving) return;
+    if (editing && dirty) setDiscardAction(action);
+    else if (action === 'close') onClose();
+    else { setEditing(false); setDraftValues(null); setSaveError(''); }
+  }
+
+  function startEditing() {
+    if (!detail || !detail.availableActions.includes('SAVE_DRAFT')) return;
+    setDraftValues(editableValues(detail));
+    setSaveError('');
+    setNotice('');
+    setEditing(true);
+  }
+
+  async function save() {
+    if (!detail || !draftValues || !baseline || !dirty || saving) return;
+    const normalized = { ...draftValues };
+    for (const field of editableProfileFields) normalized[field] = draftValues[field]?.trim() || null;
+    setDraftValues(normalized);
+    const changes = Object.fromEntries(editableProfileFields
+      .filter(field => normalized[field] !== baseline[field])
+      .map(field => [field, normalized[field]])) as Partial<EditableProfile>;
+    if (Object.keys(changes).length === 0) { setEditing(false); return; }
+    const fingerprint = JSON.stringify([detail.reviewId, detail.version, changes]);
+    if (pendingSave.current?.fingerprint !== fingerprint) {
+      pendingSave.current = { fingerprint, operationId: crypto.randomUUID() };
+    }
+    setSaving(true);
+    setSaveError('');
+    let saved = false;
+    try {
+      await saveInformationDraft(detail.reviewId, detail.version, changes, pendingSave.current.operationId);
+      saved = true;
+      const updated = await getInformationDetail(detail.reviewId);
+      setRequest({ reviewId: detail.reviewId, detail: updated });
+      setEditing(false);
+      setDraftValues(null);
+      setNotice('Draft saved. The live graduate profile has not changed.');
+      pendingSave.current = null;
+    } catch (error) {
+      if (saved) {
+        setEditing(false);
+        setDraftValues(null);
+        setNotice('Draft saved, but the profile could not refresh. Close and reopen it to see the latest version.');
+        pendingSave.current = null;
+      } else {
+        setSaveError(error instanceof Error ? error.message : 'Unable to save the draft. Your edits are still here.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <>
+  <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) requestClose('close'); }}>
     <DialogContent
       showCloseButton={false}
       overlayClassName="bg-stone-950/70 backdrop-blur-sm"
@@ -139,15 +237,51 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3 sm:px-6">
         <div>
           <DialogTitle className="text-lg text-stone-900">Graduate information</DialogTitle>
-          <DialogDescription className="mt-1 text-sm text-stone-600">Focused, read-only profile</DialogDescription>
+          <DialogDescription className="mt-1 text-sm text-stone-600">{editing ? 'Edit information draft' : 'Complete graduate profile'}</DialogDescription>
         </div>
-        <Button variant="outline" onClick={onClose} className="min-h-11 shrink-0">Close</Button>
+        <div className="flex items-center gap-2">
+          {!editing && detail?.availableActions.includes('SAVE_DRAFT') && <Button onClick={startEditing} className="min-h-11">Edit information</Button>}
+          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving} className="min-h-11 shrink-0">Close</Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
         {!current?.detail && !current?.error ? <p role="status" className="text-sm text-stone-600">Loading graduate profile…</p>
           : current.error ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{current.error}</p>
-            : current.detail ? <Profile detail={current.detail} /> : null}
+            : detail && editing && draftValues ? <InformationEditor detail={detail} values={draftValues}
+              original={canonicalValues(detail)}
+              onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
+              : detail ? <Profile detail={detail} /> : null}
       </div>
+      {(editing || notice) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
+        <div className="min-w-0 flex-1">
+          {saveError ? <p role="alert" className="text-sm text-red-700">{saveError} Your edits remain on this screen.</p>
+            : <p role="status" className="text-sm text-stone-600">{notice || (dirty ? 'Unsaved draft changes' : 'No changes yet')}</p>}
+        </div>
+        {editing && <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => requestClose('cancel')} disabled={saving}>Cancel</Button>
+          <Button type="submit" form="information-edit-form" disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save draft'}</Button>
+        </div>}
+      </div>}
     </DialogContent>
-  </Dialog>;
+  </Dialog>
+  <AlertDialog open={discardAction !== null} onOpenChange={open => { if (!open) setDiscardAction(null); }}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+        <AlertDialogDescription>Your unsaved edits will be lost. Saved revisions remain in the review.</AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Keep editing</AlertDialogCancel>
+        <AlertDialogAction onClick={() => {
+          const action = discardAction;
+          setDiscardAction(null);
+          setEditing(false);
+          setDraftValues(null);
+          setSaveError('');
+          if (action === 'close') onClose();
+        }}>Discard changes</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+  </>;
 }

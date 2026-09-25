@@ -2,7 +2,7 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
 
 export type GraduationTerm = 'MID_YEAR' | 'END_YEAR';
 export type InformationQueue = 'ALL' | 'PENDING' | 'SUBMITTED_QC' | 'REJECTED_QC' |
-  'APPROVED_QC' | 'COMPLETED' | 'REJECTED_MODERATOR';
+  'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'COMPLETED' | 'REJECTED_MODERATOR';
 export type InformationStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' |
   'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
 export type Verification = 'UNCHECKED' | 'NOT_LISTED' | 'VERIFIED';
@@ -192,4 +192,14 @@ export async function getInformationDecisionHistory(reviewId: number, signal?: A
     credentials: 'include', cache: 'no-store', signal,
   });
   return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
+}
+
+export async function decideInformationModerator(reviewId: number, expectedVersion: number, revisionId: number,
+  operationId: string, decision: 'APPROVE' | 'REJECT', reason: string | null) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/moderator-decision`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId, decision, reason }),
+  });
+  return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: InformationStage }>(response);
 }

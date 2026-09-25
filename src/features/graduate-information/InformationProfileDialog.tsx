@@ -13,7 +13,7 @@ import {
   type EditableProfile, type InformationDetail,
 } from './api';
 import { InformationEditor } from './InformationEditor';
-import { InformationQcActions } from './InformationQcActions';
+import { InformationReviewActions } from './InformationReviewActions';
 import { InformationReviewActivity } from './InformationReviewActivity';
 
 type Field = [label: string, value: string | number | null | undefined, changed?: boolean];
@@ -148,7 +148,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
   const [draftValues, setDraftValues] = useState<EditableProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [qcBusy, setQcBusy] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [notice, setNotice] = useState('');
@@ -184,9 +184,11 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
   const canSubmit = !editing && !!detail?.draft && detail.availableActions.includes('SUBMIT_QC');
   const canDecideQc = !editing && !!detail?.draft && detail.availableActions.some(action =>
     ['QC_APPROVE', 'QC_REJECT', 'FORWARD_MODERATOR'].includes(action));
+  const canDecideModerator = !editing && !!detail?.draft && detail.availableActions.some(action =>
+    ['MODERATOR_APPROVE', 'MODERATOR_REJECT'].includes(action));
 
   function requestClose(action: 'close' | 'cancel') {
-    if (saving || submitting || qcBusy) return;
+    if (saving || submitting || decisionBusy) return;
     if (editing && dirty) setDiscardAction(action);
     else if (action === 'close') onClose();
     else { setEditing(false); setDraftValues(null); setSaveError(''); }
@@ -291,7 +293,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
         </div>
         <div className="flex items-center gap-2">
           {!editing && detail?.availableActions.includes('SAVE_DRAFT') && <Button onClick={startEditing} className="min-h-11">Edit information</Button>}
-          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving || submitting || qcBusy} className="min-h-11 shrink-0">Close</Button>
+          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving || submitting || decisionBusy} className="min-h-11 shrink-0">Close</Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
@@ -302,8 +304,8 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
               : detail ? <Profile detail={detail} /> : null}
       </div>
-      {(editing || canSubmit || canDecideQc || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
-        {(!canDecideQc || notice || submitError || editing) && <div className="min-w-0 flex-1">
+      {(editing || canSubmit || canDecideQc || canDecideModerator || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
+        {(!(canDecideQc || canDecideModerator) || notice || submitError || editing) && <div className="min-w-0 flex-1">
           {saveError ? <p role="alert" className="text-sm text-red-700">{saveError} Your edits remain on this screen.</p>
             : submitError ? <p role="alert" className="text-sm text-red-700">{submitError}</p>
               : <p role="status" className="text-sm text-stone-600">{notice || (editing ? (dirty ? 'Unsaved draft changes' : 'No changes yet') : 'Saved draft ready for QC')}</p>}
@@ -315,9 +317,12 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
         {canSubmit && <Button onClick={() => setSubmitOpen(true)} disabled={submitting}>
           {submitting ? 'Submitting…' : 'Submit to QC'}
         </Button>}
-        {canDecideQc && detail && <InformationQcActions detail={detail}
+        {canDecideQc && detail && <InformationReviewActions role="qc" detail={detail}
           onUpdated={updated => setRequest({ reviewId: updated.reviewId, detail: updated })}
-          onChanged={onChanged} onBusyChange={setQcBusy} onNotice={setNotice} />}
+          onChanged={onChanged} onBusyChange={setDecisionBusy} onNotice={setNotice} />}
+        {canDecideModerator && detail && <InformationReviewActions role="moderator" detail={detail}
+          onUpdated={updated => setRequest({ reviewId: updated.reviewId, detail: updated })}
+          onChanged={onChanged} onBusyChange={setDecisionBusy} onNotice={setNotice} />}
       </div>}
     </DialogContent>
   </Dialog>

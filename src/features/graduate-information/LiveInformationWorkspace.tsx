@@ -30,14 +30,22 @@ const qcQueues: { value: InformationQueue; label: string }[] = [
   { value: 'COMPLETED', label: 'Completed' },
 ];
 
+const moderatorQueues: { value: InformationQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Pending' },
+  { value: 'COMPLETED', label: 'Completed' },
+];
+
 const initialFilters: InformationFilters = {
   year: new Date().getFullYear(), term: 'END_YEAR', department: '', program: '', major: '',
   search: '', queue: 'ALL', page: 1,
 };
 
-export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' }) {
-  const queues = role === 'qc' ? qcQueues : proofreaderQueues;
-  const [filters, setFilters] = useState(initialFilters);
+export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' | 'moderator' }) {
+  const queues = role === 'moderator' ? moderatorQueues : role === 'qc' ? qcQueues : proofreaderQueues;
+  const [filters, setFilters] = useState<InformationFilters>(() => ({ ...initialFilters,
+    queue: role === 'moderator' ? 'SUBMITTED_MODERATOR' : 'ALL',
+  }));
   const [searchInput, setSearchInput] = useState('');
   const [list, setList] = useState<InformationList | null>(null);
   const [options, setOptions] = useState<InformationOptions | null>(null);
@@ -108,9 +116,11 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
   return <section className="space-y-5" aria-label="Graduate information workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate information</h2>
-      <p className="mt-1 text-sm text-stone-600">{role === 'qc'
-        ? 'Review submitted profiles and their changes before sending approved records to the moderator.'
-        : 'Browse the assigned graduate records. Open a review queue to inspect one complete profile.'}</p>
+      <p className="mt-1 text-sm text-stone-600">{role === 'moderator'
+        ? 'Review records forwarded by QC. Final approval publishes the information and locks the review.'
+        : role === 'qc'
+          ? 'Review submitted profiles and their changes before sending approved records to the moderator.'
+          : 'Browse the assigned graduate records. Open a review queue to inspect one complete profile.'}</p>
     </div>
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}

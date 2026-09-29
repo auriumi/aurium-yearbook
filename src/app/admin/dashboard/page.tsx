@@ -16,6 +16,7 @@ import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
 import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
 import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
+import { PhotoWorkspace } from '@/features/graduate-photos/PhotoWorkspace';
 import { getReviewCapabilities } from '@/features/rac-verification/api';
 import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
 
@@ -63,6 +64,8 @@ export default function AdminDashboard() {
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
       : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;
   const canReviewInformation = informationRole !== null;
+  const canReviewPhotos = reviewCapabilities.some(capability =>
+    ['PHOTO_UPLOADER', 'PHOTO_QC', 'FINAL_MODERATOR'].includes(capability));
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
@@ -200,6 +203,7 @@ export default function AdminDashboard() {
                 onLogout={() => onLogout()}
                 canCheckRac={canCheckRac}
                 canReviewInformation={canReviewInformation}
+                canReviewPhotos={canReviewPhotos}
              />
          </div>
       )}
@@ -213,6 +217,7 @@ export default function AdminDashboard() {
         onLogout={() => onLogout()}
         canCheckRac={canCheckRac}
         canReviewInformation={canReviewInformation}
+        canReviewPhotos={canReviewPhotos}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -249,6 +254,7 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
+            {activeTab === 'photo-workspace' && canReviewPhotos && <PhotoWorkspace />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'images-approvals' && (

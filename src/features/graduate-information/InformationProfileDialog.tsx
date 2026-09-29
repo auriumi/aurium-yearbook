@@ -64,7 +64,7 @@ function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
   </section>;
 }
 
-function Profile({ detail }: { detail: InformationDetail }) {
+function Profile({ detail, onCommented }: { detail: InformationDetail; onCommented: () => Promise<void> }) {
   const profile = detail.draft ? { ...detail.profile, ...detail.draft.after } : detail.profile;
   const changed = (field: keyof EditableProfile) => !!detail.draft && detail.draft.after[field] !== detail.profile[field];
   const session = profile.record.photoSession;
@@ -131,7 +131,9 @@ function Profile({ detail }: { detail: InformationDetail }) {
       ['Photo session', session ? `${new Date(session.date).toLocaleDateString()} · ${session.period}${session.startTime ? ` · ${session.startTime}${session.endTime ? `–${session.endTime}` : ''}` : ''}` : 'Not booked'],
       ['Attendance', profile.record.attendanceRecorded ? 'Recorded' : 'Not yet recorded'],
     ]} />
-    <InformationReviewActivity key={`${detail.reviewId}-${detail.version}`} reviewId={detail.reviewId} version={detail.version} />
+    <InformationReviewActivity key={`${detail.reviewId}-${detail.version}`} reviewId={detail.reviewId} version={detail.version}
+      revisionId={detail.draft?.revisionId ?? null} canComment={detail.availableActions.includes('COMMENT')}
+      onCommented={onCommented} />
   </div>;
 }
 
@@ -302,7 +304,16 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
             : detail && editing && draftValues ? <InformationEditor detail={detail} values={draftValues}
               original={canonicalValues(detail)}
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
-              : detail ? <Profile detail={detail} /> : null}
+              : detail ? <Profile detail={detail} onCommented={async () => {
+                try {
+                  const updated = await getInformationDetail(detail.reviewId);
+                  setRequest({ reviewId: updated.reviewId, detail: updated });
+                  onChanged();
+                } catch (cause) {
+                  setRequest({ reviewId: detail.reviewId, error: cause instanceof Error ? cause.message : 'Comment saved; refresh the profile.' });
+                  throw cause;
+                }
+              }} /> : null}
       </div>
       {(editing || canSubmit || canDecideQc || canDecideModerator || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
         {(!(canDecideQc || canDecideModerator) || notice || submitError || editing) && <div className="min-w-0 flex-1">

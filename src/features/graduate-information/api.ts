@@ -194,6 +194,16 @@ export async function getInformationDecisionHistory(reviewId: number, signal?: A
   return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
 }
 
+export async function addInformationComment(reviewId: number, expectedVersion: number, revisionId: number,
+  operationId: string, note: string) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/comments`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId, note }),
+  });
+  return readResponse<{ success: true; eventId: number; version: number }>(response);
+}
+
 export async function decideInformationModerator(reviewId: number, expectedVersion: number, revisionId: number,
   operationId: string, decision: 'APPROVE' | 'REJECT', reason: string | null) {
   const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/moderator-decision`, {

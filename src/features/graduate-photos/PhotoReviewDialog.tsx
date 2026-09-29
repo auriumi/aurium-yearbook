@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { beginPhotoUpload, finalizePhotoUpload, getPhotoDetail, putPhoto, submitPhotoPair,
-  type PhotoDetail, type PhotoStage } from './api';
+  getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoStage } from './api';
+import { PhotoReviewActions } from './PhotoReviewActions';
 
 const labels: Record<PhotoStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -16,6 +17,11 @@ const labels: Record<PhotoStage, string> = {
 };
 type Kind = 'GRADUATION' | 'THEME';
 type Field = [label: string, value: string | number | null | undefined];
+const eventLabels: Record<PhotoEvent['action'], string> = {
+  SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
+  APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Sent to moderator',
+  REJECTED_MODERATOR: 'Rejected by moderator', LOCKED: 'Approved and locked',
+};
 
 function name(profile: PhotoDetail['profile']) {
   return [profile.firstName, profile.middleName, profile.lastName, profile.suffix].filter(Boolean).join(' ') ||
@@ -87,8 +93,10 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   returnFocusRef: RefObject<HTMLButtonElement | null>;
 }) {
   const [detail, setDetail] = useState<PhotoDetail | null>(null);
+  const [events, setEvents] = useState<PhotoEvent[]>([]);
+  const [historyError, setHistoryError] = useState('');
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'photos' | 'profile'>('photos');
+  const [tab, setTab] = useState<'photos' | 'profile' | 'activity'>('photos');
   const [selected, setSelected] = useState<{ type: Kind; file: File } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -100,11 +108,21 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    setDetail(null); setError(''); setNotice(''); setSelected(null); setTab('photos');
+    setDetail(null); setEvents([]); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setTab('photos');
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
+    getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
+      if (!controller.signal.aborted) setEvents(result.events);
+    }).catch(cause => {
+      if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
+    });
     return () => controller.abort();
   }, [reviewId]);
+
+  async function refreshHistory(id: number) {
+    try { setEvents((await getPhotoDecisionHistory(id)).events); setHistoryError(''); }
+    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
+  }
 
   useEffect(() => {
     if (!selected) { setPreview(null); return; }
@@ -147,6 +165,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     try {
       await submitPhotoPair(detail.reviewId, detail.version, detail.pair.revisionId, operationId);
       setDetail(await getPhotoDetail(detail.reviewId));
+      void refreshHistory(detail.reviewId);
       pendingSubmission.current = null; onChanged(); setNotice('Photo pair submitted to QC.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to submit this pair.'); }
     finally { setBusy(false); }
@@ -154,6 +173,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
+  const rejection = events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
   return <>
     <Dialog open={reviewId !== null} onOpenChange={open => { if (!open && !busy) onClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
@@ -167,12 +187,17 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         <div className="flex shrink-0 gap-2 border-b border-stone-200 bg-white px-4 py-2 sm:px-6" aria-label="Graduate review sections">
           <Button aria-pressed={tab === 'photos'} variant={tab === 'photos' ? 'default' : 'ghost'} onClick={() => setTab('photos')}>Photo pair</Button>
           <Button aria-pressed={tab === 'profile'} variant={tab === 'profile' ? 'default' : 'ghost'} onClick={() => setTab('profile')}>Full profile</Button>
+          <Button aria-pressed={tab === 'activity'} variant={tab === 'activity' ? 'default' : 'ghost'} onClick={() => setTab('activity')}>Review activity</Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
           {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
           {notice && <p role="status" className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
           {!detail && !error && <p role="status" className="text-sm text-stone-600">Loading graduate photos…</p>}
           {detail && tab === 'photos' && <div>
+            {(detail.stage === 'REJECTED_QC' || detail.stage === 'REJECTED_MODERATOR') && rejection?.note &&
+              <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <strong>{eventLabels[rejection.action]}:</strong> {rejection.note}
+              </div>}
             <p className="mb-4 text-sm text-stone-600">Review the graduation and theme photos together. The registration photo is a read-only reference.</p>
             <div className="grid gap-4 md:grid-cols-3">
               <PhotoCard title="Graduation photo" src={detail.photos.graduation?.url ?? null} alt={`Graduation photo for ${name(detail.profile)}`} description="Required for QC submission" />
@@ -199,10 +224,27 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </section>}
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
+          {detail && tab === 'activity' && <section className="mx-auto max-w-3xl rounded-xl border border-stone-200 bg-white p-4 sm:p-6">
+            <h3 className="font-semibold text-stone-900">Photo review activity</h3>
+            <p className="mt-1 text-sm text-stone-600">Decisions are recorded against a specific photo pair revision.</p>
+            {historyError && <p role="alert" className="mt-4 text-sm text-red-700">{historyError}</p>}
+            {!historyError && !events.length && <p className="mt-4 text-sm text-stone-600">No decisions recorded yet.</p>}
+            <ol className="mt-4 divide-y divide-stone-100">{events.map(event => <li key={event.id} className="py-3 first:pt-0">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-stone-900">{eventLabels[event.action]} · Pair {event.pair_id}</p>
+                <time dateTime={event.created_at} className="text-xs text-stone-500">{new Date(event.created_at).toLocaleString()}</time>
+              </div>
+              <p className="mt-1 text-xs text-stone-600">{[event.actor.first_name, event.actor.last_name].filter(Boolean).join(' ') || 'Assigned staff'}</p>
+              {event.note && <p className="mt-2 whitespace-pre-wrap text-sm text-stone-800">{event.note}</p>}
+            </li>)}</ol>
+          </section>}
         </div>
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>
           {canSubmit && <Button disabled={busy} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
+          <PhotoReviewActions detail={detail} onUpdated={setDetail}
+            onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
+            onBusyChange={setBusy} onNotice={setNotice} />
         </div>}
       </DialogContent>
     </Dialog>

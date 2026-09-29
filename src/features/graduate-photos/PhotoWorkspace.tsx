@@ -16,7 +16,8 @@ const labels: Record<PhotoStage, string> = {
 const queues: { value: PhotoQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' }, { value: 'DRAFT', label: 'Pending' },
   { value: 'SUBMITTED_QC', label: 'Submitted to QC' }, { value: 'REJECTED_QC', label: 'Rejected by QC' },
-  { value: 'APPROVED_QC', label: 'Approved by QC' }, { value: 'LOCKED', label: 'Completed' },
+  { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Pending moderator' }, { value: 'LOCKED', label: 'Completed' },
   { value: 'REJECTED_MODERATOR', label: 'Rejected by Moderator' },
 ];
 const selectStyle = 'mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus-visible:outline-2 focus-visible:outline-amber-700';
@@ -73,7 +74,7 @@ export function PhotoWorkspace() {
   return <section className="space-y-5" aria-label="Graduate photo workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate photos</h2>
-      <p className="mt-1 text-sm text-stone-600">Upload graduation and theme photos for RAC/SAO-verified graduates. The registration photo stays read-only.</p>
+      <p className="mt-1 text-sm text-stone-600">Upload and review graduation and theme photos for RAC/SAO-verified graduates. The registration photo stays read-only.</p>
     </div>
     <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

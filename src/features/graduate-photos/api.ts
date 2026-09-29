@@ -19,6 +19,10 @@ export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; 
     theme: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     reference: string | null; referencePresent: boolean };
   profile: Omit<InformationDetail['profile'], 'referencePhotoUrl' | 'referencePhotoPresent'> };
+export type PhotoEvent = { id: number; track_version: number; pair_id: number;
+  action: 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  from_stage: PhotoStage; to_stage: PhotoStage; note: string | null; created_at: string;
+  actor: { first_name: string; last_name: string } };
 
 async function read<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => null);
@@ -97,4 +101,21 @@ export async function submitPhotoPair(reviewId: number, expectedVersion: number,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ expectedVersion, revisionId, operationId }),
   }));
+}
+
+export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSignal) {
+  return read<{ success: true; events: PhotoEvent[] }>(await fetch(
+    `${baseUrl}/api/admin/photo-reviews/${reviewId}/decision-events`, {
+      credentials: 'include', cache: 'no-store', signal,
+    }));
+}
+
+export async function decidePhoto(reviewId: number, role: 'qc' | 'moderator', expectedVersion: number,
+  pairRevisionId: number, operationId: string, decision: 'APPROVE' | 'REJECT' | 'FORWARD', reason: string | null) {
+  return read<{ success: true; reviewId: number; pairRevisionId: number; version: number; stage: PhotoStage }>(await fetch(
+    `${baseUrl}/api/admin/photo-reviews/${reviewId}/${role}-decision`, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedVersion, pairRevisionId, operationId, decision, reason }),
+    }));
 }

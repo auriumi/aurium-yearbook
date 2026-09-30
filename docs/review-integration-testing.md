@@ -22,6 +22,8 @@ Koi or the environment owner should identify an isolated PostgreSQL database wit
 
 First compare the test database's actual migration history with this branch. Restore a backup into another isolated database, then apply the additive migrations in timestamp order and compare existing record counts and representative records. Do not run `migrate reset`, `db push --accept-data-loss`, or a migration against the live graduate database for this test. Verify the test R2 credentials cannot access production objects.
 
+For a local browser session, run the test UI at `http://localhost:3000` with `NEXT_PUBLIC_LOCAL_URL=http://localhost:4000`; the API's development origin default already matches. For a hosted test UI, set the API's `FRONTEND_ORIGIN` to that exact HTTPS UI origin and point `NEXT_PUBLIC_LOCAL_URL` at the test API. Start both services only after their environment variables reference the isolated database and storage. Do not copy a production `.env` file into these checkouts.
+
 ## Acceptance journey
 
 1. Assign each role its intended academic scope. Confirm an unrelated account cannot list, open, upload, comment, decide, or request a correction on an out-of-scope graduate.

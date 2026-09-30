@@ -10,6 +10,7 @@ The matching branches are `codex/review-integration-sep30-api` in `aurium-api` a
 - IT correction requests against a locked information revision or photo pair. IT approval reopens a new draft; it never changes the old locked record. The maker must change the draft and pass QC and moderator review again.
 - The legacy Image Management list points verified graduates to Photo Workspace and omits them from its old missing-image filters. It does not copy approved pairs to `StudentImage`.
 - Pull-request build checks in both repositories. Existing production deploy workflows are unchanged.
+- Next.js 16.3.3 security patch; the production audit no longer reports a critical Next.js finding.
 
 ## Local checks completed
 
@@ -38,3 +39,4 @@ Record each failure with the role, fictional record ID, exact request/action, ex
 - The isolated PostgreSQL/R2 environment and test accounts have not been identified. No migration, storage upload, or end-to-end journey has been run here.
 - The publication/export consumer for newly locked photo pairs needs a reviewed mapping. `StudentImage` is year-only while reviewed pairs are year-and-term aware, so this branch deliberately preserves the two stores instead of overwriting historical rows.
 - Koi must review the feature PRs, migration order, backup/restore evidence, and any dependency findings. A green build is not approval to merge or deploy.
+- The last production dependency audit still reported seven API findings (six high, one moderate) and thirteen UI findings (six high, seven moderate). Triage reachability and compatible fixes in separate maintenance PRs before production rollout; do not force a Prisma major downgrade or ExcelJS major downgrade into the review feature chain.

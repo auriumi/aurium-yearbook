@@ -256,7 +256,8 @@ export default function AdminDashboard() {
             {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
             {activeTab === 'photo-workspace' && canReviewPhotos && <PhotoWorkspace />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
-            {activeTab === 'images' && <ImageManagementTab />}
+            {activeTab === 'images' && <ImageManagementTab onOpenPhotoWorkspace={canReviewPhotos ?
+              () => handleNavigate('photo-workspace') : undefined} />}
             {activeTab === 'images-approvals' && (
               <ImageApprovalsTab
                 isApprover={isImageApprover}

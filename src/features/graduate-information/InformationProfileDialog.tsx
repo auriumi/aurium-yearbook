@@ -15,6 +15,7 @@ import {
 import { InformationEditor } from './InformationEditor';
 import { InformationReviewActions } from './InformationReviewActions';
 import { InformationReviewActivity } from './InformationReviewActivity';
+import { CorrectionRequestPanel } from '@/features/corrections/CorrectionRequestPanel';
 
 type Field = [label: string, value: string | number | null | undefined, changed?: boolean];
 
@@ -302,7 +303,16 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
             : detail && editing && draftValues ? <InformationEditor detail={detail} values={draftValues}
               original={canonicalValues(detail)}
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
-              : detail ? <Profile detail={detail} /> : null}
+              : detail ? <div className="space-y-4">
+                <CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
+                  stage={detail.informationStage} correction={detail.correction}
+                  canRequest={detail.availableActions.includes('REQUEST_CORRECTION')}
+                  onUpdated={async () => {
+                    setRequest({ reviewId: detail.reviewId, detail: await getInformationDetail(detail.reviewId) });
+                    onChanged();
+                  }} />
+                <Profile detail={detail} />
+              </div> : null}
       </div>
       {(editing || canSubmit || canDecideQc || canDecideModerator || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
         {(!(canDecideQc || canDecideModerator) || notice || submitError || editing) && <div className="min-w-0 flex-1">

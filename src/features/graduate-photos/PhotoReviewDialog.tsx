@@ -10,6 +10,7 @@ import { beginPhotoUpload, finalizePhotoUpload, getPhotoDetail, putPhoto, submit
   getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoStage } from './api';
 import { PhotoReviewActions } from './PhotoReviewActions';
 import { PhotoReviewActivity, photoEventLabels } from './PhotoReviewActivity';
+import { CorrectionRequestPanel } from '@/features/corrections/CorrectionRequestPanel';
 
 const labels: Record<PhotoStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -206,6 +207,10 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
           {notice && <p role="status" className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
           {!detail && !error && <p role="status" className="text-sm text-stone-600">Loading graduate photos…</p>}
           {detail && tab === 'photos' && <div>
+            <div className="mb-4"><CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
+              stage={detail.stage} correction={detail.correction}
+              canRequest={detail.availableActions.includes('REQUEST_CORRECTION')}
+              onUpdated={async () => { setDetail(await getPhotoDetail(detail.reviewId)); onChanged(); }} /></div>
             {(detail.stage === 'REJECTED_QC' || detail.stage === 'REJECTED_MODERATOR') && rejection?.note &&
               <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
                 <strong>{photoEventLabels[rejection.action]}:</strong> {rejection.note}

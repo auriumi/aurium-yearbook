@@ -1,4 +1,5 @@
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
+import type { CorrectionSummary } from '@/features/corrections/api';
 
 export type GraduationTerm = 'MID_YEAR' | 'END_YEAR';
 export type InformationQueue = 'ALL' | 'PENDING' | 'SUBMITTED_QC' | 'REJECTED_QC' |
@@ -76,6 +77,7 @@ export interface InformationDetail {
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];
+  correction: CorrectionSummary | null;
   draft: {
     revisionId: number; version: number; before: EditableProfile; after: EditableProfile;
     changedFields: EditableProfileField[]; savedAt: string;
@@ -108,7 +110,7 @@ export interface InformationDecisionEvent {
   id: number;
   track_version: number;
   revision_id: number;
-  action: 'COMMENTED' | 'SUBMITTED_QC' | 'APPROVED_QC' | 'REJECTED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'APPROVED_QC' | 'REJECTED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED' | 'REOPENED';
   from_stage: InformationStage;
   to_stage: InformationStage;
   note: string | null;

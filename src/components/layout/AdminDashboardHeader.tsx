@@ -13,6 +13,7 @@ const TAB_TITLES: Record<string, string> = {
   masterlist: "Verified Masterlist",
   "information-workspace": "Graduate Information",
   "rac-verification": "RAC/SAO Verification",
+  "it-corrections": "IT Corrections",
   images: "Image Management",
   "images-approvals": "Approval Thread",
   scanner: "Attendance Scanner",

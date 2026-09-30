@@ -20,7 +20,7 @@ export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; 
     reference: string | null; referencePresent: boolean };
   profile: Omit<InformationDetail['profile'], 'referencePhotoUrl' | 'referencePhotoPresent'> };
 export type PhotoEvent = { id: number; track_version: number; pair_id: number;
-  action: 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
   from_stage: PhotoStage; to_stage: PhotoStage; note: string | null; created_at: string;
   actor: { first_name: string; last_name: string } };
 
@@ -117,5 +117,15 @@ export async function decidePhoto(reviewId: number, role: 'qc' | 'moderator', ex
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedVersion, pairRevisionId, operationId, decision, reason }),
+    }));
+}
+
+export async function addPhotoComment(reviewId: number, expectedVersion: number, pairRevisionId: number,
+  operationId: string, note: string) {
+  return read<{ success: true; eventId: number; version: number }>(await fetch(
+    `${baseUrl}/api/admin/photo-reviews/${reviewId}/comments`, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expectedVersion, pairRevisionId, operationId, note }),
     }));
 }

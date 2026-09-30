@@ -73,14 +73,22 @@ function FullProfile({ profile }: { profile: PhotoDetail['profile'] }) {
   </div>;
 }
 
-function PhotoCard({ title, src, alt, description }: { title: string; src: string | null; alt: string; description: string }) {
+function PhotoCard({ title, src, alt, description, onExpand }: { title: string; src: string | null;
+  alt: string; description: string; onExpand: (button: HTMLButtonElement, title: string, src: string, alt: string) => void }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return <section className="rounded-xl border border-stone-200 bg-white p-4">
     <div className="mb-3"><h3 className="font-semibold text-stone-900">{title}</h3>
       <p className="mt-1 text-xs text-stone-600">{description}</p></div>
-    <div className="relative flex aspect-[4/5] max-h-[42vh] items-center justify-center overflow-hidden rounded-lg bg-stone-100 text-sm text-stone-500">
-      {src ? <Image unoptimized fill sizes="(max-width: 768px) 100vw, 33vw" src={src} alt={alt} className="object-contain" />
+    {src && failedSrc !== src ? <button type="button" onClick={event => onExpand(event.currentTarget, title, src, alt)}
+      aria-label={`View ${title.toLowerCase()} larger`}
+      className="relative flex aspect-[4/5] max-h-[42vh] w-full items-center justify-center overflow-hidden rounded-lg bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">
+      <Image unoptimized fill sizes="(max-width: 768px) 100vw, 33vw" src={src} alt={alt}
+        onError={() => setFailedSrc(src)} className="object-contain" />
+      <span className="absolute bottom-2 right-2 rounded-md bg-stone-950/80 px-2 py-1 text-xs font-medium text-white">View larger</span>
+    </button> : <div className="flex aspect-[4/5] max-h-[42vh] flex-col items-center justify-center gap-2 rounded-lg bg-stone-100 px-4 text-center text-sm text-stone-600">
+      {src ? <><span>Photo preview unavailable.</span><Button variant="outline" onClick={() => setFailedSrc(null)}>Retry preview</Button></>
         : <span>No photo yet</span>}
-    </div>
+    </div>}
   </section>;
 }
 
@@ -99,12 +107,15 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [expanded, setExpanded] = useState<{ title: string; src: string; alt: string } | null>(null);
+  const [expandedError, setExpandedError] = useState(false);
+  const expandedTrigger = useRef<HTMLButtonElement | null>(null);
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    setDetail(null); setEvents([]); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setTab('photos');
+    setDetail(null); setEvents([]); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
@@ -170,6 +181,11 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
   const rejection = events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
+  function expand(button: HTMLButtonElement, title: string, src: string, alt: string) {
+    expandedTrigger.current = button;
+    setExpandedError(false);
+    setExpanded({ title, src, alt });
+  }
   return <>
     <Dialog open={reviewId !== null} onOpenChange={open => { if (!open && !busy) onClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
@@ -196,9 +212,9 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
               </div>}
             <p className="mb-4 text-sm text-stone-600">Review the graduation and theme photos together. The registration photo is a read-only reference.</p>
             <div className="grid gap-4 md:grid-cols-3">
-              <PhotoCard title="Graduation photo" src={detail.photos.graduation?.url ?? null} alt={`Graduation photo for ${name(detail.profile)}`} description="Required for QC submission" />
-              <PhotoCard title="Theme photo" src={detail.photos.theme?.url ?? null} alt={`Theme photo for ${name(detail.profile)}`} description="Required for QC submission" />
-              <PhotoCard title="Registration reference" src={detail.photos.reference} alt={`Registration reference for ${name(detail.profile)}`} description="For comparison only; it cannot be changed here" />
+              <PhotoCard title="Graduation photo" src={detail.photos.graduation?.url ?? null} alt={`Graduation photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand} />
+              <PhotoCard title="Theme photo" src={detail.photos.theme?.url ?? null} alt={`Theme photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand} />
+              <PhotoCard title="Registration reference" src={detail.photos.reference} alt={`Registration reference for ${name(detail.profile)}`} description="For comparison only; it cannot be changed here" onExpand={expand} />
             </div>
             {canUpload && <section className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
               <h3 className="font-semibold text-stone-900">Add or replace a photo</h3>
@@ -235,6 +251,26 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
             onBusyChange={setBusy} onNotice={setNotice} />
         </div>}
+      </DialogContent>
+    </Dialog>
+    <Dialog open={expanded !== null} onOpenChange={open => { if (!open) setExpanded(null); }}>
+      <DialogContent showCloseButton={false} overlayClassName="z-[60] bg-stone-950/90 backdrop-blur-md"
+        className="z-[61] flex h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-xl border-stone-700 bg-stone-950 p-0 sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-none"
+        onCloseAutoFocus={event => { event.preventDefault(); expandedTrigger.current?.focus(); }}>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-700 px-4 py-3 sm:px-6">
+          <div><DialogTitle className="text-base text-white">{expanded?.title ?? 'Photo'}</DialogTitle>
+            <DialogDescription className="mt-1 text-sm text-stone-300">Full-size preview of this graduate’s photo.</DialogDescription></div>
+          <Button variant="outline" className="min-h-11 border-stone-600 bg-stone-900 text-white hover:bg-stone-800 hover:text-white"
+            onClick={() => setExpanded(null)}>Close photo</Button>
+        </div>
+        <div className="relative min-h-0 flex-1 p-3 sm:p-6">
+          {expanded && !expandedError && <Image unoptimized fill sizes="100vw" src={expanded.src} alt={expanded.alt}
+            onError={() => setExpandedError(true)} className="object-contain p-3 sm:p-6" />}
+          {expandedError && <div role="alert" className="flex h-full flex-col items-center justify-center gap-3 text-center text-sm text-stone-200">
+            <p>Photo preview unavailable. If the link expired, close and reopen this graduate to refresh it.</p>
+            <Button variant="outline" onClick={() => setExpandedError(false)} className="border-stone-600 bg-stone-900 text-white hover:bg-stone-800">Retry preview</Button>
+          </div>}
+        </div>
       </DialogContent>
     </Dialog>
     <AlertDialog open={confirmSubmit} onOpenChange={setConfirmSubmit}>

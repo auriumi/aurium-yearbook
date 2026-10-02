@@ -2,7 +2,7 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
 
 export type GraduationTerm = 'MID_YEAR' | 'END_YEAR';
 export type InformationQueue = 'ALL' | 'PENDING' | 'SUBMITTED_QC' | 'REJECTED_QC' |
-  'APPROVED_QC' | 'COMPLETED' | 'REJECTED_MODERATOR';
+  'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'COMPLETED' | 'REJECTED_MODERATOR';
 export type InformationStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' |
   'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
 export type Verification = 'UNCHECKED' | 'NOT_LISTED' | 'VERIFIED';

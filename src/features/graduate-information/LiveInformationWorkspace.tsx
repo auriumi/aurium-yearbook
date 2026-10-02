@@ -24,9 +24,10 @@ const proofreaderQueues: { value: InformationQueue; label: string }[] = [
 
 const qcQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
-  { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
+  { value: 'SUBMITTED_QC', label: 'Pending' },
   { value: 'REJECTED_QC', label: 'Rejected by QC' },
   { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Submitted to Moderator' },
   { value: 'COMPLETED', label: 'Completed' },
 ];
 

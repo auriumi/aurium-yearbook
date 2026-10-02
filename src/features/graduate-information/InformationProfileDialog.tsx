@@ -224,6 +224,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
     try {
       await saveInformationDraft(detail.reviewId, detail.version, changes, pendingSave.current.operationId);
       saved = true;
+      onChanged();
       const updated = await getInformationDetail(detail.reviewId);
       setRequest({ reviewId: detail.reviewId, detail: updated });
       setEditing(false);
@@ -257,6 +258,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
     try {
       const result = await submitInformationReview(detail.reviewId, detail.version, (detail.draft?.revisionId ?? null), pendingSubmission.current.operationId);
       submitted = true;
+      onChanged();
       setRequest({ reviewId: detail.reviewId, detail: {
         ...detail, informationStage: 'SUBMITTED_QC', queue: 'SUBMITTED_QC',
         version: result.version, availableActions: [],

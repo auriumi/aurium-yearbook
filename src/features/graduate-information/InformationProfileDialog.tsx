@@ -173,7 +173,7 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
   const detail = current?.detail;
   const baseline = detail ? editableValues(detail) : null;
   const dirty = !!draftValues && !!baseline && editableProfileFields.some(field => draftValues[field] !== baseline[field]);
-  const canSubmit = !editing && !!detail?.draft && detail.availableActions.includes('SUBMIT_QC');
+  const canSubmit = !editing && !!detail && detail.availableActions.includes('SUBMIT_QC');
 
   function requestClose(action: 'close' | 'cancel') {
     if (saving || submitting) return;
@@ -231,8 +231,8 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
 
   async function submit() {
     setSubmitOpen(false);
-    if (!detail?.draft || !detail.availableActions.includes('SUBMIT_QC') || submitting) return;
-    const fingerprint = JSON.stringify([detail.reviewId, detail.version, detail.draft.revisionId]);
+    if (!detail || !detail.availableActions.includes('SUBMIT_QC') || submitting) return;
+    const fingerprint = JSON.stringify([detail.reviewId, detail.version, (detail.draft?.revisionId ?? null)]);
     if (pendingSubmission.current?.fingerprint !== fingerprint) {
       pendingSubmission.current = { fingerprint, operationId: crypto.randomUUID() };
     }
@@ -240,7 +240,7 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
     setSubmitError('');
     let submitted = false;
     try {
-      const result = await submitInformationReview(detail.reviewId, detail.version, detail.draft.revisionId, pendingSubmission.current.operationId);
+      const result = await submitInformationReview(detail.reviewId, detail.version, (detail.draft?.revisionId ?? null), pendingSubmission.current.operationId);
       submitted = true;
       setRequest({ reviewId: detail.reviewId, detail: {
         ...detail, informationStage: 'SUBMITTED_QC', queue: 'SUBMITTED_QC',
@@ -296,7 +296,7 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
         <div className="min-w-0 flex-1">
           {saveError ? <p role="alert" className="text-sm text-red-700">{saveError} Your edits remain on this screen.</p>
             : submitError ? <p role="alert" className="text-sm text-red-700">{submitError}</p>
-              : <p role="status" className="text-sm text-stone-600">{notice || (editing ? (dirty ? 'Unsaved draft changes' : 'No changes yet') : 'Saved draft ready for QC')}</p>}
+              : <p role="status" className="text-sm text-stone-600">{notice || (editing ? (dirty ? 'Unsaved draft changes' : 'No changes yet') : 'Profile ready for QC review')}</p>}
         </div>
         {editing && <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => requestClose('cancel')} disabled={saving}>Cancel</Button>
@@ -330,8 +330,8 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
   <AlertDialog open={submitOpen} onOpenChange={setSubmitOpen}>
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>Submit this revision to QC?</AlertDialogTitle>
-        <AlertDialogDescription>The saved draft will leave the proofreader queue. You can edit it again only if QC or the moderator returns it.</AlertDialogDescription>
+        <AlertDialogTitle>Submit this profile to QC?</AlertDialogTitle>
+        <AlertDialogDescription>A snapshot of the displayed profile will be sent to QC, including when no edits were needed. You can edit it again only if QC or the moderator returns it.</AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Keep reviewing</AlertDialogCancel>

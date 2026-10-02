@@ -133,6 +133,7 @@ export function LiveInformationWorkspace() {
       </div>
     </>}
 
-    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)} returnFocusRef={returnFocusRef} />
+    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)}
+      onChanged={() => setRefresh(value => value + 1)} returnFocusRef={returnFocusRef} />
   </section>;
 }

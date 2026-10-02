@@ -123,7 +123,7 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.stage === item.value}
         className={`min-h-11 h-auto rounded-lg px-3 py-2 text-sm ${filters.stage === item.value ? 'border-amber-800 bg-amber-900 text-white hover:bg-amber-800 hover:text-white' : 'border-stone-200 bg-white text-stone-600'}`}
         onClick={() => change({ stage: item.value })}>{item.label}
-        <span className="ml-2 rounded bg-stone-100 px-1.5 text-xs text-stone-700">{list?.counts[item.value] ?? '—'}</span>
+        <span className="ml-2 rounded bg-stone-100 px-1.5 text-xs text-stone-700">{list ? list.counts[item.value] ?? 0 : '—'}</span>
       </Button>)}
     </nav>
     <div className="flex items-end justify-between gap-3">

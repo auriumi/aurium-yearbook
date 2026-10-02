@@ -142,8 +142,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   function choose(type: Kind, file: File | undefined) {
     setError(''); setNotice('');
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024 || file.size < 64) {
-      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 8 MB.'); return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024 || file.size < 64) {
+      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 5 MB.'); return;
     }
     setSelected({ type, file });
   }
@@ -223,7 +223,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </div>
             {canUpload && <section className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
               <h3 className="font-semibold text-stone-900">Add or replace a photo</h3>
-              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 8 MB. Each saved replacement creates a new pair revision.</p>
+              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 5 MB. Each saved replacement creates a new pair revision.</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(['GRADUATION', 'THEME'] as const).map(type => <label key={type} className="text-sm font-medium text-stone-800">
                   {type === 'GRADUATION' ? 'Graduation photo' : 'Theme photo'}

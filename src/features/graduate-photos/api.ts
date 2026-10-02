@@ -7,11 +7,12 @@ export type PhotoStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC
 export type PhotoQueue = PhotoStage | 'ALL';
 export type PhotoFilters = { year: number; term: GraduationTerm; department: string; program: string;
   major: string; search: string; stage: PhotoQueue; page: number };
-export type PhotoRow = { reviewId: number; stage: PhotoStage; version: number;
+export type PhotoRow = { reviewId: number | null; stage: PhotoStage | null; version: number | null;
+  verification: 'UNCHECKED' | 'VERIFIED' | 'NOT_LISTED';
   studentNumber: number; firstName: string | null; middleName: string | null; lastName: string | null;
   suffix: string | null; department: string | null; program: string | null; major: string | null };
 export type PhotoList = { success: true; rows: PhotoRow[]; page: number; pageSize: number; total: number;
-  counts: Partial<Record<PhotoStage, number>> };
+  counts: Partial<Record<PhotoQueue, number>> };
 export type PhotoOptions = { success: true; departments: string[]; programs: string[]; majors: string[]; hasNoMajor: boolean };
 export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; version: number;
   availableActions: string[];

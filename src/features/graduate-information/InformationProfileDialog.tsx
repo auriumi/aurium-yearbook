@@ -64,11 +64,20 @@ function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
   </section>;
 }
 
-function Profile({ detail }: { detail: InformationDetail }) {
+function Profile({ detail, commentDraft, onCommentChange, onCommentBusy, onCommented }: {
+  detail: InformationDetail; commentDraft: string; onCommentChange: (value: string) => void;
+  onCommentBusy: (value: boolean) => void; onCommented: () => Promise<void>;
+}) {
   const profile = detail.draft ? { ...detail.profile, ...detail.draft.after } : detail.profile;
   const changed = (field: keyof EditableProfile) => !!detail.draft && detail.draft.after[field] !== detail.profile[field];
   const session = profile.record.photoSession;
   return <div className="space-y-4">
+    {detail.rejection && ['REJECTED_QC', 'REJECTED_MODERATOR'].includes(detail.informationStage) && <section aria-label="Reason for return" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-950">
+      <h3 className="font-semibold">{stageLabels[detail.informationStage]}</h3>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm">{detail.rejection.reason}</p>
+      <p className="mt-2 text-xs">{detail.rejection.actor.first_name} {detail.rejection.actor.last_name} · {new Date(detail.rejection.createdAt).toLocaleString()}</p>
+      <p className="mt-2 text-sm">General Proofreader: recheck this record, then submit it to QC.</p>
+    </section>}
     <section className="flex flex-wrap items-start gap-5 rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
       <div className="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-center text-xs text-stone-500">
         {profile.referencePhotoUrl ? <Image unoptimized width={96} height={128} src={profile.referencePhotoUrl} alt={`Registration reference photo for ${fullName(profile)}`} className="h-full w-full object-cover" />
@@ -131,7 +140,9 @@ function Profile({ detail }: { detail: InformationDetail }) {
       ['Photo session', session ? `${new Date(session.date).toLocaleDateString()} · ${session.period}${session.startTime ? ` · ${session.startTime}${session.endTime ? `–${session.endTime}` : ''}` : ''}` : 'Not booked'],
       ['Attendance', profile.record.attendanceRecorded ? 'Recorded' : 'Not yet recorded'],
     ]} />
-    <InformationReviewActivity key={`${detail.reviewId}-${detail.version}`} reviewId={detail.reviewId} version={detail.version} />
+    <InformationReviewActivity key={`${detail.reviewId}-${detail.version}`} reviewId={detail.reviewId} version={detail.version}
+      revisionId={detail.draft?.revisionId ?? null} canComment={detail.availableActions.includes('COMMENT')}
+      note={commentDraft} onNoteChange={onCommentChange} onBusyChange={onCommentBusy} onCommented={onCommented} />
   </div>;
 }
 
@@ -152,6 +163,8 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
   const [saveError, setSaveError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [notice, setNotice] = useState('');
+  const [commentDraft, setCommentDraft] = useState('');
+  const [commentBusy, setCommentBusy] = useState(false);
   const [discardAction, setDiscardAction] = useState<'close' | 'cancel' | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
   const pendingSave = useRef<{ fingerprint: string; operationId: string } | null>(null);
@@ -166,6 +179,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
     setSaveError('');
     setSubmitError('');
     setNotice('');
+    setCommentDraft('');
     pendingSave.current = null;
     pendingSubmission.current = null;
     getInformationDetail(reviewId, controller.signal)
@@ -181,6 +195,12 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
   const detail = current?.detail;
   const baseline = detail ? editableValues(detail) : null;
   const dirty = !!draftValues && !!baseline && editableProfileFields.some(field => draftValues[field] !== baseline[field]);
+  useEffect(() => {
+    if (reviewId === null || (!dirty && !commentDraft.trim())) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [reviewId, dirty, commentDraft]);
   const canSubmit = !editing && !!detail?.draft && detail.availableActions.includes('SUBMIT_QC');
   const canDecideQc = !editing && !!detail?.draft && detail.availableActions.some(action =>
     ['QC_APPROVE', 'QC_REJECT', 'FORWARD_MODERATOR'].includes(action));
@@ -188,14 +208,14 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
     ['MODERATOR_APPROVE', 'MODERATOR_REJECT'].includes(action));
 
   function requestClose(action: 'close' | 'cancel') {
-    if (saving || submitting || decisionBusy) return;
-    if (editing && dirty) setDiscardAction(action);
+    if (saving || submitting || decisionBusy || commentBusy) return;
+    if ((editing && dirty) || (action === 'close' && commentDraft.trim())) setDiscardAction(action);
     else if (action === 'close') onClose();
     else { setEditing(false); setDraftValues(null); setSaveError(''); }
   }
 
   function startEditing() {
-    if (!detail || !detail.availableActions.includes('SAVE_DRAFT')) return;
+    if (!detail || commentBusy || !detail.availableActions.includes('SAVE_DRAFT')) return;
     setDraftValues(editableValues(detail));
     setSaveError('');
     setNotice('');
@@ -292,8 +312,8 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
           <DialogDescription className="mt-1 text-sm text-stone-600">{editing ? 'Edit information draft' : 'Complete graduate profile'}</DialogDescription>
         </div>
         <div className="flex items-center gap-2">
-          {!editing && detail?.availableActions.includes('SAVE_DRAFT') && <Button onClick={startEditing} className="min-h-11">Edit information</Button>}
-          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving || submitting || decisionBusy} className="min-h-11 shrink-0">Close</Button>
+          {!editing && detail?.availableActions.includes('SAVE_DRAFT') && <Button onClick={startEditing} disabled={commentBusy} className="min-h-11">Edit information</Button>}
+          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving || submitting || decisionBusy || commentBusy} className="min-h-11 shrink-0">Close</Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
@@ -302,7 +322,16 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
             : detail && editing && draftValues ? <InformationEditor detail={detail} values={draftValues}
               original={canonicalValues(detail)}
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
-              : detail ? <Profile detail={detail} /> : null}
+              : detail ? <Profile detail={detail} commentDraft={commentDraft} onCommentChange={setCommentDraft} onCommentBusy={setCommentBusy} onCommented={async () => {
+                try {
+                  const updated = await getInformationDetail(detail.reviewId);
+                  setRequest({ reviewId: updated.reviewId, detail: updated });
+                  onChanged();
+                } catch (cause) {
+                  setRequest({ reviewId: detail.reviewId, error: cause instanceof Error ? cause.message : 'Comment saved; refresh the profile.' });
+                  throw cause;
+                }
+              }} /> : null}
       </div>
       {(editing || canSubmit || canDecideQc || canDecideModerator || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
         {(!(canDecideQc || canDecideModerator) || notice || submitError || editing) && <div className="min-w-0 flex-1">
@@ -314,13 +343,13 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
           <Button variant="outline" onClick={() => requestClose('cancel')} disabled={saving}>Cancel</Button>
           <Button type="submit" form="information-edit-form" disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save draft'}</Button>
         </div>}
-        {canSubmit && <Button onClick={() => setSubmitOpen(true)} disabled={submitting}>
+        {canSubmit && <Button onClick={() => setSubmitOpen(true)} disabled={submitting || commentBusy}>
           {submitting ? 'Submitting…' : 'Submit to QC'}
         </Button>}
-        {canDecideQc && detail && <InformationReviewActions role="qc" detail={detail}
+        {canDecideQc && detail && !commentBusy && <InformationReviewActions role="qc" detail={detail}
           onUpdated={updated => setRequest({ reviewId: updated.reviewId, detail: updated })}
           onChanged={onChanged} onBusyChange={setDecisionBusy} onNotice={setNotice} />}
-        {canDecideModerator && detail && <InformationReviewActions role="moderator" detail={detail}
+        {canDecideModerator && detail && !commentBusy && <InformationReviewActions role="moderator" detail={detail}
           onUpdated={updated => setRequest({ reviewId: updated.reviewId, detail: updated })}
           onChanged={onChanged} onBusyChange={setDecisionBusy} onNotice={setNotice} />}
       </div>}
@@ -330,17 +359,17 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
-        <AlertDialogDescription>Your unsaved edits will be lost. Saved revisions remain in the review.</AlertDialogDescription>
+        <AlertDialogDescription>{discardAction === 'close' ? 'Your unsaved edits or comment will be discarded. Saved changes remain in the review.' : 'Your unsaved profile edits will be discarded. Your comment draft will remain.'}</AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>Keep editing</AlertDialogCancel>
+        <AlertDialogCancel>Keep reviewing</AlertDialogCancel>
         <AlertDialogAction onClick={() => {
           const action = discardAction;
           setDiscardAction(null);
           setEditing(false);
           setDraftValues(null);
           setSaveError('');
-          if (action === 'close') onClose();
+          if (action === 'close') { setCommentDraft(''); onClose(); }
         }}>Discard changes</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

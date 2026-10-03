@@ -16,7 +16,6 @@ import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
 import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
 import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
-import { informationWorkspacePreviewEnabled } from '@/features/graduate-information/preview';
 import { getReviewCapabilities } from '@/features/rac-verification/api';
 import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
 
@@ -58,7 +57,9 @@ export default function AdminDashboard() {
   const [selectedReviewStudent, setSelectedReviewStudent] = useState<any>(null);
 
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
-  const [canCheckRac, setCanCheckRac] = useState(false);
+  const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
+  const canCheckRac = reviewCapabilities.includes('RAC_CHECK');
+  const canReviewInformation = reviewCapabilities.includes('INFORMATION_PROOFREADER');
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
@@ -96,8 +97,8 @@ export default function AdminDashboard() {
     if (!staffUser) return;
     const controller = new AbortController();
     getReviewCapabilities(controller.signal)
-      .then(result => setCanCheckRac(result.assignments.some(item => item.capability === 'RAC_CHECK')))
-      .catch(() => { if (!controller.signal.aborted) setCanCheckRac(false); });
+      .then(result => setReviewCapabilities(result.assignments.map(item => item.capability)))
+      .catch(() => { if (!controller.signal.aborted) setReviewCapabilities([]); });
     return () => controller.abort();
   }, [staffUser]);
 
@@ -195,6 +196,7 @@ export default function AdminDashboard() {
                 user={staffUser} 
                 onLogout={() => onLogout()}
                 canCheckRac={canCheckRac}
+                canReviewInformation={canReviewInformation}
              />
          </div>
       )}
@@ -207,6 +209,7 @@ export default function AdminDashboard() {
         user={staffUser} 
         onLogout={() => onLogout()}
         canCheckRac={canCheckRac}
+        canReviewInformation={canReviewInformation}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -242,7 +245,7 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
-            {activeTab === 'information-workspace' && informationWorkspacePreviewEnabled && (userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR') && <InformationWorkspaceTab />}
+            {activeTab === 'information-workspace' && canReviewInformation && <InformationWorkspaceTab />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'images-approvals' && (

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { beginPhotoUpload, finalizePhotoUpload, getPhotoDetail, putPhoto, submitPhotoPair,
-  getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoStage } from './api';
+  getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoUploadEvent, type PhotoStage } from './api';
 import { PhotoReviewActions } from './PhotoReviewActions';
 import { PhotoReviewActivity, photoEventLabels } from './PhotoReviewActivity';
 import { CorrectionRequestPanel } from '@/features/corrections/CorrectionRequestPanel';
@@ -63,6 +63,7 @@ function FullProfile({ profile }: { profile: PhotoDetail['profile'] }) {
       ['Registered on', new Date(profile.record.registeredAt).toLocaleString()],
       ['Profile updated on', new Date(profile.record.updatedAt).toLocaleString()],
       ['Photo session', session ? `${new Date(session.date).toLocaleDateString()} · ${session.period}` : 'Not booked'],
+      ['Session time', session?.startTime && session?.endTime ? `${session.startTime}–${session.endTime}` : 'Not scheduled'],
       ['Attendance', profile.record.attendanceRecorded ? 'Recorded' : 'Not yet recorded'],
     ]} />
     <section className="rounded-xl border border-stone-200 bg-white p-4">
@@ -99,6 +100,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 }) {
   const [detail, setDetail] = useState<PhotoDetail | null>(null);
   const [events, setEvents] = useState<PhotoEvent[]>([]);
+  const [uploads, setUploads] = useState<PhotoUploadEvent[]>([]);
+  const [latestRejection, setLatestRejection] = useState<PhotoEvent | null>(null);
   const [historyError, setHistoryError] = useState('');
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'photos' | 'profile' | 'activity'>('photos');
@@ -117,11 +120,13 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    setDetail(null); setEvents([]); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
+    setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
-      if (!controller.signal.aborted) setEvents(result.events);
+      if (!controller.signal.aborted) {
+        setEvents(result.events); setUploads(result.uploads ?? []); setLatestRejection(result.latestRejection ?? null);
+      }
     }).catch(cause => {
       if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
     });
@@ -129,7 +134,11 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   }, [reviewId]);
 
   async function refreshHistory(id: number) {
-    try { setEvents((await getPhotoDecisionHistory(id)).events); setHistoryError(''); }
+    try {
+      const history = await getPhotoDecisionHistory(id);
+      setEvents(history.events); setUploads(history.uploads ?? []); setHistoryError('');
+      setLatestRejection(history.latestRejection ?? null);
+    }
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
   }
 
@@ -158,6 +167,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
       await finalizePhotoUpload(detail.reviewId, started.assetId, detail.version);
       const updated = await getPhotoDetail(detail.reviewId);
       setDetail(updated); setSelected(null); setProgress(0); onChanged();
+      void refreshHistory(detail.reviewId);
       setNotice(`${selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'} photo saved in this review.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Photo upload failed. Try again.'); }
     finally { setBusy(false); }
@@ -182,7 +192,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
-  const rejection = events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
+  const rejection = latestRejection ?? events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
   function expand(button: HTMLButtonElement, title: string, src: string, alt: string) {
     expandedTrigger.current = button;
     setExpandedError(false);
@@ -249,7 +259,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </section>}
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
-          {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events}
+          {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}
             historyError={historyError} onBusyChange={setBusy}
             onCommented={async () => {
               onChanged();

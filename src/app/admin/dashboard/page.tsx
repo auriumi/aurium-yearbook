@@ -197,7 +197,9 @@ export default function AdminDashboard() {
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
-         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
+         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={event => {
+           if (event.target === event.currentTarget) setIsMobileMenuOpen(false);
+         }}>
              <AdminSidebar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 

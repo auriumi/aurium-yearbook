@@ -14,7 +14,7 @@ import {
 } from './api';
 import { InformationEditor } from './InformationEditor';
 
-type Field = [label: string, value: string | number | null | undefined, changed?: boolean];
+type Field = [label: string, value: string | number | null | undefined, changed?: boolean, previous?: string | null];
 
 const stageLabels: Record<InformationDetail['informationStage'], string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -54,9 +54,12 @@ function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
   return <section className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
     <h3 className="text-base font-semibold text-stone-900">{title}</h3>
     <dl className="mt-4 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-      {fields.map(([label, value, changed]) => <div key={label} className={`min-w-0 ${changed ? 'rounded-lg bg-amber-50 p-2 ring-1 ring-amber-200' : ''}`}>
+      {fields.map(([label, value, changed, previous]) => <div key={label} className={`min-w-0 ${changed ? 'rounded-lg bg-amber-50 p-2 ring-1 ring-amber-200' : ''}`}>
         <dt className="text-xs font-medium text-stone-500">{label}{changed && <span className="ml-2 text-amber-800">Edited</span>}</dt>
-        <dd className="mt-1 break-words text-sm leading-6 text-stone-800">{display(value)}</dd>
+        <dd className="mt-1 break-words text-sm leading-6 text-stone-800">
+          {display(value)}
+          {changed && <p className="mt-1 text-xs text-stone-600">Previously: <del>{display(previous)}</del></p>}
+        </dd>
       </div>)}
     </dl>
   </section>;
@@ -87,25 +90,25 @@ function Profile({ detail }: { detail: InformationDetail }) {
     {detail.draft && detail.informationStage !== 'LOCKED' && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Saved draft · Changes are not in the live graduate record until final moderator approval.</p>}
     <div className="grid gap-4 xl:grid-cols-2">
       <FieldGroup title="Personal information" fields={[
-        ['First name', profile.firstName, changed('firstName')], ['Middle name', profile.middleName, changed('middleName')],
-        ['Last name', profile.lastName, changed('lastName')], ['Suffix', profile.suffix, changed('suffix')],
-        ['Nickname', profile.nickname, changed('nickname')], ['Date of birth', profile.birthDate, changed('birthDate')],
+        ['First name', profile.firstName, changed('firstName'), detail.profile.firstName], ['Middle name', profile.middleName, changed('middleName'), detail.profile.middleName],
+        ['Last name', profile.lastName, changed('lastName'), detail.profile.lastName], ['Suffix', profile.suffix, changed('suffix'), detail.profile.suffix],
+        ['Nickname', profile.nickname, changed('nickname'), detail.profile.nickname], ['Date of birth', profile.birthDate, changed('birthDate'), detail.profile.birthDate],
       ]} />
       <FieldGroup title="Academic information" fields={[
-        ['Department', profile.department, changed('department')], ['Course / program', profile.program, changed('program')],
-        ['Major', profile.major, changed('major')], ['Graduation year', profile.graduationYear],
+        ['Department', profile.department, changed('department'), detail.profile.department], ['Course / program', profile.program, changed('program'), detail.profile.program],
+        ['Major', profile.major, changed('major'), detail.profile.major], ['Graduation year', profile.graduationYear],
         ['Graduation term', profile.graduationTerm === 'END_YEAR' ? 'End year' : 'Mid year'],
-        ['Thesis / capstone title', profile.thesisTitle, changed('thesisTitle')],
+        ['Thesis / capstone title', profile.thesisTitle, changed('thesisTitle'), detail.profile.thesisTitle],
       ]} />
       <FieldGroup title="Contact and address" fields={[
         ['School email', profile.schoolEmail], ['Personal email', profile.personalEmail],
-        ['Mobile number', profile.contactNumber, changed('contactNumber')], ['Province', profile.province, changed('province')],
-        ['City / municipality', profile.city, changed('city')], ['Barangay', profile.barangay, changed('barangay')],
+        ['Mobile number', profile.contactNumber, changed('contactNumber'), detail.profile.contactNumber], ['Province', profile.province, changed('province'), detail.profile.province],
+        ['City / municipality', profile.city, changed('city'), detail.profile.city], ['Barangay', profile.barangay, changed('barangay'), detail.profile.barangay],
       ]} />
       <FieldGroup title="Parents and guardian" fields={[
-        ['Mother’s name', profile.mothersName, changed('mothersName')], ['Mother’s title', profile.mothersTitle, changed('mothersTitle')],
-        ['Father’s name', profile.fathersName, changed('fathersName')], ['Father’s title', profile.fathersTitle, changed('fathersTitle')],
-        ['Guardian’s name', profile.guardiansName, changed('guardiansName')], ['Guardian’s title', profile.guardiansTitle, changed('guardiansTitle')],
+        ['Mother’s name', profile.mothersName, changed('mothersName'), detail.profile.mothersName], ['Mother’s title', profile.mothersTitle, changed('mothersTitle'), detail.profile.mothersTitle],
+        ['Father’s name', profile.fathersName, changed('fathersName'), detail.profile.fathersName], ['Father’s title', profile.fathersTitle, changed('fathersTitle'), detail.profile.fathersTitle],
+        ['Guardian’s name', profile.guardiansName, changed('guardiansName'), detail.profile.guardiansName], ['Guardian’s title', profile.guardiansTitle, changed('guardiansTitle'), detail.profile.guardiansTitle],
       ]} />
     </div>
 

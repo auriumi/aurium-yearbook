@@ -98,7 +98,7 @@ function Profile({ detail, commentDraft, onCommentChange, onCommentBusy, onComme
 
     {detail.draft && detail.informationStage !== 'LOCKED' && <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Saved draft · Changes are not in the live graduate record until final moderator approval.</p>}
     {detail.draft && <p className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
-      Revision {detail.draft.revisionId} · Saved {new Date(detail.draft.savedAt).toLocaleString()} · {detail.draft.changedFields.length} changed fields highlighted below
+      Revision {detail.draft.revisionId} · Saved {new Date(detail.draft.savedAt).toLocaleString()} · {editableProfileFields.filter(changed).length} changed fields highlighted below
     </p>}
     <div className="grid gap-4 xl:grid-cols-2">
       <FieldGroup title="Personal information" fields={[

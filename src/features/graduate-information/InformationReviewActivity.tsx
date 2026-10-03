@@ -76,7 +76,7 @@ export function InformationReviewActivity({ reviewId, version, revisionId, canCo
     <h3 className="text-base font-semibold text-stone-900">Review activity</h3>
     {canComment && <form onSubmit={submit} className="mt-4 border-b border-stone-200 pb-4">
       <label htmlFor={`information-comment-${reviewId}`} className="text-sm font-medium text-stone-800">{revisionId === null ? 'Add a comment to this review' : `Add a comment to revision ${revisionId}`}</label>
-      <textarea id={`information-comment-${reviewId}`} value={note} maxLength={2000} rows={3}
+      <textarea id={`information-comment-${reviewId}`} value={note} maxLength={2000} rows={3} disabled={saving}
         onChange={event => { onNoteChange(event.target.value); setCommentError(''); }}
         placeholder="Leave a clear note for the next reviewer"
         className="mt-2 w-full rounded-lg border border-stone-200 bg-white p-3 text-sm text-stone-800 focus-visible:outline-2 focus-visible:outline-amber-700" />

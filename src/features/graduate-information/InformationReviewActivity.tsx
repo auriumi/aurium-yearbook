@@ -6,7 +6,7 @@ import { getInformationDecisionHistory, type InformationDecisionEvent } from './
 const labels: Record<InformationDecisionEvent['action'], string> = {
   COMMENTED: 'Commented', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
   APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Sent to moderator',
-  REJECTED_MODERATOR: 'Rejected by moderator', LOCKED: 'Completed',
+  REJECTED_MODERATOR: 'Rejected by moderator', LOCKED: 'Completed', REOPENED: 'Reopened by IT',
 };
 
 export function InformationReviewActivity({ reviewId, version }: { reviewId: number; version: number }) {

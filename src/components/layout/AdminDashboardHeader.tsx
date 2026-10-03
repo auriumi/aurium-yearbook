@@ -11,6 +11,7 @@ const TAB_TITLES: Record<string, string> = {
   notes: "Staff Notes",
   slots: "Schedule Manager",
   masterlist: "Verified Masterlist",
+  "information-workspace": "Graduate Information",
   images: "Image Management",
   "images-approvals": "Approval Thread",
   scanner: "Attendance Scanner",

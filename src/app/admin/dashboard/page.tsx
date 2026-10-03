@@ -15,6 +15,8 @@ import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
 import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
+import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
+import { informationWorkspacePreviewEnabled } from '@/features/graduate-information/preview';
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -172,7 +174,9 @@ export default function AdminDashboard() {
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
-         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
+         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={event => {
+           if (event.target === event.currentTarget) setIsMobileMenuOpen(false);
+         }}>
              <AdminSidebar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -226,6 +230,7 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
+            {activeTab === 'information-workspace' && informationWorkspacePreviewEnabled && (userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR') && <InformationWorkspaceTab />}
             {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'images-approvals' && (
               <ImageApprovalsTab

@@ -13,11 +13,21 @@ const labels: Record<PhotoStage, string> = {
   APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Submitted to Moderator',
   REJECTED_MODERATOR: 'Rejected by Moderator', LOCKED: 'Completed',
 };
-const queues: { value: PhotoQueue; label: string }[] = [
+const uploaderQueues: { value: PhotoQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' }, { value: 'DRAFT', label: 'Pending' },
   { value: 'SUBMITTED_QC', label: 'Submitted to QC' }, { value: 'REJECTED_QC', label: 'Rejected by QC' },
-  { value: 'APPROVED_QC', label: 'Approved by QC' }, { value: 'LOCKED', label: 'Completed' },
+  { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'LOCKED', label: 'Completed' },
   { value: 'REJECTED_MODERATOR', label: 'Rejected by Moderator' },
+];
+const qcQueues: { value: PhotoQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' }, { value: 'SUBMITTED_QC', label: 'Pending' },
+  { value: 'REJECTED_QC', label: 'Rejected by QC' }, { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Submitted to Moderator' }, { value: 'LOCKED', label: 'Completed' },
+];
+const moderatorQueues: { value: PhotoQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' }, { value: 'SUBMITTED_MODERATOR', label: 'Pending' },
+  { value: 'LOCKED', label: 'Completed' },
 ];
 const selectStyle = 'mt-2 h-11 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-800 focus-visible:outline-2 focus-visible:outline-amber-700';
 const currentYear = new Date().getFullYear();
@@ -29,8 +39,11 @@ function name(row: PhotoRow) {
     `Graduate ${row.studentNumber}`;
 }
 
-export function PhotoWorkspace() {
-  const [filters, setFilters] = useState<PhotoFilters>(initial);
+export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator' }) {
+  const queues = role === 'moderator' ? moderatorQueues : role === 'qc' ? qcQueues : uploaderQueues;
+  const [filters, setFilters] = useState<PhotoFilters>(() => ({ ...initial,
+    stage: role === 'moderator' ? 'SUBMITTED_MODERATOR' : role === 'qc' ? 'SUBMITTED_QC' : 'ALL',
+  }));
   const [searchInput, setSearchInput] = useState('');
   const [list, setList] = useState<PhotoList | null>(null);
   const [options, setOptions] = useState<PhotoOptions | null>(null);
@@ -48,8 +61,15 @@ export function PhotoWorkspace() {
   }, [searchInput]);
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true); setError('');
-    getPhotoList(filters, controller.signal).then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+    setLoading(true); setList(null); setError('');
+    getPhotoList(filters, controller.signal).then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => { if (!controller.signal.aborted) { setError(cause instanceof Error ? cause.message : 'Unable to load photo reviews.'); setLoading(false); } });
     return () => controller.abort();
   }, [filters, refresh]);
@@ -66,6 +86,7 @@ export function PhotoWorkspace() {
     setFilters(previous => ({ ...previous, ...patch, page: 1 }));
   }
   function open(row: PhotoRow, button: HTMLButtonElement) {
+    if (filters.stage === 'ALL' || row.reviewId === null) return;
     returnFocusRef.current = button;
     setReviewId(row.reviewId);
   }
@@ -73,7 +94,7 @@ export function PhotoWorkspace() {
   return <section className="space-y-5" aria-label="Graduate photo workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate photos</h2>
-      <p className="mt-1 text-sm text-stone-600">Upload graduation and theme photos for RAC/SAO-verified graduates. The registration photo stays read-only.</p>
+      <p className="mt-1 text-sm text-stone-600">Upload and review graduation and theme photos for RAC/SAO-verified graduates. The registration photo stays read-only.</p>
     </div>
     <div className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -109,7 +130,7 @@ export function PhotoWorkspace() {
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.stage === item.value}
         className={`min-h-11 h-auto rounded-lg px-3 py-2 text-sm ${filters.stage === item.value ? 'border-amber-800 bg-amber-900 text-white hover:bg-amber-800 hover:text-white' : 'border-stone-200 bg-white text-stone-600'}`}
         onClick={() => change({ stage: item.value })}>{item.label}
-        {item.value !== 'ALL' && <span className="ml-2 rounded bg-stone-100 px-1.5 text-xs text-stone-700">{list?.counts[item.value] ?? 0}</span>}
+        <span className="ml-2 rounded bg-stone-100 px-1.5 text-xs text-stone-700">{list ? list.counts[item.value] ?? 0 : '—'}</span>
       </Button>)}
     </nav>
     <div className="flex items-end justify-between gap-3">
@@ -125,13 +146,16 @@ export function PhotoWorkspace() {
           <thead className="border-b border-stone-200 bg-stone-50 text-xs text-stone-600"><tr>
             <th scope="col" className="px-4 py-3">Graduate</th><th scope="col" className="hidden px-4 py-3 sm:table-cell">Department and program</th>
             <th scope="col" className="px-4 py-3">Status</th></tr></thead>
-          <tbody className="divide-y divide-stone-100">{list.rows.map(row => <tr key={row.reviewId}>
-            <td className="px-4 py-3"><button type="button" onClick={event => open(row, event.currentTarget)}
+          <tbody className="divide-y divide-stone-100">{list.rows.map(row => <tr key={row.studentNumber}>
+            <td className="px-4 py-3">{filters.stage === 'ALL' || row.reviewId === null
+              ? <span className="font-semibold text-stone-900">{name(row)}</span>
+              : <button type="button" onClick={event => open(row, event.currentTarget)}
               className="min-h-11 text-left font-semibold text-amber-900 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-amber-800">
-              {name(row)}</button><p className="text-xs text-stone-500">{row.studentNumber}</p></td>
+              {name(row)}</button>}<p className="text-xs text-stone-500">{row.studentNumber}</p></td>
             <td className="hidden px-4 py-3 text-stone-700 sm:table-cell">{row.department || 'No department'} · {row.program || 'No program'}
               {row.major ? ` · ${row.major}` : ''}</td>
-            <td className="px-4 py-3 text-stone-700">{labels[row.stage]}</td>
+            <td className="px-4 py-3 text-stone-700">{row.stage ? labels[row.stage]
+              : row.verification === 'NOT_LISTED' ? 'Not on RAC/SAO list' : 'Awaiting RAC/SAO verification'}</td>
           </tr>)}</tbody>
         </table>
       </div>

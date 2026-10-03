@@ -115,12 +115,13 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [expandedError, setExpandedError] = useState(false);
   const expandedTrigger = useRef<HTMLButtonElement | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [commentDraft, setCommentDraft] = useState('');
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
+    setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos'); setCommentDraft(''); setConfirmDiscard(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
@@ -132,6 +133,16 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     });
     return () => controller.abort();
   }, [reviewId]);
+
+  useEffect(() => {
+    if (reviewId === null || !commentDraft.trim()) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [reviewId, commentDraft]);
 
   async function refreshHistory(id: number) {
     try {
@@ -200,7 +211,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   }
   function requestClose() {
     if (busy) return;
-    if (selected) setConfirmDiscard(true);
+    if (selected || commentDraft.trim()) setConfirmDiscard(true);
     else onClose();
   }
   return <>
@@ -260,7 +271,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
           {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}
-            historyError={historyError} onBusyChange={setBusy}
+            historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
             onCommented={async () => {
               onChanged();
               setDetail(await getPhotoDetail(detail.reviewId));
@@ -303,10 +314,10 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
-      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard the selected photo?</AlertDialogTitle>
-        <AlertDialogDescription>This selection has not been saved. Previously saved photos will stay in the review.</AlertDialogDescription>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+        <AlertDialogDescription>Your selected photo or comment has not been saved. Previously saved work will stay in the review.</AlertDialogDescription>
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
-        <AlertDialogAction onClick={() => { setSelected(null); setConfirmDiscard(false); onClose(); }}>Discard selection</AlertDialogAction>
+        <AlertDialogAction onClick={() => { setSelected(null); setCommentDraft(''); setConfirmDiscard(false); onClose(); }}>Discard changes</AlertDialogAction>
       </AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </>;

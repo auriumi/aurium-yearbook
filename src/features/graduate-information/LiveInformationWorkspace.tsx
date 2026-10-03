@@ -47,13 +47,19 @@ export function LiveInformationWorkspace() {
   }, [searchInput]);
 
   useEffect(() => {
-    setReviewId(null);
     const controller = new AbortController();
     setLoading(true);
     setList(null);
     setError('');
     getInformationList(filters, controller.signal)
-      .then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+      .then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => {
         if (!controller.signal.aborted) {
           setError(cause instanceof Error ? cause.message : 'Unable to load graduate information.');
@@ -133,6 +139,7 @@ export function LiveInformationWorkspace() {
       </div>
     </>}
 
-    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)} returnFocusRef={returnFocusRef} />
+    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)}
+      onChanged={() => setRefresh(value => value + 1)} returnFocusRef={returnFocusRef} />
   </section>;
 }

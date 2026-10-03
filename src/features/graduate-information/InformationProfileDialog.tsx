@@ -9,7 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  editableProfileFields, getInformationDetail, saveInformationDraft,
+  editableProfileFields, getInformationDetail, saveInformationDraft, submitInformationReview,
   type EditableProfile, type InformationDetail,
 } from './api';
 import { InformationEditor } from './InformationEditor';
@@ -132,9 +132,10 @@ function Profile({ detail }: { detail: InformationDetail }) {
   </div>;
 }
 
-export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: {
+export function InformationProfileDialog({ reviewId, onClose, onChanged, returnFocusRef }: {
   reviewId: number | null;
   onClose: () => void;
+  onChanged: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
 }) {
   const [request, setRequest] = useState<{
@@ -143,10 +144,14 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
   const [editing, setEditing] = useState(false);
   const [draftValues, setDraftValues] = useState<EditableProfile | null>(null);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [submitError, setSubmitError] = useState('');
   const [notice, setNotice] = useState('');
   const [discardAction, setDiscardAction] = useState<'close' | 'cancel' | null>(null);
+  const [submitOpen, setSubmitOpen] = useState(false);
   const pendingSave = useRef<{ fingerprint: string; operationId: string } | null>(null);
+  const pendingSubmission = useRef<{ fingerprint: string; operationId: string } | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
@@ -155,8 +160,10 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
     setEditing(false);
     setDraftValues(null);
     setSaveError('');
+    setSubmitError('');
     setNotice('');
     pendingSave.current = null;
+    pendingSubmission.current = null;
     getInformationDetail(reviewId, controller.signal)
       .then(result => { if (!controller.signal.aborted) setRequest({ reviewId, detail: result }); })
       .catch(cause => {
@@ -170,9 +177,10 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
   const detail = current?.detail;
   const baseline = detail ? editableValues(detail) : null;
   const dirty = !!draftValues && !!baseline && editableProfileFields.some(field => draftValues[field] !== baseline[field]);
+  const canSubmit = !editing && !!detail && detail.availableActions.includes('SUBMIT_QC');
 
   function requestClose(action: 'close' | 'cancel') {
-    if (saving) return;
+    if (saving || submitting) return;
     if (editing && dirty) setDiscardAction(action);
     else if (action === 'close') onClose();
     else { setEditing(false); setDraftValues(null); setSaveError(''); }
@@ -205,6 +213,7 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
     try {
       await saveInformationDraft(detail.reviewId, detail.version, changes, pendingSave.current.operationId);
       saved = true;
+      onChanged();
       const updated = await getInformationDetail(detail.reviewId);
       setRequest({ reviewId: detail.reviewId, detail: updated });
       setEditing(false);
@@ -222,6 +231,40 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function submit() {
+    setSubmitOpen(false);
+    if (!detail || !detail.availableActions.includes('SUBMIT_QC') || submitting) return;
+    const fingerprint = JSON.stringify([detail.reviewId, detail.version, (detail.draft?.revisionId ?? null)]);
+    if (pendingSubmission.current?.fingerprint !== fingerprint) {
+      pendingSubmission.current = { fingerprint, operationId: crypto.randomUUID() };
+    }
+    setSubmitting(true);
+    setSubmitError('');
+    let submitted = false;
+    try {
+      const result = await submitInformationReview(detail.reviewId, detail.version, (detail.draft?.revisionId ?? null), pendingSubmission.current.operationId);
+      submitted = true;
+      onChanged();
+      setRequest({ reviewId: detail.reviewId, detail: {
+        ...detail, informationStage: 'SUBMITTED_QC', queue: 'SUBMITTED_QC',
+        version: result.version, availableActions: [],
+      } });
+      const updated = await getInformationDetail(detail.reviewId);
+      setRequest({ reviewId: detail.reviewId, detail: updated });
+      setNotice('Submitted to QC. This revision is now read-only for the proofreader.');
+      pendingSubmission.current = null;
+    } catch (error) {
+      if (submitted) {
+        setNotice('Submitted to QC, but the profile could not refresh. Close and reopen it to see the latest status.');
+        pendingSubmission.current = null;
+      } else {
+        setSubmitError(error instanceof Error ? error.message : 'Unable to submit. Refresh and try again.');
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -244,7 +287,7 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
         </div>
         <div className="flex items-center gap-2">
           {!editing && detail?.availableActions.includes('SAVE_DRAFT') && <Button onClick={startEditing} className="min-h-11">Edit information</Button>}
-          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving} className="min-h-11 shrink-0">Close</Button>
+          <Button variant="outline" onClick={() => requestClose('close')} disabled={saving || submitting} className="min-h-11 shrink-0">Close</Button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
@@ -255,15 +298,19 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
               : detail ? <Profile detail={detail} /> : null}
       </div>
-      {(editing || notice) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
+      {(editing || canSubmit || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
         <div className="min-w-0 flex-1">
           {saveError ? <p role="alert" className="text-sm text-red-700">{saveError} Your edits remain on this screen.</p>
-            : <p role="status" className="text-sm text-stone-600">{notice || (dirty ? 'Unsaved draft changes' : 'No changes yet')}</p>}
+            : submitError ? <p role="alert" className="text-sm text-red-700">{submitError}</p>
+              : <p role="status" className="text-sm text-stone-600">{notice || (editing ? (dirty ? 'Unsaved draft changes' : 'No changes yet') : 'Profile ready for QC review')}</p>}
         </div>
         {editing && <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => requestClose('cancel')} disabled={saving}>Cancel</Button>
           <Button type="submit" form="information-edit-form" disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save draft'}</Button>
         </div>}
+        {canSubmit && <Button onClick={() => setSubmitOpen(true)} disabled={submitting}>
+          {submitting ? 'Submitting…' : 'Submit to QC'}
+        </Button>}
       </div>}
     </DialogContent>
   </Dialog>
@@ -283,6 +330,18 @@ export function InformationProfileDialog({ reviewId, onClose, returnFocusRef }: 
           setSaveError('');
           if (action === 'close') onClose();
         }}>Discard changes</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+  <AlertDialog open={submitOpen} onOpenChange={setSubmitOpen}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Submit this profile to QC?</AlertDialogTitle>
+        <AlertDialogDescription>A snapshot of the displayed profile will be sent to QC, including when no edits were needed. You can edit it again only if QC or the moderator returns it.</AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Keep reviewing</AlertDialogCancel>
+        <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

@@ -102,12 +102,15 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [confirmDiscardComment, setConfirmDiscardComment] = useState(false);
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
     setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setTab('photos');
+    setCommentDraft(''); setConfirmDiscardComment(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
@@ -119,6 +122,16 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     });
     return () => controller.abort();
   }, [reviewId]);
+
+  useEffect(() => {
+    if (reviewId === null || !commentDraft.trim()) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [reviewId, commentDraft]);
 
   async function refreshHistory(id: number) {
     try {
@@ -180,15 +193,20 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
   const rejection = latestRejection ?? events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
+  function requestClose() {
+    if (busy) return;
+    if (commentDraft.trim()) setConfirmDiscardComment(true);
+    else onClose();
+  }
   return <>
-    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open && !busy) onClose(); }}>
+    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) requestClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
         className="flex h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-xl border-stone-200 bg-[#FDFBF7] p-0 sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-none"
         onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3 sm:px-6">
           <div><DialogTitle className="text-lg text-stone-900">{detail ? name(detail.profile) : 'Graduate photos'}</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-stone-600">{detail ? `Student ${detail.profile.studentNumber} · ${labels[detail.stage]}` : 'Loading review…'}</DialogDescription></div>
-          <Button variant="outline" onClick={onClose} disabled={busy} className="min-h-11">Close</Button>
+          <Button variant="outline" onClick={requestClose} disabled={busy} className="min-h-11">Close</Button>
         </div>
         <div className="flex shrink-0 gap-2 border-b border-stone-200 bg-white px-4 py-2 sm:px-6" aria-label="Graduate review sections">
           <Button aria-pressed={tab === 'photos'} variant={tab === 'photos' ? 'default' : 'ghost'} onClick={() => setTab('photos')}>Photo pair</Button>
@@ -231,7 +249,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
           {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}
-            historyError={historyError} onBusyChange={setBusy}
+            historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
             onCommented={async () => {
               onChanged();
               setDetail(await getPhotoDetail(detail.reviewId));
@@ -252,6 +270,13 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         <AlertDialogDescription>QC will review the current graduation and theme photos. You cannot replace them while the pair is under review.</AlertDialogDescription>
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
         <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={confirmDiscardComment} onOpenChange={setConfirmDiscardComment}>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard the unsaved comment?</AlertDialogTitle>
+        <AlertDialogDescription>Your comment has not been saved. Keep reviewing to finish it, or discard it and close this graduate.</AlertDialogDescription>
+      </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep reviewing</AlertDialogCancel>
+        <AlertDialogAction onClick={() => { setCommentDraft(''); setConfirmDiscardComment(false); onClose(); }}>Discard comment</AlertDialogAction>
+      </AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </>;
 }

@@ -74,6 +74,7 @@ export interface InformationDetail {
   success: true;
   reviewId: number;
   informationStage: InformationStage;
+  photoStage: InformationStage | null;
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import Image from 'next/image';
+import { ReferencePhoto } from './ReferencePhoto';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -83,16 +83,14 @@ function Profile({ detail, commentDraft, onCommentChange, onCommentBusy, onComme
       <p className="mt-2 text-sm">General Proofreader: recheck this record, then submit it to QC.</p>
     </section>}
     <section className="flex flex-wrap items-start gap-5 rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-      <div className="flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-center text-xs text-stone-500">
-        {profile.referencePhotoUrl ? <Image unoptimized width={96} height={128} src={profile.referencePhotoUrl} alt={`Registration reference photo for ${fullName(profile)}`} className="h-full w-full object-cover" />
-          : <span className="px-2">{profile.referencePhotoPresent ? 'Reference photo unavailable' : 'No reference photo'}</span>}
-      </div>
+      <ReferencePhoto src={profile.referencePhotoUrl} present={profile.referencePhotoPresent} graduateName={fullName(profile)} />
       <div className="min-w-0 flex-1">
         <h2 className="text-xl font-semibold text-stone-900">{fullName(profile)}</h2>
         <p className="mt-1 text-sm text-stone-600">Student number {profile.studentNumber}</p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
           <span className="rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-800">RAC/SAO verified</span>
           <span className="rounded-md bg-amber-50 px-2.5 py-1.5 text-amber-900">Information: {stageLabels[detail.informationStage]}</span>
+          <span className="rounded-md bg-stone-100 px-2.5 py-1.5 text-stone-700">Photos: {detail.photoStage ? stageLabels[detail.photoStage] : 'Review unavailable'}</span>
           <span className="rounded-md bg-stone-100 px-2.5 py-1.5 text-stone-700">Reference list: {detail.verification.sourceVersion}</span>
         </div>
         <p className="mt-3 text-xs text-stone-500">The registration photo is a read-only reference.</p>

@@ -193,3 +193,13 @@ export async function getInformationDecisionHistory(reviewId: number, signal?: A
   });
   return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
 }
+
+export async function decideInformationModerator(reviewId: number, expectedVersion: number, revisionId: number,
+  operationId: string, decision: 'APPROVE' | 'REJECT', reason: string | null) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/moderator-decision`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId, decision, reason }),
+  });
+  return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: InformationStage }>(response);
+}

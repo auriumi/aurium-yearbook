@@ -76,6 +76,7 @@ export interface InformationDetail {
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];
+  rejection: { reason: string | null; createdAt: string; actor: { first_name: string; last_name: string } } | null;
   draft: {
     revisionId: number; version: number; before: EditableProfile; after: EditableProfile;
     changedFields: EditableProfileField[]; savedAt: string;
@@ -114,6 +115,14 @@ export interface InformationDecisionEvent {
   note: string | null;
   created_at: string;
   actor: { first_name: string; last_name: string };
+}
+
+export interface InformationRevision {
+  id: number;
+  version: number;
+  changedFields: EditableProfileField[];
+  createdAt: string;
+  author: { first_name: string; last_name: string };
 }
 
 async function readResponse<T>(response: Response): Promise<T> {
@@ -192,6 +201,13 @@ export async function getInformationDecisionHistory(reviewId: number, signal?: A
     credentials: 'include', cache: 'no-store', signal,
   });
   return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
+}
+
+export async function getInformationDraftHistory(reviewId: number, signal?: AbortSignal) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/revisions`, {
+    credentials: 'include', cache: 'no-store', signal,
+  });
+  return readResponse<{ success: true; revisions: InformationRevision[] }>(response);
 }
 
 export async function addInformationComment(reviewId: number, expectedVersion: number, revisionId: number | null,

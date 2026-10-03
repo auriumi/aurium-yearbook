@@ -19,10 +19,12 @@ export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; 
     theme: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     reference: string | null; referencePresent: boolean };
   profile: Omit<InformationDetail['profile'], 'referencePhotoUrl' | 'referencePhotoPresent'> };
-export type PhotoEvent = { id: number; track_version: number; pair_id: number;
+export type PhotoEvent = { id: number; track_version: number; pair_id: number | null;
   action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
   from_stage: PhotoStage; to_stage: PhotoStage; note: string | null; created_at: string;
   actor: { first_name: string; last_name: string } };
+export type PhotoUploadEvent = { id: number; type: 'GRADUATION' | 'THEME'; sealed_at: string | null;
+  uploader: { first_name: string; last_name: string } };
 
 async function read<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => null);
@@ -104,7 +106,8 @@ export async function submitPhotoPair(reviewId: number, expectedVersion: number,
 }
 
 export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSignal) {
-  return read<{ success: true; events: PhotoEvent[] }>(await fetch(
+  return read<{ success: true; events: PhotoEvent[]; uploads: PhotoUploadEvent[];
+    latestRejection: PhotoEvent | null }>(await fetch(
     `${baseUrl}/api/admin/photo-reviews/${reviewId}/decision-events`, {
       credentials: 'include', cache: 'no-store', signal,
     }));
@@ -120,7 +123,7 @@ export async function decidePhoto(reviewId: number, role: 'qc' | 'moderator', ex
     }));
 }
 
-export async function addPhotoComment(reviewId: number, expectedVersion: number, pairRevisionId: number,
+export async function addPhotoComment(reviewId: number, expectedVersion: number, pairRevisionId: number | null,
   operationId: string, note: string) {
   return read<{ success: true; eventId: number; version: number }>(await fetch(
     `${baseUrl}/api/admin/photo-reviews/${reviewId}/comments`, {

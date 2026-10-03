@@ -111,6 +111,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [expanded, setExpanded] = useState<{ title: string; src: string; alt: string } | null>(null);
   const [expandedError, setExpandedError] = useState(false);
   const expandedTrigger = useRef<HTMLButtonElement | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
@@ -163,7 +164,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   }
 
   async function submit() {
-    if (!detail?.pair) return;
+    if (!detail?.pair || selected || busy) return;
     const fingerprint = `${detail.reviewId}:${detail.version}:${detail.pair.revisionId}`;
     if (!pendingSubmission.current?.startsWith(`${fingerprint}:`)) {
       pendingSubmission.current = `${fingerprint}:${crypto.randomUUID()}`;
@@ -187,15 +188,20 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     setExpandedError(false);
     setExpanded({ title, src, alt });
   }
+  function requestClose() {
+    if (busy) return;
+    if (selected) setConfirmDiscard(true);
+    else onClose();
+  }
   return <>
-    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open && !busy) onClose(); }}>
+    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) requestClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
         className="flex h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-xl border-stone-200 bg-[#FDFBF7] p-0 sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-none"
         onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3 sm:px-6">
           <div><DialogTitle className="text-lg text-stone-900">{detail ? name(detail.profile) : 'Graduate photos'}</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-stone-600">{detail ? `Student ${detail.profile.studentNumber} · ${labels[detail.stage]}` : 'Loading review…'}</DialogDescription></div>
-          <Button variant="outline" onClick={onClose} disabled={busy} className="min-h-11">Close</Button>
+          <Button variant="outline" onClick={requestClose} disabled={busy} className="min-h-11">Close</Button>
         </div>
         <div className="flex shrink-0 gap-2 border-b border-stone-200 bg-white px-4 py-2 sm:px-6" aria-label="Graduate review sections">
           <Button aria-pressed={tab === 'photos'} variant={tab === 'photos' ? 'default' : 'ghost'} onClick={() => setTab('photos')}>Photo pair</Button>
@@ -236,7 +242,9 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
               {selected && <div className="mt-4 flex flex-wrap items-center gap-4">
                 {preview && <div className="relative h-28 w-24 overflow-hidden rounded-lg bg-stone-100"><Image unoptimized fill sizes="96px" src={preview} alt="Selected local photo preview" className="object-contain" /></div>}
                 <div><p className="text-sm text-stone-700">{selected.file.name} · {selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'}</p>
-                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button></div>
+                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button>
+                  <Button variant="outline" className="ml-2 mt-2 min-h-11" disabled={busy} onClick={() => setSelected(null)}>Discard selection</Button>
+                  <p className="mt-2 text-sm text-amber-900">Save or discard this selection before submitting to QC.</p></div>
               </div>}
             </section>}
           </div>}
@@ -251,7 +259,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         </div>
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>
-          {canSubmit && <Button disabled={busy} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
+          {canSubmit && <Button disabled={busy || !!selected} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
           <PhotoReviewActions detail={detail} onUpdated={setDetail}
             onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
             onBusyChange={setBusy} onNotice={setNotice} />
@@ -283,6 +291,13 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         <AlertDialogDescription>QC will review the current graduation and theme photos. You cannot replace them while the pair is under review.</AlertDialogDescription>
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
         <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard the selected photo?</AlertDialogTitle>
+        <AlertDialogDescription>This selection has not been saved. Previously saved photos will stay in the review.</AlertDialogDescription>
+      </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
+        <AlertDialogAction onClick={() => { setSelected(null); setConfirmDiscard(false); onClose(); }}>Discard selection</AlertDialogAction>
+      </AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </>;
 }

@@ -62,7 +62,14 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setList(null); setError('');
-    getPhotoList(filters, controller.signal).then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+    getPhotoList(filters, controller.signal).then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => { if (!controller.signal.aborted) { setError(cause instanceof Error ? cause.message : 'Unable to load photo reviews.'); setLoading(false); } });
     return () => controller.abort();
   }, [filters, refresh]);

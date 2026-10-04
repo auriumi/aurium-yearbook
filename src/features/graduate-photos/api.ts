@@ -108,10 +108,12 @@ export async function submitPhotoPair(reviewId: number, expectedVersion: number,
   }));
 }
 
-export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSignal) {
+export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSignal,
+  cursors?: { events: number | null; uploads: number | null }) {
+  const query = cursors ? `?beforeVersion=${cursors.events ?? 0}&beforeUploadId=${cursors.uploads ?? 0}` : '';
   return read<{ success: true; events: PhotoEvent[]; uploads: PhotoUploadEvent[];
-    latestRejection: PhotoEvent | null }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/decision-events`, {
+    nextEventCursor: number | null; nextUploadCursor: number | null; latestRejection: PhotoEvent | null }>(await fetch(
+    `${baseUrl}/api/admin/photo-reviews/${reviewId}/decision-events${query}`, {
       credentials: 'include', cache: 'no-store', signal,
     }));
 }

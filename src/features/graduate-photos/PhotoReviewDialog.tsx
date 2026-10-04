@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject, type ReactNode } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -74,8 +74,8 @@ function FullProfile({ profile }: { profile: PhotoDetail['profile'] }) {
   </div>;
 }
 
-function PhotoCard({ title, src, alt, description, onExpand }: { title: string; src: string | null;
-  alt: string; description: string; onExpand: (button: HTMLButtonElement, title: string, src: string, alt: string) => void }) {
+function PhotoCard({ title, src, alt, description, children, onExpand }: { title: string; src: string | null;
+  alt: string; description: string; children?: ReactNode; onExpand: (button: HTMLButtonElement, title: string, src: string, alt: string) => void }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return <section className="rounded-xl border border-stone-200 bg-white p-4">
     <div className="mb-3"><h3 className="font-semibold text-stone-900">{title}</h3>
@@ -90,6 +90,7 @@ function PhotoCard({ title, src, alt, description, onExpand }: { title: string; 
       {src ? <><span>Photo preview unavailable.</span><Button variant="outline" onClick={() => setFailedSrc(null)}>Retry preview</Button></>
         : <span>No photo yet</span>}
     </div>}
+    {children}
   </section>;
 }
 
@@ -214,6 +215,24 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     if (selected || commentDraft.trim()) setConfirmDiscard(true);
     else onClose();
   }
+  function uploadControl(type: Kind) {
+    if (!canUpload) return null;
+    return <div className="mt-4 border-t border-stone-100 pt-3">
+      <label className="text-sm font-medium text-stone-800">
+        {type === 'GRADUATION' ? 'Choose graduation photo' : 'Choose theme photo'}
+        <input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || (!!selected && selected.type !== type)}
+          onChange={event => { choose(type, event.target.files?.[0]); event.currentTarget.value = ''; }}
+          className="mt-2 block w-full rounded-lg border border-stone-200 bg-stone-50 p-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:text-amber-900" />
+      </label>
+      {selected?.type === type && <div className="mt-3 space-y-2">
+        <p className="break-words text-xs text-stone-600">{selected.file.name} · Not saved</p>
+        <div className="flex flex-wrap gap-2">
+          <Button className="min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button>
+          <Button className="min-h-11" variant="outline" disabled={busy} onClick={() => setSelected(null)}>Discard selection</Button>
+        </div>
+      </div>}
+    </div>;
+  }
   return <>
     <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) requestClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
@@ -238,32 +257,12 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
               <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
                 <strong>{photoEventLabels[rejection.action]}:</strong> {rejection.note}
               </div>}
-            <p className="mb-4 text-sm text-stone-600">Review the graduation and theme photos together. The registration photo is a read-only reference.</p>
+            <p className="mb-4 text-sm text-stone-600">Compare both photos with the registration reference. JPEG, PNG or WebP · up to 5 MB · 8192 pixels per side · 32 megapixels.</p>
             <div className="grid gap-4 md:grid-cols-3">
-              <PhotoCard title="Graduation photo" src={detail.photos.graduation?.url ?? null} alt={`Graduation photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand} />
-              <PhotoCard title="Theme photo" src={detail.photos.theme?.url ?? null} alt={`Theme photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand} />
               <PhotoCard title="Registration reference" src={detail.photos.reference} alt={`Registration reference for ${name(detail.profile)}`} description="For comparison only; it cannot be changed here" onExpand={expand} />
+              <PhotoCard title="Graduation photo" src={selected?.type === 'GRADUATION' ? preview : detail.photos.graduation?.url ?? null} alt={`Graduation photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand}>{uploadControl('GRADUATION')}</PhotoCard>
+              <PhotoCard title="Theme photo" src={selected?.type === 'THEME' ? preview : detail.photos.theme?.url ?? null} alt={`Theme photo for ${name(detail.profile)}`} description="Required for QC submission" onExpand={expand}>{uploadControl('THEME')}</PhotoCard>
             </div>
-            {canUpload && <section className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
-              <h3 className="font-semibold text-stone-900">Add or replace a photo</h3>
-              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 5 MB. Each saved replacement creates a new pair revision.</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {(['GRADUATION', 'THEME'] as const).map(type => <label key={type} className="text-sm font-medium text-stone-800">
-                  {type === 'GRADUATION' ? 'Graduation photo' : 'Theme photo'}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event => {
-                    choose(type, event.target.files?.[0]); event.currentTarget.value = '';
-                  }}
-                    className="mt-2 block w-full rounded-lg border border-stone-200 bg-stone-50 p-3 text-sm file:mr-3 file:rounded file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:text-amber-900" />
-                </label>)}
-              </div>
-              {selected && <div className="mt-4 flex flex-wrap items-center gap-4">
-                {preview && <div className="relative h-28 w-24 overflow-hidden rounded-lg bg-stone-100"><Image unoptimized fill sizes="96px" src={preview} alt="Selected local photo preview" className="object-contain" /></div>}
-                <div><p className="text-sm text-stone-700">{selected.file.name} · {selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'}</p>
-                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button>
-                  <Button variant="outline" className="ml-2 mt-2 min-h-11" disabled={busy} onClick={() => setSelected(null)}>Discard selection</Button>
-                  <p className="mt-2 text-sm text-amber-900">Save or discard this selection before submitting to QC.</p></div>
-              </div>}
-            </section>}
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
           {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}

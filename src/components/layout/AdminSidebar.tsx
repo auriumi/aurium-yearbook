@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
-  ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, type LucideIcon
+  ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, ClipboardCheck, type LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

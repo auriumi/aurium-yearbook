@@ -103,7 +103,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [notice, setNotice] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
-  const [confirmDiscardComment, setConfirmDiscardComment] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
@@ -152,8 +152,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   function choose(type: Kind, file: File | undefined) {
     setError(''); setNotice('');
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024 || file.size < 64) {
-      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 8 MB.'); return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024 || file.size < 64) {
+      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 5 MB.'); return;
     }
     setSelected({ type, file });
   }
@@ -174,7 +174,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   }
 
   async function submit() {
-    if (!detail?.pair) return;
+    if (!detail?.pair || selected || busy) return;
     const fingerprint = `${detail.reviewId}:${detail.version}:${detail.pair.revisionId}`;
     if (!pendingSubmission.current?.startsWith(`${fingerprint}:`)) {
       pendingSubmission.current = `${fingerprint}:${crypto.randomUUID()}`;
@@ -195,7 +195,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const rejection = latestRejection ?? events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
   function requestClose() {
     if (busy) return;
-    if (commentDraft.trim()) setConfirmDiscardComment(true);
+    if (selected || commentDraft.trim()) setConfirmDiscard(true);
     else onClose();
   }
   return <>
@@ -230,7 +230,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </div>
             {canUpload && <section className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
               <h3 className="font-semibold text-stone-900">Add or replace a photo</h3>
-              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 8 MB. Each saved replacement creates a new pair revision.</p>
+              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 5 MB. Each saved replacement creates a new pair revision.</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(['GRADUATION', 'THEME'] as const).map(type => <label key={type} className="text-sm font-medium text-stone-800">
                   {type === 'GRADUATION' ? 'Graduation photo' : 'Theme photo'}
@@ -243,7 +243,9 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
               {selected && <div className="mt-4 flex flex-wrap items-center gap-4">
                 {preview && <div className="relative h-28 w-24 overflow-hidden rounded-lg bg-stone-100"><Image unoptimized fill sizes="96px" src={preview} alt="Selected local photo preview" className="object-contain" /></div>}
                 <div><p className="text-sm text-stone-700">{selected.file.name} · {selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'}</p>
-                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button></div>
+                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button>
+                  <Button variant="outline" className="ml-2 mt-2 min-h-11" disabled={busy} onClick={() => setSelected(null)}>Discard selection</Button>
+                  <p className="mt-2 text-sm text-amber-900">Save or discard this selection before submitting to QC.</p></div>
               </div>}
             </section>}
           </div>}
@@ -258,7 +260,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         </div>
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>
-          {canSubmit && <Button disabled={busy} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
+          {canSubmit && <Button disabled={busy || !!selected} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
           <PhotoReviewActions detail={detail} onUpdated={setDetail}
             onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
             onBusyChange={setBusy} onNotice={setNotice} />
@@ -271,11 +273,11 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
         <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
-    <AlertDialog open={confirmDiscardComment} onOpenChange={setConfirmDiscardComment}>
-      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard the unsaved comment?</AlertDialogTitle>
-        <AlertDialogDescription>Your comment has not been saved. Keep reviewing to finish it, or discard it and close this graduate.</AlertDialogDescription>
+    <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+        <AlertDialogDescription>Your selected photo or comment has not been saved. Previously saved photos will stay in the review.</AlertDialogDescription>
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep reviewing</AlertDialogCancel>
-        <AlertDialogAction onClick={() => { setCommentDraft(''); setConfirmDiscardComment(false); onClose(); }}>Discard comment</AlertDialogAction>
+        <AlertDialogAction onClick={() => { setSelected(null); setCommentDraft(''); setConfirmDiscard(false); onClose(); }}>Discard changes</AlertDialogAction>
       </AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </>;

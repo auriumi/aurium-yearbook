@@ -110,7 +110,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     if (reviewId === null) return;
     const controller = new AbortController();
     setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setTab('photos');
-    setCommentDraft(''); setConfirmDiscardComment(false);
+    setCommentDraft(''); setConfirmDiscard(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {

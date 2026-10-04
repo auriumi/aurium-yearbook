@@ -7,7 +7,7 @@ import { addPhotoComment, type PhotoDetail, type PhotoEvent, type PhotoUploadEve
 export const photoEventLabels: Record<PhotoEvent['action'], string> = {
   COMMENTED: 'Commented', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
   APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Sent to moderator',
-  REJECTED_MODERATOR: 'Rejected by moderator', LOCKED: 'Approved and locked',
+  REJECTED_MODERATOR: 'Rejected by moderator', LOCKED: 'Approved and locked', REOPENED: 'Reopened by IT',
 };
 
 export function PhotoReviewActivity({ detail, events, uploads, historyError, note, onNoteChange, onCommented, onBusyChange,

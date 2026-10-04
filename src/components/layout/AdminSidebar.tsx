@@ -23,6 +23,7 @@ interface SidebarProps {
   canCheckRac?: boolean;
   canReviewInformation?: boolean;
   canReviewPhotos?: boolean;
+  canReviewCorrections?: boolean;
 }
 
 interface NavItemProps {
@@ -45,7 +46,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
   );
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false }: SidebarProps) {
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false, canReviewCorrections = false }: SidebarProps) {
   const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
@@ -92,6 +93,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
           <NavItem id="information-workspace" label="Information Workspace" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
         {canReviewPhotos && <NavItem id="photo-workspace" label="Photo Workspace" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />}
+        {canReviewCorrections && <NavItem id="it-corrections" label="IT Corrections" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />}
 
         <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />
 

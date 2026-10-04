@@ -1,4 +1,5 @@
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
+import type { CorrectionSummary } from '@/features/corrections/api';
 
 export type GraduationTerm = 'MID_YEAR' | 'END_YEAR';
 export type InformationQueue = 'ALL' | 'PENDING' | 'SUBMITTED_QC' | 'REJECTED_QC' |
@@ -77,6 +78,8 @@ export interface InformationDetail {
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];
+  correction: CorrectionSummary | null;
+  rejection: { reason: string | null; createdAt: string; actor: { first_name: string; last_name: string } } | null;
   draft: {
     revisionId: number; version: number; before: EditableProfile; after: EditableProfile;
     changedFields: EditableProfileField[]; savedAt: string;
@@ -108,13 +111,21 @@ export type InformationQcDecision = 'APPROVE' | 'REJECT' | 'FORWARD';
 export interface InformationDecisionEvent {
   id: number;
   track_version: number;
-  revision_id: number;
-  action: 'COMMENTED' | 'SUBMITTED_QC' | 'APPROVED_QC' | 'REJECTED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  revision_id: number | null;
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'APPROVED_QC' | 'REJECTED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED' | 'REOPENED';
   from_stage: InformationStage;
   to_stage: InformationStage;
   note: string | null;
   created_at: string;
   actor: { first_name: string; last_name: string };
+}
+
+export interface InformationRevision {
+  id: number;
+  version: number;
+  changedFields: EditableProfileField[];
+  createdAt: string;
+  author: { first_name: string; last_name: string };
 }
 
 async function readResponse<T>(response: Response): Promise<T> {
@@ -188,11 +199,30 @@ export async function decideInformationQc(reviewId: number, expectedVersion: num
   return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: InformationStage }>(response);
 }
 
-export async function getInformationDecisionHistory(reviewId: number, signal?: AbortSignal) {
-  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/decision-events`, {
+export async function getInformationDecisionHistory(reviewId: number, signal?: AbortSignal, beforeVersion?: number) {
+  const query = beforeVersion === undefined ? '' : `?beforeVersion=${beforeVersion}`;
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/decision-events${query}`, {
     credentials: 'include', cache: 'no-store', signal,
   });
-  return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
+  return readResponse<{ success: true; events: InformationDecisionEvent[]; nextCursor: number | null }>(response);
+}
+
+export async function getInformationDraftHistory(reviewId: number, signal?: AbortSignal, beforeVersion?: number) {
+  const query = beforeVersion === undefined ? '' : `?beforeVersion=${beforeVersion}`;
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/revisions${query}`, {
+    credentials: 'include', cache: 'no-store', signal,
+  });
+  return readResponse<{ success: true; revisions: InformationRevision[]; nextCursor: number | null }>(response);
+}
+
+export async function addInformationComment(reviewId: number, expectedVersion: number, revisionId: number | null,
+  operationId: string, note: string) {
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/comments`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedVersion, revisionId, operationId, note }),
+  });
+  return readResponse<{ success: true; eventId: number; version: number }>(response);
 }
 
 export async function decideInformationModerator(reviewId: number, expectedVersion: number, revisionId: number,

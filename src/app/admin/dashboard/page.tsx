@@ -15,6 +15,7 @@ import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
 import { PhotoWorkspace } from '@/features/graduate-photos/PhotoWorkspace';
+import { ItCorrectionWorkspace } from '@/features/corrections/ItCorrectionWorkspace';
 import { getReviewCapabilities } from '@/features/rac-verification/api';
 import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
 
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
       : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;
   const canReviewInformation = informationRole !== null;
+  const canReviewCorrections = reviewCapabilities.includes('IT_CORRECTION');
   const photoRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
     : reviewCapabilities.includes('PHOTO_UPLOADER') ? 'uploader'
       : reviewCapabilities.includes('PHOTO_QC') ? 'qc' : null;
@@ -202,6 +204,7 @@ export default function AdminDashboard() {
                 canCheckRac={canCheckRac}
                 canReviewInformation={canReviewInformation}
                 canReviewPhotos={canReviewPhotos}
+                canReviewCorrections={canReviewCorrections}
              />
          </div>
       )}
@@ -216,6 +219,7 @@ export default function AdminDashboard() {
         canCheckRac={canCheckRac}
         canReviewInformation={canReviewInformation}
         canReviewPhotos={canReviewPhotos}
+        canReviewCorrections={canReviewCorrections}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -252,6 +256,7 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
+            {activeTab === 'it-corrections' && canReviewCorrections && <ItCorrectionWorkspace />}
             {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}

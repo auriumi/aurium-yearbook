@@ -11,6 +11,7 @@ import {
 import { InformationProfileDialog } from './InformationProfileDialog';
 import { InformationFiltersPanel } from './InformationFiltersPanel';
 import { InformationRecords } from './InformationRecords';
+import { InformationSummary } from './InformationSummary';
 
 const proofreaderQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
@@ -24,9 +25,10 @@ const proofreaderQueues: { value: InformationQueue; label: string }[] = [
 
 const qcQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
-  { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
+  { value: 'SUBMITTED_QC', label: 'Pending' },
   { value: 'REJECTED_QC', label: 'Rejected by QC' },
   { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Submitted to Moderator' },
   { value: 'COMPLETED', label: 'Completed' },
 ];
 
@@ -69,7 +71,14 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
     setList(null);
     setError('');
     getInformationList(filters, controller.signal)
-      .then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+      .then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => {
         if (!controller.signal.aborted) {
           setError(cause instanceof Error ? cause.message : 'Unable to load graduate information.');
@@ -125,6 +134,7 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
       optionsError={optionsError} onSearch={changeSearch} onChange={changeFilter} />
+    <InformationSummary counts={list?.counts} role={role} />
 
     <nav aria-label="Information status" className="flex flex-wrap gap-2">
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.queue === item.value}

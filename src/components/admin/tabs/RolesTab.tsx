@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ShieldCheck, Shield, RefreshCw, Loader2, Mail, Clock, Save, RotateCcw, Eye, EyeOff, Lock, BadgeCheck } from "lucide-react";
+import { ShieldCheck, Shield, RefreshCw, Loader2, Mail, Clock, Save, RotateCcw, Eye, EyeOff, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import * as adminService from "@/app/admin/adminService";
-import { setImageApprover } from "@/app/admin/staffService";
 import toast from "react-hot-toast";
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
@@ -20,7 +18,6 @@ interface StaffMember {
   email: string;
   role: string;
   last_login: string | null;
-  can_approve_images: boolean;
 }
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
@@ -64,8 +61,6 @@ export function RolesTab() {
 
   // Local role overrides — keys are member IDs, values are the new role string
   const [localRoles, setLocalRoles] = useState<Record<number, string>>({});
-  // Local image-approver overrides — keys are member IDs, values are the new flag
-  const [localApprover, setLocalApprover] = useState<Record<number, boolean>>({});
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -77,23 +72,13 @@ export function RolesTab() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const getDisplayRole = (member: StaffMember) => localRoles[member.id] ?? member.role;
-  const getDisplayApprover = (member: StaffMember) => localApprover[member.id] ?? member.can_approve_images;
 
   // Rows whose role differs from the server state
   const pendingRoleChanges = useMemo(() => {
     return staffList.filter(m => localRoles[m.id] !== undefined && localRoles[m.id] !== m.role);
   }, [staffList, localRoles]);
 
-  // Rows whose approver flag differs (only meaningful while the effective role is MODERATOR)
-  const pendingApproverChanges = useMemo(() => {
-    return staffList.filter(m =>
-      (localRoles[m.id] ?? m.role) === "MODERATOR" &&
-      localApprover[m.id] !== undefined &&
-      localApprover[m.id] !== m.can_approve_images
-    );
-  }, [staffList, localRoles, localApprover]);
-
-  const totalPending = pendingRoleChanges.length + pendingApproverChanges.length;
+  const totalPending = pendingRoleChanges.length;
   const hasPendingChanges = totalPending > 0;
 
   const loadStaffList = useCallback(async () => {
@@ -106,7 +91,6 @@ export function RolesTab() {
       }
       setStaffList(result.data as StaffMember[]);
       setLocalRoles({});
-      setLocalApprover({});
     } catch {
       toast.error("Could not connect to the server.");
     } finally {
@@ -127,24 +111,10 @@ export function RolesTab() {
 
   const handleRoleSelectChange = (memberId: number, newRole: string) => {
     setLocalRoles(prev => ({ ...prev, [memberId]: newRole }));
-    // the approver flag only applies to moderators — drop any pending toggle if leaving MODERATOR
-    if (newRole !== "MODERATOR") {
-      setLocalApprover(prev => {
-        if (prev[memberId] === undefined) return prev;
-        const next = { ...prev };
-        delete next[memberId];
-        return next;
-      });
-    }
-  };
-
-  const handleApproverChange = (memberId: number, value: boolean) => {
-    setLocalApprover(prev => ({ ...prev, [memberId]: value }));
   };
 
   const discardChanges = () => {
     setLocalRoles({});
-    setLocalApprover({});
   };
 
   const closeConfirmDialog = () => {
@@ -186,17 +156,11 @@ export function RolesTab() {
 
     setIsUpdating(true);
     try {
-      // role changes first (so an approver toggle on a freshly-promoted moderator succeeds)
       const roleResults = await Promise.all(
         pendingRoleChanges.map(m => adminService.updateAdminRole(m.id, localRoles[m.id]))
       );
-      const approverResults = await Promise.all(
-        pendingApproverChanges.map(m => setImageApprover(m.id, localApprover[m.id]))
-      );
 
-      const failedCount =
-        roleResults.filter(r => !r.success).length +
-        approverResults.filter(r => !r.success).length;
+      const failedCount = roleResults.filter(r => !r.success).length;
 
       if (failedCount > 0) {
         toast.error(`${failedCount} update(s) failed. Refreshing to show current state.`);
@@ -214,12 +178,7 @@ export function RolesTab() {
   };
 
   const isDirty = (member: StaffMember) => {
-    const roleDirty = localRoles[member.id] !== undefined && localRoles[member.id] !== member.role;
-    const approverDirty =
-      getDisplayRole(member) === "MODERATOR" &&
-      localApprover[member.id] !== undefined &&
-      localApprover[member.id] !== member.can_approve_images;
-    return roleDirty || approverDirty;
+    return localRoles[member.id] !== undefined && localRoles[member.id] !== member.role;
   };
 
   return (
@@ -233,7 +192,7 @@ export function RolesTab() {
               <ShieldCheck className="h-6 w-6 text-amber-600" /> Staff Management
             </h2>
             <p className="text-sm text-stone-500 mt-1">
-              Manage your staff members&apos; roles and image-approval access
+              Manage your staff members&apos; roles
             </p>
           </div>
           <Button
@@ -286,10 +245,9 @@ export function RolesTab() {
           <div className="divide-y divide-stone-100">
             {/* Table Header */}
             <div className="grid grid-cols-12 px-6 py-3 bg-stone-50 border-b border-stone-200">
-              <span className="col-span-4 text-[10px] font-bold uppercase tracking-widest text-stone-500">Staff Member</span>
+              <span className="col-span-7 sm:col-span-6 text-[10px] font-bold uppercase tracking-widest text-stone-500">Staff Member</span>
               <span className="col-span-2 text-[10px] font-bold uppercase tracking-widest text-stone-500 hidden sm:block">Last Login</span>
-              <span className="col-span-3 text-[10px] font-bold uppercase tracking-widest text-stone-500">Role</span>
-              <span className="col-span-3 text-[10px] font-bold uppercase tracking-widest text-stone-500">Image Approver</span>
+              <span className="col-span-5 sm:col-span-4 text-[10px] font-bold uppercase tracking-widest text-stone-500">Role</span>
             </div>
 
             {staffList.map(member => {
@@ -302,7 +260,7 @@ export function RolesTab() {
                   className={`grid grid-cols-12 items-center px-6 py-4 transition-colors ${dirty ? "bg-amber-50/50" : "hover:bg-stone-50/60"}`}
                 >
                   {/* Name + Email */}
-                  <div className="col-span-4 min-w-0">
+                  <div className="col-span-7 sm:col-span-6 min-w-0 pr-3">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-stone-800 truncate">
                         {member.last_name}, {member.first_name}
@@ -326,7 +284,7 @@ export function RolesTab() {
                   </div>
 
                   {/* Role Select */}
-                  <div className="col-span-3">
+                  <div className="col-span-5 sm:col-span-4">
                     <Select
                       value={displayRole}
                       onValueChange={(newRole) => handleRoleSelectChange(member.id, newRole)}
@@ -353,24 +311,6 @@ export function RolesTab() {
                     </Select>
                   </div>
 
-                  {/* Image Approver toggle (moderators only) */}
-                  <div className="col-span-3">
-                    {displayRole === "MODERATOR" ? (
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <Checkbox
-                          checked={getDisplayApprover(member)}
-                          onCheckedChange={(val) => handleApproverChange(member.id, val === true)}
-                          className="data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
-                        />
-                        <span className="text-xs text-stone-600 inline-flex items-center gap-1">
-                          <BadgeCheck size={13} className={getDisplayApprover(member) ? "text-amber-600" : "text-stone-300"} />
-                          {getDisplayApprover(member) ? "Approver" : "Not an approver"}
-                        </span>
-                      </label>
-                    ) : (
-                      <span className="text-xs text-stone-300">—</span>
-                    )}
-                  </div>
                 </div>
               );
             })}
@@ -428,20 +368,6 @@ export function RolesTab() {
                   <RoleChip role={m.role} size="xs" />
                   <span className="text-stone-400 text-xs">→</span>
                   <RoleChip role={localRoles[m.id]} size="xs" />
-                </div>
-              </div>
-            ))}
-            {pendingApproverChanges.map(m => (
-              <div key={`approver-${m.id}`} className="flex items-center justify-between px-4 py-2.5 bg-white">
-                <p className="text-sm font-medium text-stone-800 truncate">
-                  {m.last_name}, {m.first_name}
-                </p>
-                <div className="flex items-center gap-1.5 shrink-0 text-[11px] font-semibold">
-                  <BadgeCheck size={13} className="text-amber-600" />
-                  <span className="text-stone-400">Approver:</span>
-                  <span className="text-stone-500">{m.can_approve_images ? "On" : "Off"}</span>
-                  <span className="text-stone-400">→</span>
-                  <span className="text-amber-700">{localApprover[m.id] ? "On" : "Off"}</span>
                 </div>
               </div>
             ))}

@@ -33,7 +33,11 @@ export function ItCorrectionWorkspace() {
     const controller = new AbortController();
     setLoading(true); setError('');
     getCorrections(status, page, controller.signal)
-      .then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+      .then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (page > lastPage) { setPage(lastPage); return; }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => { if (!controller.signal.aborted) {
         setError(cause instanceof Error ? cause.message : 'Unable to load requests.'); setLoading(false);
       } });
@@ -93,7 +97,7 @@ export function ItCorrectionWorkspace() {
             setView({ reviewId: row.reviewId, trackType: row.trackType });
           }}>View approved record</Button>
           {row.status === 'PENDING' && !row.requestedByCurrentUser && row.stage === 'LOCKED' &&
-            row.currentVersion === row.lockedVersion && <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <Button onClick={() => choose(row, 'APPROVE')}>Approve reopening</Button>
               <Button variant="outline" onClick={() => choose(row, 'REJECT')}>Decline</Button>
             </div>}

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { beginPhotoUpload, finalizePhotoUpload, getPhotoDetail, putPhoto, submitPhotoPair,
-  getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoStage } from './api';
+  getPhotoDecisionHistory, type PhotoDetail, type PhotoEvent, type PhotoUploadEvent, type PhotoStage } from './api';
 import { PhotoReviewActions } from './PhotoReviewActions';
 import { PhotoReviewActivity, photoEventLabels } from './PhotoReviewActivity';
 import { CorrectionRequestPanel } from '@/features/corrections/CorrectionRequestPanel';
@@ -63,6 +63,7 @@ function FullProfile({ profile }: { profile: PhotoDetail['profile'] }) {
       ['Registered on', new Date(profile.record.registeredAt).toLocaleString()],
       ['Profile updated on', new Date(profile.record.updatedAt).toLocaleString()],
       ['Photo session', session ? `${new Date(session.date).toLocaleDateString()} · ${session.period}` : 'Not booked'],
+      ['Session time', session?.startTime && session?.endTime ? `${session.startTime}–${session.endTime}` : 'Not scheduled'],
       ['Attendance', profile.record.attendanceRecorded ? 'Recorded' : 'Not yet recorded'],
     ]} />
     <section className="rounded-xl border border-stone-200 bg-white p-4">
@@ -99,6 +100,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 }) {
   const [detail, setDetail] = useState<PhotoDetail | null>(null);
   const [events, setEvents] = useState<PhotoEvent[]>([]);
+  const [uploads, setUploads] = useState<PhotoUploadEvent[]>([]);
+  const [latestRejection, setLatestRejection] = useState<PhotoEvent | null>(null);
   const [historyError, setHistoryError] = useState('');
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'photos' | 'profile' | 'activity'>('photos');
@@ -111,24 +114,43 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [expanded, setExpanded] = useState<{ title: string; src: string; alt: string } | null>(null);
   const [expandedError, setExpandedError] = useState(false);
   const expandedTrigger = useRef<HTMLButtonElement | null>(null);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const pendingSubmission = useRef<string | null>(null);
 
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    setDetail(null); setEvents([]); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
+    setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
+    setCommentDraft(''); setConfirmDiscard(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
-      if (!controller.signal.aborted) setEvents(result.events);
+      if (!controller.signal.aborted) {
+        setEvents(result.events); setUploads(result.uploads ?? []); setLatestRejection(result.latestRejection ?? null);
+      }
     }).catch(cause => {
       if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
     });
     return () => controller.abort();
   }, [reviewId]);
 
+  useEffect(() => {
+    if (reviewId === null || !commentDraft.trim()) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [reviewId, commentDraft]);
+
   async function refreshHistory(id: number) {
-    try { setEvents((await getPhotoDecisionHistory(id)).events); setHistoryError(''); }
+    try {
+      const history = await getPhotoDecisionHistory(id);
+      setEvents(history.events); setUploads(history.uploads ?? []); setHistoryError('');
+      setLatestRejection(history.latestRejection ?? null);
+    }
     catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
   }
 
@@ -142,8 +164,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   function choose(type: Kind, file: File | undefined) {
     setError(''); setNotice('');
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024 || file.size < 64) {
-      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 8 MB.'); return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024 || file.size < 64) {
+      setError('Choose a JPEG, PNG or WebP photo between 64 bytes and 5 MB.'); return;
     }
     setSelected({ type, file });
   }
@@ -157,13 +179,14 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
       await finalizePhotoUpload(detail.reviewId, started.assetId, detail.version);
       const updated = await getPhotoDetail(detail.reviewId);
       setDetail(updated); setSelected(null); setProgress(0); onChanged();
+      void refreshHistory(detail.reviewId);
       setNotice(`${selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'} photo saved in this review.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Photo upload failed. Try again.'); }
     finally { setBusy(false); }
   }
 
   async function submit() {
-    if (!detail?.pair) return;
+    if (!detail?.pair || selected || busy) return;
     const fingerprint = `${detail.reviewId}:${detail.version}:${detail.pair.revisionId}`;
     if (!pendingSubmission.current?.startsWith(`${fingerprint}:`)) {
       pendingSubmission.current = `${fingerprint}:${crypto.randomUUID()}`;
@@ -181,21 +204,26 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
-  const rejection = events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
+  const rejection = latestRejection ?? events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
   function expand(button: HTMLButtonElement, title: string, src: string, alt: string) {
     expandedTrigger.current = button;
     setExpandedError(false);
     setExpanded({ title, src, alt });
   }
+  function requestClose() {
+    if (busy) return;
+    if (selected || commentDraft.trim()) setConfirmDiscard(true);
+    else onClose();
+  }
   return <>
-    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open && !busy) onClose(); }}>
+    <Dialog open={reviewId !== null} onOpenChange={open => { if (!open) requestClose(); }}>
       <DialogContent showCloseButton={false} overlayClassName="bg-stone-950/70 backdrop-blur-sm"
         className="flex h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-xl border-stone-200 bg-[#FDFBF7] p-0 sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-none"
         onCloseAutoFocus={event => { event.preventDefault(); returnFocusRef.current?.focus(); }}>
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-white px-4 py-3 sm:px-6">
           <div><DialogTitle className="text-lg text-stone-900">{detail ? name(detail.profile) : 'Graduate photos'}</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-stone-600">{detail ? `Student ${detail.profile.studentNumber} · ${labels[detail.stage]}` : 'Loading review…'}</DialogDescription></div>
-          <Button variant="outline" onClick={onClose} disabled={busy} className="min-h-11">Close</Button>
+          <Button variant="outline" onClick={requestClose} disabled={busy} className="min-h-11">Close</Button>
         </div>
         <div className="flex shrink-0 gap-2 border-b border-stone-200 bg-white px-4 py-2 sm:px-6" aria-label="Graduate review sections">
           <Button aria-pressed={tab === 'photos'} variant={tab === 'photos' ? 'default' : 'ghost'} onClick={() => setTab('photos')}>Photo pair</Button>
@@ -223,7 +251,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </div>
             {canUpload && <section className="mt-5 rounded-xl border border-stone-200 bg-white p-4">
               <h3 className="font-semibold text-stone-900">Add or replace a photo</h3>
-              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 8 MB. Each saved replacement creates a new pair revision.</p>
+              <p className="mt-1 text-sm text-stone-600">JPEG, PNG or WebP · up to 5 MB. Each saved replacement creates a new pair revision.</p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 {(['GRADUATION', 'THEME'] as const).map(type => <label key={type} className="text-sm font-medium text-stone-800">
                   {type === 'GRADUATION' ? 'Graduation photo' : 'Theme photo'}
@@ -236,13 +264,15 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
               {selected && <div className="mt-4 flex flex-wrap items-center gap-4">
                 {preview && <div className="relative h-28 w-24 overflow-hidden rounded-lg bg-stone-100"><Image unoptimized fill sizes="96px" src={preview} alt="Selected local photo preview" className="object-contain" /></div>}
                 <div><p className="text-sm text-stone-700">{selected.file.name} · {selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'}</p>
-                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button></div>
+                  <Button className="mt-2 min-h-11" disabled={busy} onClick={upload}>{busy ? `Uploading ${progress}%…` : 'Save photo'}</Button>
+                  <Button variant="outline" className="ml-2 mt-2 min-h-11" disabled={busy} onClick={() => setSelected(null)}>Discard selection</Button>
+                  <p className="mt-2 text-sm text-amber-900">Save or discard this selection before submitting to QC.</p></div>
               </div>}
             </section>}
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
-          {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events}
-            historyError={historyError} onBusyChange={setBusy}
+          {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}
+            historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
             onCommented={async () => {
               onChanged();
               setDetail(await getPhotoDetail(detail.reviewId));
@@ -251,7 +281,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         </div>
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>
-          {canSubmit && <Button disabled={busy} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
+          {canSubmit && <Button disabled={busy || !!selected} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
           <PhotoReviewActions detail={detail} onUpdated={setDetail}
             onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
             onBusyChange={setBusy} onNotice={setNotice} />
@@ -283,6 +313,13 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         <AlertDialogDescription>QC will review the current graduation and theme photos. You cannot replace them while the pair is under review.</AlertDialogDescription>
       </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel>
         <AlertDialogAction onClick={submit}>Submit to QC</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={confirmDiscard} onOpenChange={setConfirmDiscard}>
+      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+        <AlertDialogDescription>Your selected photo or comment has not been saved. Previously saved photos will stay in the review.</AlertDialogDescription>
+      </AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep reviewing</AlertDialogCancel>
+        <AlertDialogAction onClick={() => { setSelected(null); setCommentDraft(''); setConfirmDiscard(false); onClose(); }}>Discard changes</AlertDialogAction>
+      </AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </>;
 }

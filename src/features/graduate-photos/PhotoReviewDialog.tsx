@@ -95,6 +95,9 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [uploads, setUploads] = useState<PhotoUploadEvent[]>([]);
   const [latestRejection, setLatestRejection] = useState<PhotoEvent | null>(null);
   const [historyError, setHistoryError] = useState('');
+  const [historyCursors, setHistoryCursors] = useState<{ events: number | null; uploads: number | null }>({ events: null, uploads: null });
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const historyRequest = useRef<AbortController | null>(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'photos' | 'profile' | 'activity'>('photos');
   const [selected, setSelected] = useState<{ type: Kind; file: File } | null>(null);
@@ -110,6 +113,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
+    historyRequest.current = controller;
+    setHistoryCursors({ events: null, uploads: null }); setLoadingOlder(false);
     setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setTab('photos');
     setCommentDraft(''); setConfirmDiscard(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
@@ -117,30 +122,52 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
       if (!controller.signal.aborted) {
         setEvents(result.events); setUploads(result.uploads ?? []); setLatestRejection(result.latestRejection ?? null);
+        setHistoryCursors({ events: result.nextEventCursor, uploads: result.nextUploadCursor });
       }
     }).catch(cause => {
       if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
     });
-    return () => controller.abort();
+    return () => { controller.abort(); historyRequest.current?.abort(); };
   }, [reviewId]);
 
   useEffect(() => {
-    if (reviewId === null || !commentDraft.trim()) return;
+    if (reviewId === null || (!commentDraft.trim() && !selected)) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', warnBeforeUnload);
     return () => window.removeEventListener('beforeunload', warnBeforeUnload);
-  }, [reviewId, commentDraft]);
+  }, [reviewId, commentDraft, selected]);
 
   async function refreshHistory(id: number) {
+    historyRequest.current?.abort();
+    const controller = new AbortController();
+    historyRequest.current = controller;
+    setLoadingOlder(false);
     try {
-      const history = await getPhotoDecisionHistory(id);
+      const history = await getPhotoDecisionHistory(id, controller.signal);
+      if (controller.signal.aborted) return;
       setEvents(history.events); setUploads(history.uploads ?? []); setHistoryError('');
       setLatestRejection(history.latestRejection ?? null);
+      setHistoryCursors({ events: history.nextEventCursor, uploads: history.nextUploadCursor });
     }
-    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
+    catch (cause) { if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
+  }
+
+  async function loadOlderHistory() {
+    const signal = historyRequest.current?.signal;
+    if (reviewId === null || !signal || signal.aborted || loadingOlder) return;
+    setLoadingOlder(true); setHistoryError('');
+    try {
+      const history = await getPhotoDecisionHistory(reviewId, signal, historyCursors);
+      if (signal.aborted) return;
+      setEvents(previous => [...new Map([...previous, ...history.events].map(event => [event.id, event])).values()]);
+      setUploads(previous => [...new Map([...previous, ...history.uploads].map(upload => [upload.id, upload])).values()]);
+      setHistoryCursors({ events: history.nextEventCursor, uploads: history.nextUploadCursor });
+    } catch (cause) {
+      if (!signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load older activity.');
+    } finally { if (!signal.aborted) setLoadingOlder(false); }
   }
 
   useEffect(() => {
@@ -193,6 +220,17 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
 
   const canUpload = !!detail?.availableActions.includes('UPLOAD');
   const canSubmit = !!detail?.availableActions.includes('SUBMIT_QC');
+  function activity(mode: 'activity' | 'discussion') {
+    return detail && <PhotoReviewActivity key={`${detail.reviewId}-${mode}`} detail={detail} events={events} uploads={uploads}
+      mode={mode} busy={busy} hasOlder={historyCursors.events !== null || historyCursors.uploads !== null}
+      loadingOlder={loadingOlder} onLoadOlder={loadOlderHistory}
+      historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
+      onCommented={async () => {
+        onChanged();
+        setDetail(await getPhotoDetail(detail.reviewId));
+        await refreshHistory(detail.reviewId);
+      }} />;
+  }
   const rejection = latestRejection ?? events.find(event => event.action === 'REJECTED_QC' || event.action === 'REJECTED_MODERATOR');
   function requestClose() {
     if (busy) return;
@@ -236,6 +274,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
           {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
           {notice && <p role="status" className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
           {!detail && !error && <p role="status" className="text-sm text-stone-600">Loading graduate photos…</p>}
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0">
           {detail && tab === 'photos' && <div>
             {(detail.stage === 'REJECTED_QC' || detail.stage === 'REJECTED_MODERATOR') && rejection?.note &&
               <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
@@ -249,13 +289,10 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             </div>
           </div>}
           {detail && tab === 'profile' && <FullProfile profile={detail.profile} />}
-          {detail && tab === 'activity' && <PhotoReviewActivity detail={detail} events={events} uploads={uploads}
-            historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
-            onCommented={async () => {
-              onChanged();
-              setDetail(await getPhotoDetail(detail.reviewId));
-              await refreshHistory(detail.reviewId);
-            }} />}
+          {detail && tab === 'activity' && activity('activity')}
+          </div>
+          {detail && <aside aria-label="Photo discussion" className="xl:sticky xl:top-0 xl:max-h-[calc(100dvh-15rem)] xl:overflow-y-auto">{activity('discussion')}</aside>}
+          </div>
         </div>
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>

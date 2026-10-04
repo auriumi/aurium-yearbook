@@ -47,7 +47,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
 }
 
 export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false, canReviewCorrections = false }: SidebarProps) {
-  const { canAccessVerification, canAccessSchedules, canManageImages, canApproveImages, canManageRoles, displayPosition, userInitials } = useSidebar(user);
+  const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
     setActiveTab(tab);
@@ -94,16 +94,6 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         )}
         {canReviewPhotos && <NavItem id="photo-workspace" label="Photo Workspace" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />}
         {canReviewCorrections && <NavItem id="it-corrections" label="IT Corrections" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />}
-
-        {/* Image Management — ADMINISTRATOR and MODERATOR */}
-        {canManageImages && (
-          <NavItem id="images" label="Image Management" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />
-        )}
-
-        {/* Image Approvals — ADMINISTRATOR and approver MODERATORs */}
-        {canApproveImages && (
-          <NavItem id="images-approvals" label="Approval Thread" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />
-        )}
 
         <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />
 

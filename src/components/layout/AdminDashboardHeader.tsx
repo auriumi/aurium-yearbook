@@ -15,8 +15,6 @@ const TAB_TITLES: Record<string, string> = {
   "photo-workspace": "Graduate Photos",
   "rac-verification": "RAC/SAO Verification",
   "it-corrections": "IT Corrections",
-  images: "Image Management",
-  "images-approvals": "Approval Thread",
   scanner: "Attendance Scanner",
   profile: "My Profile",
   roles: "Manage Staffs",

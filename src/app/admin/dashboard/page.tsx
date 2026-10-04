@@ -13,8 +13,6 @@ import { ProfileTab } from "@/components/admin/tabs/ProfileTab";
 import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
-import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
-import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
 import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
 import { PhotoWorkspace } from '@/features/graduate-photos/PhotoWorkspace';
 import { ItCorrectionWorkspace } from '@/features/corrections/ItCorrectionWorkspace';
@@ -38,9 +36,6 @@ export default function AdminDashboard() {
 
   const [activeTab, setActiveTab] = useState("masterlist");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // notification deep-link target for the Image Approvals tab
-  const [focusedApprovalId, setFocusedApprovalId] = useState<number | null>(null);
 
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
@@ -73,13 +68,12 @@ export default function AdminDashboard() {
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
-  const isImageApprover = userRole === 'ADMINISTRATOR' || (userRole === 'MODERATOR' && !!staffUser?.can_approve_images);
 
-  // navigate to a tab (optionally focusing a request) — used by the notification bell
-  const handleNavigate = useCallback((tab: string, imageId?: number | null) => {
-    setActiveTab(tab);
-    setFocusedApprovalId(imageId ?? null);
-  }, []);
+  const handleNavigate = useCallback((tab: string) => {
+    // Old sample notifications use legacy image IDs, not photo review IDs.
+    const isPhotoTab = ['images', 'images-approvals', 'photo-workspace'].includes(tab);
+    setActiveTab(isPhotoTab ? (canReviewPhotos ? 'photo-workspace' : 'masterlist') : tab);
+  }, [canReviewPhotos]);
 
   useEffect(() => {
     let isActive = true;
@@ -265,15 +259,6 @@ export default function AdminDashboard() {
             {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'it-corrections' && canReviewCorrections && <ItCorrectionWorkspace />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
-            {activeTab === 'images' && <ImageManagementTab onOpenPhotoWorkspace={canReviewPhotos ?
-              () => handleNavigate('photo-workspace') : undefined} />}
-            {activeTab === 'images-approvals' && (
-              <ImageApprovalsTab
-                isApprover={isImageApprover}
-                focusImageId={focusedApprovalId}
-                onConsumeFocus={() => setFocusedApprovalId(null)}
-              />
-            )}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 

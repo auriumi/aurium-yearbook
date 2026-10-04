@@ -1,4 +1,5 @@
 import type { GraduationTerm, InformationDetail } from '@/features/graduate-information/api';
+import type { CorrectionSummary } from '@/features/corrections/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
 export type PhotoStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' |
@@ -15,13 +16,14 @@ export type PhotoList = { success: true; rows: PhotoRow[]; page: number; pageSiz
 export type PhotoOptions = { success: true; departments: string[]; programs: string[]; majors: string[]; hasNoMajor: boolean };
 export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; version: number;
   availableActions: string[];
+  correction: CorrectionSummary | null;
   pair: { revisionId: number; version: number; graduationAssetId: number; themeAssetId: number } | null;
   photos: { graduation: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     theme: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     reference: string | null; referencePresent: boolean };
   profile: Omit<InformationDetail['profile'], 'referencePhotoUrl' | 'referencePhotoPresent'> };
 export type PhotoEvent = { id: number; track_version: number; pair_id: number | null;
-  action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED' | 'REOPENED';
   from_stage: PhotoStage; to_stage: PhotoStage; note: string | null; created_at: string;
   actor: { first_name: string; last_name: string } };
 export type PhotoUploadEvent = { id: number; type: 'GRADUATION' | 'THEME'; sealed_at: string | null;

@@ -62,7 +62,16 @@ export function RacVerificationWorkspace() {
     setLoading(true);
     setError('');
     getVerificationList(filters, controller.signal)
-      .then(result => { setList(result); setLoading(false); })
+      .then(result => {
+        if (controller.signal.aborted) return;
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => previous === filters ? { ...previous, page: lastPage } : previous);
+          return;
+        }
+        setList(result);
+        setLoading(false);
+      })
       .catch(cause => { if (!isAbort(cause)) { setError(cause instanceof Error ? cause.message : 'Unable to load graduates.'); setLoading(false); } });
     return () => controller.abort();
   }, [filters, refresh]);

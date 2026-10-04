@@ -124,7 +124,7 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
       optionsError={optionsError} onSearch={changeSearch} onChange={changeFilter} />
-    <InformationSummary counts={list?.counts} />
+    <InformationSummary counts={list?.counts} role={role} />
 
     <nav aria-label="Information status" className="flex flex-wrap gap-2">
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.queue === item.value}

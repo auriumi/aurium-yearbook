@@ -197,18 +197,20 @@ export async function decideInformationQc(reviewId: number, expectedVersion: num
   return readResponse<{ success: true; reviewId: number; revisionId: number; version: number; stage: InformationStage }>(response);
 }
 
-export async function getInformationDecisionHistory(reviewId: number, signal?: AbortSignal) {
-  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/decision-events`, {
+export async function getInformationDecisionHistory(reviewId: number, signal?: AbortSignal, beforeVersion?: number) {
+  const query = beforeVersion === undefined ? '' : `?beforeVersion=${beforeVersion}`;
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/decision-events${query}`, {
     credentials: 'include', cache: 'no-store', signal,
   });
-  return readResponse<{ success: true; events: InformationDecisionEvent[] }>(response);
+  return readResponse<{ success: true; events: InformationDecisionEvent[]; nextCursor: number | null }>(response);
 }
 
-export async function getInformationDraftHistory(reviewId: number, signal?: AbortSignal) {
-  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/revisions`, {
+export async function getInformationDraftHistory(reviewId: number, signal?: AbortSignal, beforeVersion?: number) {
+  const query = beforeVersion === undefined ? '' : `?beforeVersion=${beforeVersion}`;
+  const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/revisions${query}`, {
     credentials: 'include', cache: 'no-store', signal,
   });
-  return readResponse<{ success: true; revisions: InformationRevision[] }>(response);
+  return readResponse<{ success: true; revisions: InformationRevision[]; nextCursor: number | null }>(response);
 }
 
 export async function addInformationComment(reviewId: number, expectedVersion: number, revisionId: number | null,

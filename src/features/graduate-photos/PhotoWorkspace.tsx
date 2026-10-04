@@ -91,6 +91,15 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
     setReviewId(row.reviewId);
   }
   const totalPages = Math.max(1, Math.ceil((list?.total ?? 0) / (list?.pageSize ?? 25)));
+  const summary = [
+    { label: 'Pending', count: list?.counts[role === 'moderator' ? 'SUBMITTED_MODERATOR' : role === 'qc' ? 'SUBMITTED_QC' : 'DRAFT'] },
+    ...(role === 'moderator' ? [] : [{
+      label: role === 'qc' ? 'Ready to forward' : 'Returned for correction',
+      count: list ? role === 'qc' ? list.counts.APPROVED_QC ?? 0
+        : (list.counts.REJECTED_QC ?? 0) + (list.counts.REJECTED_MODERATOR ?? 0) : undefined,
+    }]),
+    { label: 'Completed', count: list ? list.counts.LOCKED ?? 0 : undefined },
+  ];
   return <section className="space-y-5" aria-label="Graduate photo workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate photos</h2>
@@ -126,6 +135,12 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
           </select></label>
       </div>
     </div>
+    <dl aria-label="Photo review summary" className="grid gap-3 sm:grid-cols-3">
+      {summary.map(item => <div key={item.label} className="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-sm">
+        <dt className="text-sm font-medium text-stone-600">{item.label}</dt>
+        <dd className="mt-2 text-3xl font-semibold tabular-nums text-stone-900">{list ? item.count ?? 0 : '—'}</dd>
+      </div>)}
+    </dl>
     <nav aria-label="Photo review status" className="flex flex-wrap gap-2">
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.stage === item.value}
         className={`min-h-11 h-auto rounded-lg px-3 py-2 text-sm ${filters.stage === item.value ? 'border-amber-800 bg-amber-900 text-white hover:bg-amber-800 hover:text-white' : 'border-stone-200 bg-white text-stone-600'}`}

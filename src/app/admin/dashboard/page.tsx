@@ -59,8 +59,10 @@ export default function AdminDashboard() {
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
       : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;
   const canReviewInformation = informationRole !== null;
-  const canReviewPhotos = reviewCapabilities.some(capability =>
-    ['PHOTO_UPLOADER', 'PHOTO_QC', 'FINAL_MODERATOR'].includes(capability));
+  const photoRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
+    : reviewCapabilities.includes('PHOTO_UPLOADER') ? 'uploader'
+      : reviewCapabilities.includes('PHOTO_QC') ? 'qc' : null;
+  const canReviewPhotos = photoRole !== null;
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
@@ -187,7 +189,9 @@ export default function AdminDashboard() {
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
-         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
+         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={event => {
+           if (event.target === event.currentTarget) setIsMobileMenuOpen(false);
+         }}>
              <AdminSidebar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -248,7 +252,7 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
-            {activeTab === 'photo-workspace' && canReviewPhotos && <PhotoWorkspace />}
+            {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}

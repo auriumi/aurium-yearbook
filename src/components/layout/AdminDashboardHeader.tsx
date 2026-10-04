@@ -12,6 +12,7 @@ const TAB_TITLES: Record<string, string> = {
   slots: "Schedule Manager",
   masterlist: "Verified Masterlist",
   "information-workspace": "Graduate Information",
+  "photo-workspace": "Graduate Photos",
   "rac-verification": "RAC/SAO Verification",
   "photo-workspace": "Graduate Photos",
   scanner: "Attendance Scanner",

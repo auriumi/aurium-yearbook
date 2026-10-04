@@ -73,6 +73,7 @@ export interface InformationDetail {
   success: true;
   reviewId: number;
   informationStage: InformationStage;
+  photoStage: InformationStage | null;
   queue: Exclude<InformationQueue, 'ALL'>;
   version: number;
   availableActions: string[];
@@ -177,7 +178,7 @@ export async function saveInformationDraft(reviewId: number, expectedVersion: nu
   return readResponse<{ success: true; changed: boolean; version: number; revisionId: number | null }>(response);
 }
 
-export async function submitInformationReview(reviewId: number, expectedVersion: number, revisionId: number, operationId: string) {
+export async function submitInformationReview(reviewId: number, expectedVersion: number, revisionId: number | null, operationId: string) {
   const response = await fetch(`${baseUrl}/api/admin/information-reviews/${reviewId}/submission`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },

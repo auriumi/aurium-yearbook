@@ -24,9 +24,10 @@ const proofreaderQueues: { value: InformationQueue; label: string }[] = [
 
 const qcQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
-  { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
+  { value: 'SUBMITTED_QC', label: 'Pending' },
   { value: 'REJECTED_QC', label: 'Rejected by QC' },
   { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Submitted to Moderator' },
   { value: 'COMPLETED', label: 'Completed' },
 ];
 
@@ -69,7 +70,14 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
     setList(null);
     setError('');
     getInformationList(filters, controller.signal)
-      .then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+      .then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => {
         if (!controller.signal.aborted) {
           setError(cause instanceof Error ? cause.message : 'Unable to load graduate information.');

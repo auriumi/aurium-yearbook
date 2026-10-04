@@ -11,6 +11,7 @@ import {
 import { InformationProfileDialog } from './InformationProfileDialog';
 import { InformationFiltersPanel } from './InformationFiltersPanel';
 import { InformationRecords } from './InformationRecords';
+import { InformationSummary } from './InformationSummary';
 
 const proofreaderQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
@@ -133,6 +134,7 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
       optionsError={optionsError} onSearch={changeSearch} onChange={changeFilter} />
+    <InformationSummary counts={list?.counts} />
 
     <nav aria-label="Information status" className="flex flex-wrap gap-2">
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.queue === item.value}

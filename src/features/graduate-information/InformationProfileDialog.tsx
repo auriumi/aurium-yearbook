@@ -68,10 +68,7 @@ function FieldGroup({ title, fields }: { title: string; fields: Field[] }) {
   </section>;
 }
 
-function Profile({ detail, commentDraft, onCommentChange, onCommentBusy, onCommented }: {
-  detail: InformationDetail; commentDraft: string; onCommentChange: (value: string) => void;
-  onCommentBusy: (value: boolean) => void; onCommented: () => Promise<void>;
-}) {
+function Profile({ detail }: { detail: InformationDetail }) {
   const profile = detail.draft ? { ...detail.profile, ...detail.draft.after } : detail.profile;
   const changed = (field: keyof EditableProfile) => !!detail.draft && detail.draft.after[field] !== detail.profile[field];
   const session = profile.record.photoSession;
@@ -142,9 +139,6 @@ function Profile({ detail, commentDraft, onCommentChange, onCommentBusy, onComme
       ['Photo session', session ? `${new Date(session.date).toLocaleDateString()} · ${session.period}${session.startTime ? ` · ${session.startTime}${session.endTime ? `–${session.endTime}` : ''}` : ''}` : 'Not booked'],
       ['Attendance', profile.record.attendanceRecorded ? 'Recorded' : 'Not yet recorded'],
     ]} />
-    <InformationReviewActivity key={`${detail.reviewId}-${detail.version}`} reviewId={detail.reviewId} version={detail.version}
-      revisionId={detail.draft?.revisionId ?? null} canComment={detail.availableActions.includes('COMMENT')}
-      note={commentDraft} onNoteChange={onCommentChange} onBusyChange={onCommentBusy} onCommented={onCommented} />
   </div>;
 }
 
@@ -326,25 +320,24 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
             : detail && editing && draftValues ? <InformationEditor detail={detail} values={draftValues}
               original={canonicalValues(detail)}
               onChange={values => { setDraftValues(values); setSaveError(''); }} onSubmit={save} />
-              : detail ? <div className="space-y-4">
-                <CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
+              : detail ? <InformationReviewActivity key={detail.reviewId} reviewId={detail.reviewId} version={detail.version}
+                revisionId={detail.draft?.revisionId ?? null} canComment={detail.availableActions.includes('COMMENT')}
+                note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setCommentBusy} onCommented={async () => {
+                try {
+                  const updated = await getInformationDetail(detail.reviewId);
+                  setRequest({ reviewId: updated.reviewId, detail: updated });
+                  onChanged();
+                } catch (cause) {
+                  setRequest({ reviewId: detail.reviewId, error: cause instanceof Error ? cause.message : 'Comment saved; refresh the profile.' });
+                  throw cause;
+                }
+              }}><div className="space-y-4"><CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
                   stage={detail.informationStage} correction={detail.correction}
                   canRequest={detail.availableActions.includes('REQUEST_CORRECTION')}
                   onUpdated={async () => {
                     setRequest({ reviewId: detail.reviewId, detail: await getInformationDetail(detail.reviewId) });
                     onChanged();
-                  }} />
-                <Profile detail={detail} commentDraft={commentDraft} onCommentChange={setCommentDraft} onCommentBusy={setCommentBusy} onCommented={async () => {
-                  try {
-                    const updated = await getInformationDetail(detail.reviewId);
-                    setRequest({ reviewId: updated.reviewId, detail: updated });
-                    onChanged();
-                  } catch (cause) {
-                    setRequest({ reviewId: detail.reviewId, error: cause instanceof Error ? cause.message : 'Comment saved; refresh the profile.' });
-                    throw cause;
-                  }
-                }} />
-              </div> : null}
+                  }} /><Profile detail={detail} /></div></InformationReviewActivity> : null}
       </div>
       {(editing || canSubmit || canDecideQc || canDecideModerator || notice || submitError) && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
         {(!(canDecideQc || canDecideModerator) || notice || submitError || editing) && <div className="min-w-0 flex-1">

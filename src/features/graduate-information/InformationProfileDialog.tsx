@@ -334,6 +334,7 @@ export function InformationProfileDialog({ reviewId, onClose, onChanged, returnF
               }}><div className="space-y-4"><CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
                   stage={detail.informationStage} correction={detail.correction}
                   canRequest={detail.availableActions.includes('REQUEST_CORRECTION')}
+                  onBusyChange={setCommentBusy}
                   onUpdated={async () => {
                     setRequest({ reviewId: detail.reviewId, detail: await getInformationDetail(detail.reviewId) });
                     onChanged();

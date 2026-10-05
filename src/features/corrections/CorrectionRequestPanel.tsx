@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { requestCorrection, type CorrectionSummary } from './api';
 
-export function CorrectionRequestPanel({ reviewId, version, stage, correction, canRequest, onUpdated }: {
+export function CorrectionRequestPanel({ reviewId, version, stage, correction, canRequest, onUpdated, onBusyChange }: {
   reviewId: number; version: number; stage: string; correction: CorrectionSummary | null;
-  canRequest: boolean; onUpdated: () => Promise<void>;
+  canRequest: boolean; onUpdated: () => Promise<void>; onBusyChange: (busy: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -22,18 +22,21 @@ export function CorrectionRequestPanel({ reviewId, version, stage, correction, c
     if (busy || !canRequest || trimmed.length < 1 || trimmed.length > 2000) return;
     const fingerprint = JSON.stringify([reviewId, version, trimmed]);
     if (pending.current?.fingerprint !== fingerprint) pending.current = { fingerprint, operationId: crypto.randomUUID() };
-    setBusy(true); setError('');
+    setBusy(true); onBusyChange(true); setError('');
     let recorded = false;
     try {
       await requestCorrection(reviewId, version, trimmed, pending.current.operationId);
       recorded = true;
-      setOpen(false); setReason(''); setNotice('Correction request recorded. The approved review remains locked.');
+      setReason(''); setNotice('Correction request recorded. The approved review remains locked.');
       pending.current = null;
       await onUpdated();
     } catch (cause) {
       if (recorded) setNotice('Request recorded, but the view could not refresh. Close and reopen this graduate.');
       else setError(cause instanceof Error ? cause.message : 'Unable to record the request.');
-    } finally { setBusy(false); }
+    } finally {
+      if (recorded) setOpen(false);
+      setBusy(false); onBusyChange(false);
+    }
   }
   return <>
     <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -56,7 +59,7 @@ export function CorrectionRequestPanel({ reviewId, version, stage, correction, c
         <DialogTitle>Request a correction from IT</DialogTitle>
         <DialogDescription>Explain what needs to change. The approved revision stays locked until an assigned IT reviewer approves this request.</DialogDescription>
         <label htmlFor={`correction-reason-${reviewId}`} className="mt-3 block text-sm font-medium text-stone-800">Correction needed</label>
-        <textarea id={`correction-reason-${reviewId}`} value={reason} maxLength={2000}
+        <textarea id={`correction-reason-${reviewId}`} value={reason} maxLength={2000} disabled={busy}
           onChange={event => { setReason(event.target.value); setError(''); }}
           className="min-h-28 w-full rounded-lg border border-stone-300 p-3 text-sm focus-visible:outline-2 focus-visible:outline-amber-800"
           placeholder="State the record or photo that needs correction and why." />

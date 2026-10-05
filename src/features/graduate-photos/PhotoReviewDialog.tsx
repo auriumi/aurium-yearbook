@@ -297,6 +297,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
             <div className="mb-4"><CorrectionRequestPanel reviewId={detail.reviewId} version={detail.version}
               stage={detail.stage} correction={detail.correction}
               canRequest={detail.availableActions.includes('REQUEST_CORRECTION')}
+              onBusyChange={setBusy}
               onUpdated={async () => { setDetail(await getPhotoDetail(detail.reviewId)); onChanged(); }} /></div>
             {(detail.stage === 'REJECTED_QC' || detail.stage === 'REJECTED_MODERATOR') && rejection?.note &&
               <div role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">

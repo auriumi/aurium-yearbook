@@ -11,11 +11,12 @@ export const photoEventLabels: Record<PhotoEvent['action'], string> = {
 };
 
 export function PhotoReviewActivity({ detail, events, uploads, historyError, note, onNoteChange, onCommented, onBusyChange,
-  mode, hasOlder, loadingOlder, onLoadOlder, busy }: {
+  mode, hasOlder, loadingOlder, refreshingHistory, onLoadOlder, onRetryHistory, busy }: {
   detail: PhotoDetail; events: PhotoEvent[]; uploads: PhotoUploadEvent[]; historyError: string;
   note: string; onNoteChange: (value: string) => void;
   onCommented: () => Promise<void>; onBusyChange: (busy: boolean) => void;
   mode: 'activity' | 'discussion'; hasOlder: boolean; loadingOlder: boolean; onLoadOlder: () => void; busy: boolean;
+  refreshingHistory: boolean; onRetryHistory: () => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [commentError, setCommentError] = useState('');
@@ -69,8 +70,10 @@ export function PhotoReviewActivity({ detail, events, uploads, historyError, not
       </div>
       {commentError && <p role="alert" className="mt-2 text-sm text-red-700">{commentError}</p>}
     </form>}
-    {historyError && <p role="alert" className="mt-4 text-sm text-red-700">{historyError}</p>}
-    {!historyError && !activity.length && <p className="mt-4 text-sm text-stone-600">{mode === 'activity' ? 'No activity recorded yet.' : 'No comments in the loaded activity.'}</p>}
+    {historyError && <div className="mt-4"><p role="alert" className="text-sm text-red-700">{historyError}</p>
+      <Button variant="outline" className="mt-2" disabled={refreshingHistory || loadingOlder || busy} onClick={onRetryHistory}>Retry history</Button></div>}
+    {refreshingHistory && <p role="status" className="mt-4 text-sm text-stone-600">Loading activity…</p>}
+    {!historyError && !refreshingHistory && !activity.length && <p className="mt-4 text-sm text-stone-600">{mode === 'activity' ? 'No activity recorded yet.' : 'No comments in the loaded activity.'}</p>}
     <ol className="mt-4 divide-y divide-stone-100">{activity.map(event => <li key={event.key} className="py-3 first:pt-0">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm font-semibold text-stone-900">{event.label}</p>
@@ -79,7 +82,7 @@ export function PhotoReviewActivity({ detail, events, uploads, historyError, not
       <p className="mt-1 text-xs text-stone-600">{[event.actor.first_name, event.actor.last_name].filter(Boolean).join(' ') || 'Assigned staff'}</p>
       {event.note && <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-amber-50 p-3 text-sm text-stone-800">{event.note}</p>}
     </li>)}</ol>
-    {hasOlder && <Button variant="outline" className="mt-3 min-h-11" disabled={loadingOlder || busy} onClick={onLoadOlder}>
+    {hasOlder && <Button variant="outline" className="mt-3 min-h-11" disabled={loadingOlder || refreshingHistory || busy} onClick={onLoadOlder}>
       {loadingOlder ? 'Loading…' : 'Load older activity'}</Button>}
   </section>;
 }

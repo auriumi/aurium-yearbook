@@ -105,7 +105,9 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   const [historyError, setHistoryError] = useState('');
   const [historyCursors, setHistoryCursors] = useState<{ events: number | null; uploads: number | null }>({ events: null, uploads: null });
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [refreshingHistory, setRefreshingHistory] = useState(false);
   const historyRequest = useRef<AbortController | null>(null);
+  const reviewRequest = useRef<AbortController | null>(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'photos' | 'profile' | 'activity'>('photos');
   const [selected, setSelected] = useState<{ type: Kind; file: File } | null>(null);
@@ -124,20 +126,23 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   useEffect(() => {
     if (reviewId === null) return;
     const controller = new AbortController();
-    historyRequest.current = controller;
+    const historyController = new AbortController();
+    reviewRequest.current = controller;
+    historyRequest.current = historyController;
+    setRefreshingHistory(true);
     setHistoryCursors({ events: null, uploads: null }); setLoadingOlder(false);
     setDetail(null); setEvents([]); setUploads([]); setLatestRejection(null); setHistoryError(''); setError(''); setNotice(''); setSelected(null); setExpanded(null); setTab('photos');
     setCommentDraft(''); setConfirmDiscard(false);
     getPhotoDetail(reviewId, controller.signal).then(result => { if (!controller.signal.aborted) setDetail(result); })
       .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load photos.'); });
-    getPhotoDecisionHistory(reviewId, controller.signal).then(result => {
-      if (!controller.signal.aborted) {
+    getPhotoDecisionHistory(reviewId, historyController.signal).then(result => {
+      if (!historyController.signal.aborted) {
         setEvents(result.events); setUploads(result.uploads ?? []); setLatestRejection(result.latestRejection ?? null);
         setHistoryCursors({ events: result.nextEventCursor, uploads: result.nextUploadCursor });
       }
     }).catch(cause => {
-      if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
-    });
+      if (!historyController.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.');
+    }).finally(() => { if (!historyController.signal.aborted) setRefreshingHistory(false); });
     return () => { controller.abort(); historyRequest.current?.abort(); };
   }, [reviewId]);
 
@@ -152,10 +157,12 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   }, [reviewId, commentDraft, selected]);
 
   async function refreshHistory(id: number) {
+    if (reviewRequest.current?.signal.aborted) return;
     historyRequest.current?.abort();
     const controller = new AbortController();
     historyRequest.current = controller;
-    setLoadingOlder(false);
+    setLoadingOlder(false); setRefreshingHistory(true);
+    setHistoryCursors({ events: null, uploads: null });
     try {
       const history = await getPhotoDecisionHistory(id, controller.signal);
       if (controller.signal.aborted) return;
@@ -164,11 +171,19 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
       setHistoryCursors({ events: history.nextEventCursor, uploads: history.nextUploadCursor });
     }
     catch (cause) { if (!controller.signal.aborted) setHistoryError(cause instanceof Error ? cause.message : 'Unable to load review activity.'); }
+    finally { if (!controller.signal.aborted) setRefreshingHistory(false); }
+  }
+
+  async function refreshDetail(id: number) {
+    const signal = reviewRequest.current?.signal;
+    if (!signal || signal.aborted) return;
+    const updated = await getPhotoDetail(id, signal);
+    if (!signal.aborted) setDetail(updated);
   }
 
   async function loadOlderHistory() {
     const signal = historyRequest.current?.signal;
-    if (reviewId === null || !signal || signal.aborted || loadingOlder) return;
+    if (reviewId === null || !signal || signal.aborted || loadingOlder || refreshingHistory) return;
     setLoadingOlder(true); setHistoryError('');
     try {
       const history = await getPhotoDecisionHistory(reviewId, signal, historyCursors);
@@ -204,8 +219,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
       const started = await beginPhotoUpload(detail.reviewId, selected.type, selected.file.type, detail.version);
       await putPhoto(started.uploadUrl, selected.file, setProgress);
       await finalizePhotoUpload(detail.reviewId, started.assetId, detail.version);
-      const updated = await getPhotoDetail(detail.reviewId);
-      setDetail(updated); setSelected(null); setProgress(0); onChanged();
+      await refreshDetail(detail.reviewId);
+      setSelected(null); setProgress(0); onChanged();
       void refreshHistory(detail.reviewId);
       setNotice(`${selected.type === 'GRADUATION' ? 'Graduation' : 'Theme'} photo saved in this review.`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Photo upload failed. Try again.'); }
@@ -222,7 +237,7 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
     setBusy(true); setError(''); setConfirmSubmit(false);
     try {
       await submitPhotoPair(detail.reviewId, detail.version, detail.pair.revisionId, operationId);
-      setDetail(await getPhotoDetail(detail.reviewId));
+      await refreshDetail(detail.reviewId);
       void refreshHistory(detail.reviewId);
       pendingSubmission.current = null; onChanged(); setNotice('Photo pair submitted to QC.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to submit this pair.'); }
@@ -234,11 +249,12 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
   function activity(mode: 'activity' | 'discussion') {
     return detail && <PhotoReviewActivity key={`${detail.reviewId}-${mode}`} detail={detail} events={events} uploads={uploads}
       mode={mode} busy={busy} hasOlder={historyCursors.events !== null || historyCursors.uploads !== null}
-      loadingOlder={loadingOlder} onLoadOlder={loadOlderHistory}
+      loadingOlder={loadingOlder} refreshingHistory={refreshingHistory} onLoadOlder={loadOlderHistory}
+      onRetryHistory={() => void refreshHistory(detail.reviewId)}
       historyError={historyError} note={commentDraft} onNoteChange={setCommentDraft} onBusyChange={setBusy}
       onCommented={async () => {
         onChanged();
-        setDetail(await getPhotoDetail(detail.reviewId));
+        await refreshDetail(detail.reviewId);
         await refreshHistory(detail.reviewId);
       }} />;
   }
@@ -313,7 +329,8 @@ export function PhotoReviewDialog({ reviewId, onClose, onChanged, returnFocusRef
         {detail && <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-stone-200 bg-white px-4 py-3 sm:px-6">
           <p className="text-sm text-stone-600">{detail.pair ? `Pair revision ${detail.pair.revisionId}` : 'Both photos are needed for a complete pair.'}</p>
           {canSubmit && <Button disabled={busy || !!selected} onClick={() => setConfirmSubmit(true)}>Submit pair to QC</Button>}
-          <PhotoReviewActions detail={detail} onUpdated={setDetail}
+          <PhotoReviewActions detail={detail} onUpdated={updated => setDetail(current =>
+            current?.reviewId === updated.reviewId ? updated : current)}
             onChanged={() => { onChanged(); void refreshHistory(detail.reviewId); }}
             onBusyChange={setBusy} onNotice={setNotice} />
         </div>}

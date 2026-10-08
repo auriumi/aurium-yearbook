@@ -18,6 +18,7 @@ import { PhotoWorkspace } from '@/features/graduate-photos/PhotoWorkspace';
 import { ItCorrectionWorkspace } from '@/features/corrections/ItCorrectionWorkspace';
 import { getReviewCapabilities } from '@/features/rac-verification/api';
 import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
+import { StaffAssignments } from '@/features/staff-assignments/StaffAssignments';
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -55,6 +56,8 @@ export default function AdminDashboard() {
 
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
   const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
+  const [capabilityRefresh, setCapabilityRefresh] = useState(0);
+  const refreshCapabilities = useCallback(() => setCapabilityRefresh(value => value + 1), []);
   const canCheckRac = reviewCapabilities.includes('INFORMATION_PROOFREADER');
   const informationRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
@@ -68,6 +71,13 @@ export default function AdminDashboard() {
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
+  const canManageAssignments = userRole === 'ADMINISTRATOR' ||
+    (userRole === 'MODERATOR' && reviewCapabilities.includes('FINAL_MODERATOR'));
+
+  useEffect(() => {
+    window.addEventListener('focus', refreshCapabilities);
+    return () => window.removeEventListener('focus', refreshCapabilities);
+  }, [refreshCapabilities]);
 
   const handleNavigate = useCallback((tab: string) => {
     // Old sample notifications use legacy image IDs, not photo review IDs.
@@ -104,7 +114,7 @@ export default function AdminDashboard() {
       .then(result => setReviewCapabilities(result.assignments.map(item => item.capability)))
       .catch(() => { if (!controller.signal.aborted) setReviewCapabilities([]); });
     return () => controller.abort();
-  }, [staffUser]);
+  }, [staffUser, capabilityRefresh]);
 
   const loadStudents = useCallback(async (page: number, forceRefresh = false) => {
     const cachedStudents = studentCache.current[page];
@@ -205,6 +215,7 @@ export default function AdminDashboard() {
                 canReviewInformation={canReviewInformation}
                 canReviewPhotos={canReviewPhotos}
                 canReviewCorrections={canReviewCorrections}
+                canManageAssignments={canManageAssignments}
              />
          </div>
       )}
@@ -220,6 +231,7 @@ export default function AdminDashboard() {
         canReviewInformation={canReviewInformation}
         canReviewPhotos={canReviewPhotos}
         canReviewCorrections={canReviewCorrections}
+        canManageAssignments={canManageAssignments}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -259,6 +271,7 @@ export default function AdminDashboard() {
             {activeTab === 'it-corrections' && canReviewCorrections && <ItCorrectionWorkspace />}
             {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
+            {activeTab === 'staff-assignments' && canManageAssignments && <StaffAssignments onChanged={refreshCapabilities} />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 

@@ -24,6 +24,7 @@ interface SidebarProps {
   canReviewInformation?: boolean;
   canReviewPhotos?: boolean;
   canReviewCorrections?: boolean;
+  canManageAssignments?: boolean;
 }
 
 interface NavItemProps {
@@ -46,7 +47,7 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
   );
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false, canReviewCorrections = false }: SidebarProps) {
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false, canReviewCorrections = false, canManageAssignments = false }: SidebarProps) {
   const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
@@ -109,6 +110,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
 
         <NavItem id="profile" label="Profile" icon={User} activeTab={activeTab} onSelect={handleSelect} />
+        {canManageAssignments && <NavItem id="staff-assignments" label="Staff Assignments" icon={ShieldCheck} activeTab={activeTab} onSelect={handleSelect} />}
 
         {/* Roles Management — ADMINISTRATOR only */}
         {canManageRoles && (

@@ -55,7 +55,7 @@ export default function AdminDashboard() {
 
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
   const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
-  const canCheckRac = reviewCapabilities.includes('RAC_CHECK');
+  const canCheckRac = reviewCapabilities.includes('INFORMATION_PROOFREADER');
   const informationRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
       : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;

@@ -121,16 +121,6 @@ function Profile({ detail }: { detail: InformationDetail }) {
       ]} />
     </div>
 
-    <section className="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
-      <h3 className="text-base font-semibold text-stone-900">Solicitations</h3>
-      {profile.solicitations.length ? <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-        {profile.solicitations.map(item => <div key={item.slot} className="rounded-lg border border-stone-100 bg-stone-50 p-3">
-          <dt className="text-xs font-medium text-stone-500">Slot {item.slot} · {item.type === 'PERSON' ? 'Person' : 'Company'}</dt>
-          <dd className="mt-1 text-sm text-stone-800">{[item.title, item.name].filter(Boolean).join(' ') || 'Not provided'}</dd>
-        </div>)}
-      </dl> : <p className="mt-3 text-sm text-stone-600">No solicitation records.</p>}
-    </section>
-
     <FieldGroup title="Registration and schedule" fields={[
       ['Account status', profile.record.accountStatus],
       ['Registered on', new Date(profile.record.registeredAt).toLocaleString()],

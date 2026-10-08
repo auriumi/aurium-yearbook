@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { Search, BookOpen, GraduationCap, FileText, MapPin, Phone, Mail, Clock, Filter, User, Image as ImageIcon, X, Home, Building2, ListFilter, ChevronLeft, ChevronRight, Loader2, Download, Trash2, AlertTriangle, Send, CheckCircle2, FileSpreadsheet, Eye, EyeOff, ShieldCheck } from "lucide-react";
@@ -86,6 +86,30 @@ export function MasterlistTab(props: MasterlistTabProps) {
   const canExport = userRole === 'ADMINISTRATOR' || userRole === 'MODERATOR';
 
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [detailKey, setDetailKey] = useState<number | null>(null);
+  const [detailError, setDetailError] = useState('');
+  const [detailRefresh, setDetailRefresh] = useState(0);
+  const studentNumber = selectedStudent?.student_number as number | undefined;
+
+  useEffect(() => {
+    setDetailKey(null);
+    setDetailError('');
+    setEnlargedImage(null);
+    if (!studentNumber) return;
+    const controller = new AbortController();
+    fetch(`${baseUrl}/api/admin/masterlist/${studentNumber}`, {
+      credentials: 'include', cache: 'no-store', signal: controller.signal,
+    }).then(async response => {
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.reason || 'Unable to load graduate details.');
+      if (controller.signal.aborted) return;
+      setSelectedStudent(result.student);
+      setDetailKey(studentNumber);
+    }).catch(error => {
+      if (!controller.signal.aborted) setDetailError(error instanceof Error ? error.message : 'Unable to load graduate details.');
+    });
+    return () => controller.abort();
+  }, [studentNumber, detailRefresh, setSelectedStudent]);
   
   // Deletion States
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -541,7 +565,12 @@ export function MasterlistTab(props: MasterlistTabProps) {
                             return (
                                 <div 
                                     key={student.id} 
-                                    onClick={() => setSelectedStudent(student)} 
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => { setDetailKey(null); setSelectedStudent(student); }}
+                                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault(); setDetailKey(null); setSelectedStudent(student);
+                                    } }}
                                     className="group bg-[#FDFBF7] p-4 rounded-xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden h-fit"
                                 >
                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -619,25 +648,38 @@ export function MasterlistTab(props: MasterlistTabProps) {
                 </div>
 
                 <button 
+                    aria-label="Close graduate profile"
                     onClick={() => setSelectedStudent(null)} 
                     className="absolute top-4 right-4 z-50 p-2 bg-white/80 hover:bg-stone-100 backdrop-blur-sm rounded-full text-stone-500 border border-stone-200 transition-all shadow-sm"
                 >
                     <X size={20}/>
                 </button>
 
-                {selectedStudent && (
+                {selectedStudent && detailKey !== studentNumber && <div className="flex min-h-64 w-full flex-col items-center justify-center gap-4 p-8" role="status">
+                  {detailError ? <><p className="text-sm text-red-700">{detailError}</p><Button variant="outline" onClick={() => setDetailRefresh(value => value + 1)}>Retry</Button></>
+                    : <><Loader2 className="h-6 w-6 animate-spin text-amber-700" /><p>Loading current graduate details…</p></>}
+                </div>}
+                {selectedStudent && detailKey === studentNumber && (
                     <>
                         <div className="w-full md:w-[360px] bg-stone-100 p-6 flex flex-col items-center border-r border-stone-200 overflow-y-auto shrink-0 relative">
                             <div className="text-center w-full mb-6 mt-8">
                                 <h2 className="text-2xl font-black text-stone-900 uppercase leading-none tracking-tight">
                                     {selectedStudent.last_name}, <br/> 
-                                    {selectedStudent.first_name} {selectedStudent.mid_name?.charAt(0) ? `${selectedStudent.mid_name.charAt(0)}.` : ""}
+                                    {selectedStudent.first_name} {selectedStudent.mid_name}
                                     {selectedStudent.suffix && <span className="ml-1 text-stone-600">{selectedStudent.suffix}</span>}
                                 </h2>
                                 <p className="text-amber-700 font-serif italic text-lg mt-1">"{selectedStudent.nickname}"</p>
                             </div>
 
                             <div className="w-full space-y-6">
+                                <div className="space-y-2 text-sm text-stone-700">
+                                  <p>{selectedStudent.review?.photos.approvedAt
+                                    ? `Photos approved ${formatDate(selectedStudent.review.photos.approvedAt)}`
+                                    : 'Photos awaiting final approval'}</p>
+                                  {(selectedStudent.review?.photos.correctionInProgress || selectedStudent.review?.information.correctionInProgress) &&
+                                    <p className="rounded-lg bg-amber-50 p-3 text-amber-900">Correction in progress. The last approved information and photos remain visible.</p>}
+                                  <Button variant="outline" size="sm" onClick={() => setDetailRefresh(value => value + 1)}>Refresh details and photos</Button>
+                                </div>
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
                                         <ImageIcon size={10} /> Graduation Photo
@@ -651,7 +693,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
-                                                <span className="text-[10px] italic">Not Uploaded</span>
+                                                <span className="text-xs italic">{selectedStudent.review?.photos.status === 'UNAVAILABLE' ? 'Approved photo unavailable' : 'Awaiting final approval'}</span>
                                             </div>
                                         )}
                                     </div>
@@ -659,18 +701,18 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
                                 <div className="space-y-1">
                                     <span className="text-[10px] font-bold uppercase text-stone-400 pl-1 flex items-center gap-1">
-                                        <ImageIcon size={10} /> Creative Photo
+                                        <ImageIcon size={10} /> Theme Photo
                                     </span>
                                     <div 
                                         className="w-full aspect-[4/5] bg-white p-2 shadow-sm border border-stone-200 rounded-lg cursor-pointer hover:border-amber-400 transition-colors group"
                                         onClick={() => selectedStudent.photo_creative && setEnlargedImage(selectedStudent.photo_creative)}
                                     >
                                         {selectedStudent.photo_creative ? (
-                                            <Image unoptimized src={selectedStudent.photo_creative} width={800} height={1000} className="w-full h-full object-cover rounded-sm group-hover:opacity-80 transition-opacity" alt="Creative" />
+                                            <Image unoptimized src={selectedStudent.photo_creative} width={800} height={1000} className="w-full h-full object-contain rounded-sm group-hover:opacity-80 transition-opacity" alt="Approved theme photo" />
                                         ) : (
                                             <div className="w-full h-full bg-stone-50 flex flex-col items-center justify-center text-stone-300">
                                                 <ImageIcon size={24} className="opacity-20 mb-1"/>
-                                                <span className="text-[10px] italic">Not Uploaded</span>
+                                                <span className="text-xs italic">{selectedStudent.review?.photos.status === 'UNAVAILABLE' ? 'Approved photo unavailable' : 'Awaiting final approval'}</span>
                                             </div>
                                         )}
                                     </div>
@@ -725,6 +767,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     </div>
                                     <InfoField label="Program / Course" value={selectedStudent.course} />
                                     <InfoField label="Major" value={selectedStudent.major} />
+                                    <InfoField label="Graduation year" value={selectedStudent.grad_year} />
+                                    <InfoField label="Graduation term" value={selectedStudent.grad_term === 'END_YEAR' ? 'End year' : 'Mid year'} />
                                     <div className="col-span-2">
                                         <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.thesis_title}"`} icon={FileText} fullWidth />
                                     </div>
@@ -740,8 +784,11 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     <div className="grid grid-cols-1 gap-4">
                                         <InfoField label="Date of Birth" value={formatDate(selectedStudent.studentDetail?.birth_date)} />
                                         <InfoField label="Father's Name" value={selectedStudent.studentDetail?.fathers_name} />
+                                        <InfoField label="Father's Title" value={selectedStudent.studentDetail?.fathers_title} />
                                         <InfoField label="Mother's Name" value={selectedStudent.studentDetail?.mothers_name} />
+                                        <InfoField label="Mother's Title" value={selectedStudent.studentDetail?.mothers_title} />
                                         <InfoField label="Guardian" value={selectedStudent.studentDetail?.guardians_name} />
+                                        <InfoField label="Guardian's Title" value={selectedStudent.studentDetail?.guardians_title} />
                                     </div>
                                 </div>
 
@@ -752,6 +799,8 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
                                         <InfoField label="Home Address" value={selectedStudent.studentDetail?.province} icon={Home} />
+                                        <InfoField label="City / Municipality" value={selectedStudent.studentDetail?.city} />
+                                        <InfoField label="Barangay" value={selectedStudent.studentDetail?.barangay} />
                                         <InfoField label="Mobile Number" value={selectedStudent.studentDetail?.contact_num} icon={Phone} />
                                         <InfoField label="Personal Email" value={selectedStudent.personal_email} icon={Mail} />
                                         <InfoField label="School Email" value={selectedStudent.school_email} icon={Mail} />

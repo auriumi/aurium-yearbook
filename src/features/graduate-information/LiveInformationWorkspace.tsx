@@ -13,7 +13,7 @@ import { InformationFiltersPanel } from './InformationFiltersPanel';
 import { InformationRecords } from './InformationRecords';
 import { InformationSummary } from './InformationSummary';
 
-const queues: { value: InformationQueue; label: string }[] = [
+const proofreaderQueues: { value: InformationQueue; label: string }[] = [
   { value: 'ALL', label: 'List of Graduates' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'SUBMITTED_QC', label: 'Submitted to QC' },
@@ -23,13 +23,31 @@ const queues: { value: InformationQueue; label: string }[] = [
   { value: 'REJECTED_MODERATOR', label: 'Rejected by Moderator' },
 ];
 
+const qcQueues: { value: InformationQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' },
+  { value: 'SUBMITTED_QC', label: 'Pending' },
+  { value: 'REJECTED_QC', label: 'Rejected by QC' },
+  { value: 'APPROVED_QC', label: 'Approved by QC' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Submitted to Moderator' },
+  { value: 'COMPLETED', label: 'Completed' },
+];
+
+const moderatorQueues: { value: InformationQueue; label: string }[] = [
+  { value: 'ALL', label: 'List of Graduates' },
+  { value: 'SUBMITTED_MODERATOR', label: 'Pending' },
+  { value: 'COMPLETED', label: 'Completed' },
+];
+
 const initialFilters: InformationFilters = {
   year: new Date().getFullYear(), term: 'END_YEAR', department: '', program: '', major: '',
   search: '', queue: 'ALL', page: 1,
 };
 
-export function LiveInformationWorkspace() {
-  const [filters, setFilters] = useState(initialFilters);
+export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' | 'moderator' }) {
+  const queues = role === 'moderator' ? moderatorQueues : role === 'qc' ? qcQueues : proofreaderQueues;
+  const [filters, setFilters] = useState<InformationFilters>(() => ({ ...initialFilters,
+    queue: role === 'moderator' ? 'SUBMITTED_MODERATOR' : 'ALL',
+  }));
   const [searchInput, setSearchInput] = useState('');
   const [list, setList] = useState<InformationList | null>(null);
   const [options, setOptions] = useState<InformationOptions | null>(null);
@@ -48,13 +66,19 @@ export function LiveInformationWorkspace() {
   }, [searchInput]);
 
   useEffect(() => {
-    setReviewId(null);
     const controller = new AbortController();
     setLoading(true);
     setList(null);
     setError('');
     getInformationList(filters, controller.signal)
-      .then(result => { if (!controller.signal.aborted) { setList(result); setLoading(false); } })
+      .then(result => { if (!controller.signal.aborted) {
+        const lastPage = Math.max(1, Math.ceil(result.total / result.pageSize));
+        if (filters.page > lastPage) {
+          setFilters(previous => ({ ...previous, page: lastPage }));
+          return;
+        }
+        setList(result); setLoading(false);
+      } })
       .catch(cause => {
         if (!controller.signal.aborted) {
           setError(cause instanceof Error ? cause.message : 'Unable to load graduate information.');
@@ -77,6 +101,7 @@ export function LiveInformationWorkspace() {
   }, [year, term, department, program]);
 
   function changeFilter(patch: Partial<InformationFilters>) {
+    setReviewId(null);
     setFilters(previous => ({ ...previous, ...patch, page: 1 }));
   }
 
@@ -100,12 +125,16 @@ export function LiveInformationWorkspace() {
   return <section className="space-y-5" aria-label="Graduate information workspace">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate information</h2>
-      <p className="mt-1 text-sm text-stone-600">Browse the assigned graduate records. Open a review queue to inspect one complete profile.</p>
+      <p className="mt-1 text-sm text-stone-600">{role === 'moderator'
+        ? 'Review records forwarded by QC. Final approval publishes the information and locks the review.'
+        : role === 'qc'
+          ? 'Review submitted profiles and their changes before sending approved records to the moderator.'
+          : 'Browse the assigned graduate records. Open a review queue to inspect one complete profile.'}</p>
     </div>
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
       optionsError={optionsError} onSearch={changeSearch} onChange={changeFilter} />
-    <InformationSummary counts={list?.counts} />
+    <InformationSummary counts={list?.counts} role={role} />
 
     <nav aria-label="Information status" className="flex flex-wrap gap-2">
       {queues.map(item => <Button key={item.value} variant="outline" aria-pressed={filters.queue === item.value}
@@ -129,12 +158,13 @@ export function LiveInformationWorkspace() {
       <InformationRecords list={list} queue={filters.queue} queueLabel={queueLabel} onOpenProfile={openProfile} />
 
       <div className="flex items-center justify-between gap-3">
-        <Button variant="outline" disabled={filters.page <= 1} onClick={() => setFilters(previous => ({ ...previous, page: previous.page - 1 }))}>Previous</Button>
+        <Button variant="outline" disabled={filters.page <= 1} onClick={() => { setReviewId(null); setFilters(previous => ({ ...previous, page: previous.page - 1 })); }}>Previous</Button>
         <span className="text-sm text-stone-600">Page {filters.page} of {totalPages}</span>
-        <Button variant="outline" disabled={filters.page >= totalPages} onClick={() => setFilters(previous => ({ ...previous, page: previous.page + 1 }))}>Next</Button>
+        <Button variant="outline" disabled={filters.page >= totalPages} onClick={() => { setReviewId(null); setFilters(previous => ({ ...previous, page: previous.page + 1 })); }}>Next</Button>
       </div>
     </>}
 
-    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)} returnFocusRef={returnFocusRef} />
+    <InformationProfileDialog reviewId={reviewId} onClose={() => setReviewId(null)}
+      onChanged={() => setRefresh(value => value + 1)} returnFocusRef={returnFocusRef} />
   </section>;
 }

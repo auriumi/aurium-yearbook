@@ -14,11 +14,11 @@ const TAB_TITLES: Record<string, string> = {
   "information-workspace": "Graduate Information",
   "photo-workspace": "Graduate Photos",
   "rac-verification": "RAC/SAO Verification",
-  images: "Image Management",
-  "images-approvals": "Approval Thread",
+  "it-corrections": "IT Corrections",
   scanner: "Attendance Scanner",
   profile: "My Profile",
   roles: "Manage Staffs",
+  'staff-assignments': 'Staff Assignments',
 };
 
 interface AdminDashboardHeaderProps {

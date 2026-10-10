@@ -15,6 +15,9 @@ import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
 import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
 import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
+import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
+import { getReviewCapabilities } from '@/features/rac-verification/api';
+import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -54,6 +57,9 @@ export default function AdminDashboard() {
   const [selectedReviewStudent, setSelectedReviewStudent] = useState<any>(null);
 
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
+  const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
+  const canCheckRac = reviewCapabilities.includes('INFORMATION_PROOFREADER');
+  const canReviewInformation = reviewCapabilities.includes('INFORMATION_PROOFREADER');
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
@@ -86,6 +92,15 @@ export default function AdminDashboard() {
       isActive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!staffUser) return;
+    const controller = new AbortController();
+    getReviewCapabilities(controller.signal)
+      .then(result => setReviewCapabilities(result.assignments.map(item => item.capability)))
+      .catch(() => { if (!controller.signal.aborted) setReviewCapabilities([]); });
+    return () => controller.abort();
+  }, [staffUser]);
 
   const loadStudents = useCallback(async (page: number, forceRefresh = false) => {
     const cachedStudents = studentCache.current[page];
@@ -172,7 +187,9 @@ export default function AdminDashboard() {
       
       {/* Mobile Sidebar */}
       {isMobileMenuOpen && (
-         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={() => setIsMobileMenuOpen(false)}>
+         <div className="fixed inset-0 z-50 lg:hidden bg-black/80" onClick={event => {
+           if (event.target === event.currentTarget) setIsMobileMenuOpen(false);
+         }}>
              <AdminSidebar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -180,6 +197,8 @@ export default function AdminDashboard() {
                 setIsOpen={setIsMobileMenuOpen} 
                 user={staffUser} 
                 onLogout={() => onLogout()}
+                canCheckRac={canCheckRac}
+                canReviewInformation={canReviewInformation}
              />
          </div>
       )}
@@ -191,6 +210,8 @@ export default function AdminDashboard() {
         isMobile={false} 
         user={staffUser} 
         onLogout={() => onLogout()}
+        canCheckRac={canCheckRac}
+        canReviewInformation={canReviewInformation}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -226,6 +247,8 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
+            {activeTab === 'information-workspace' && canReviewInformation && <InformationWorkspaceTab />}
+            {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'images-approvals' && (
               <ImageApprovalsTab

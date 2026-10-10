@@ -69,7 +69,7 @@ async function readResponse<T>(response: Response): Promise<T> {
 }
 
 export async function getReviewCapabilities(signal?: AbortSignal) {
-  const response = await fetch(`${baseUrl}/api/admin/review-capabilities`, { credentials: 'include', cache: 'no-store', signal });
+  const response = await fetch(`${baseUrl}/api/v1/admin/review-capabilities`, { credentials: 'include', cache: 'no-store', signal });
   return readResponse<{ success: true; assignments: ReviewAssignment[] }>(response);
 }
 
@@ -81,7 +81,7 @@ export async function getVerificationList(filters: VerificationFilters, signal?:
   if (filters.program) query.set('program', filters.program);
   if (filters.major) query.set('major', filters.major);
   if (filters.search) query.set('search', filters.search);
-  const response = await fetch(`${baseUrl}/api/admin/review-graduates?${query}`, { credentials: 'include', cache: 'no-store', signal });
+  const response = await fetch(`${baseUrl}/api/v1/admin/review-graduates?${query}`, { credentials: 'include', cache: 'no-store', signal });
   return readResponse<VerificationList>(response);
 }
 
@@ -89,12 +89,12 @@ export async function getFilterOptions(filters: Pick<VerificationFilters, 'year'
   const query = cycleQuery(filters);
   if (filters.department) query.set('department', filters.department);
   if (filters.program) query.set('program', filters.program);
-  const response = await fetch(`${baseUrl}/api/admin/review-graduate-filter-options?${query}`, { credentials: 'include', cache: 'no-store', signal });
+  const response = await fetch(`${baseUrl}/api/v1/admin/review-graduate-filter-options?${query}`, { credentials: 'include', cache: 'no-store', signal });
   return readResponse<FilterOptions>(response);
 }
 
 export async function getVerificationHistory(studentNumber: number, filters: Pick<VerificationFilters, 'year' | 'term'>, signal?: AbortSignal) {
-  const response = await fetch(`${baseUrl}/api/admin/review-graduates/${studentNumber}/verification-events?${cycleQuery(filters)}`, { credentials: 'include', cache: 'no-store', signal });
+  const response = await fetch(`${baseUrl}/api/v1/admin/review-graduates/${studentNumber}/verification-events?${cycleQuery(filters)}`, { credentials: 'include', cache: 'no-store', signal });
   return readResponse<{ success: true; events: Array<{
     id: number; action: string; previous_outcome: VerificationOutcome | null;
     new_outcome: VerificationOutcome; source_version: string; created_at: string;
@@ -104,7 +104,7 @@ export async function getVerificationHistory(studentNumber: number, filters: Pic
 
 export async function submitVerification(rows: GraduateRow[], outcome: VerificationOutcome, filters: Pick<VerificationFilters, 'year' | 'term'>, sourceVersion: string, operationId: string) {
   const expectedVersions = Object.fromEntries(rows.map(row => [String(row.studentNumber), row.version]));
-  const response = await fetch(`${baseUrl}/api/admin/verification-batches`, {
+  const response = await fetch(`${baseUrl}/api/v1/admin/verification-batches`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

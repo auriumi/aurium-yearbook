@@ -1,4 +1,5 @@
 import type { GraduationTerm, InformationDetail } from '@/features/graduate-information/api';
+import type { CorrectionSummary } from '@/features/corrections/api';
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || '';
 export type PhotoStage = 'DRAFT' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' |
@@ -15,13 +16,14 @@ export type PhotoList = { success: true; rows: PhotoRow[]; page: number; pageSiz
 export type PhotoOptions = { success: true; departments: string[]; programs: string[]; majors: string[]; hasNoMajor: boolean };
 export type PhotoDetail = { success: true; reviewId: number; stage: PhotoStage; version: number;
   availableActions: string[];
+  correction: CorrectionSummary | null;
   pair: { revisionId: number; version: number; graduationAssetId: number; themeAssetId: number } | null;
   photos: { graduation: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     theme: { assetId: number; url: string; byteSize: number; sealedAt: string } | null;
     reference: string | null; referencePresent: boolean };
   profile: Omit<InformationDetail['profile'], 'referencePhotoUrl' | 'referencePhotoPresent'> };
 export type PhotoEvent = { id: number; track_version: number; pair_id: number | null;
-  action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED';
+  action: 'COMMENTED' | 'SUBMITTED_QC' | 'REJECTED_QC' | 'APPROVED_QC' | 'SUBMITTED_MODERATOR' | 'REJECTED_MODERATOR' | 'LOCKED' | 'REOPENED';
   from_stage: PhotoStage; to_stage: PhotoStage; note: string | null; created_at: string;
   actor: { first_name: string; last_name: string } };
 export type PhotoUploadEvent = { id: number; type: 'GRADUATION' | 'THEME'; sealed_at: string | null;
@@ -47,7 +49,7 @@ export async function getPhotoList(filters: PhotoFilters, signal?: AbortSignal) 
   if (filters.program) params.set('program', filters.program);
   if (filters.major) params.set('major', filters.major);
   if (filters.search) params.set('search', filters.search);
-  return read<PhotoList>(await fetch(`${baseUrl}/api/admin/photo-reviews?${params}`, {
+  return read<PhotoList>(await fetch(`${baseUrl}/api/v1/admin/photo-reviews?${params}`, {
     credentials: 'include', cache: 'no-store', signal,
   }));
 }
@@ -56,20 +58,20 @@ export async function getPhotoOptions(filters: Pick<PhotoFilters, 'year' | 'term
   const params = query(filters);
   if (filters.department) params.set('department', filters.department);
   if (filters.program) params.set('program', filters.program);
-  return read<PhotoOptions>(await fetch(`${baseUrl}/api/admin/photo-reviews/filter-options?${params}`, {
+  return read<PhotoOptions>(await fetch(`${baseUrl}/api/v1/admin/photo-reviews/filter-options?${params}`, {
     credentials: 'include', cache: 'no-store', signal,
   }));
 }
 
 export async function getPhotoDetail(reviewId: number, signal?: AbortSignal) {
-  return read<PhotoDetail>(await fetch(`${baseUrl}/api/admin/photo-reviews/${reviewId}`, {
+  return read<PhotoDetail>(await fetch(`${baseUrl}/api/v1/admin/photo-reviews/${reviewId}`, {
     credentials: 'include', cache: 'no-store', signal,
   }));
 }
 
 export async function beginPhotoUpload(reviewId: number, type: 'GRADUATION' | 'THEME', mime: string, expectedVersion: number) {
   return read<{ success: true; assetId: number; uploadUrl: string }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/uploads`, {
+    `${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/uploads`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, mime, expectedVersion }),
     }));
@@ -92,14 +94,14 @@ export function putPhoto(uploadUrl: string, file: File, onProgress: (percent: nu
 
 export async function finalizePhotoUpload(reviewId: number, assetId: number, expectedVersion: number) {
   return read<{ success: true; version: number; pairRevisionId?: number | null }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/uploads/${assetId}/finalize`, {
+    `${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/uploads/${assetId}/finalize`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedVersion }),
     }));
 }
 
 export async function submitPhotoPair(reviewId: number, expectedVersion: number, revisionId: number, operationId: string) {
-  return read<{ success: true }>(await fetch(`${baseUrl}/api/admin/photo-reviews/${reviewId}/submission`, {
+  return read<{ success: true }>(await fetch(`${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/submission`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ expectedVersion, revisionId, operationId }),
@@ -111,7 +113,7 @@ export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSi
   const query = cursors ? `?beforeVersion=${cursors.events ?? 0}&beforeUploadId=${cursors.uploads ?? 0}` : '';
   return read<{ success: true; events: PhotoEvent[]; uploads: PhotoUploadEvent[];
     nextEventCursor: number | null; nextUploadCursor: number | null; latestRejection: PhotoEvent | null }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/decision-events${query}`, {
+    `${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/decision-events${query}`, {
       credentials: 'include', cache: 'no-store', signal,
     }));
 }
@@ -119,7 +121,7 @@ export async function getPhotoDecisionHistory(reviewId: number, signal?: AbortSi
 export async function decidePhoto(reviewId: number, role: 'qc' | 'moderator', expectedVersion: number,
   pairRevisionId: number, operationId: string, decision: 'APPROVE' | 'REJECT' | 'FORWARD', reason: string | null) {
   return read<{ success: true; reviewId: number; pairRevisionId: number; version: number; stage: PhotoStage }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/${role}-decision`, {
+    `${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/${role}-decision`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedVersion, pairRevisionId, operationId, decision, reason }),
@@ -129,7 +131,7 @@ export async function decidePhoto(reviewId: number, role: 'qc' | 'moderator', ex
 export async function addPhotoComment(reviewId: number, expectedVersion: number, pairRevisionId: number | null,
   operationId: string, note: string) {
   return read<{ success: true; eventId: number; version: number }>(await fetch(
-    `${baseUrl}/api/admin/photo-reviews/${reviewId}/comments`, {
+    `${baseUrl}/api/v1/admin/photo-reviews/${reviewId}/comments`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedVersion, pairRevisionId, operationId, note }),

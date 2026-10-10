@@ -3,6 +3,7 @@ const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
 import toast from "react-hot-toast";
 
 // Modular Imports
@@ -13,12 +14,14 @@ import { ProfileTab } from "@/components/admin/tabs/ProfileTab";
 import { MasterlistTab } from "@/components/admin/tabs/MasterlistTab";
 import { SchedulesTab } from "@/components/admin/tabs/SchedulesTab";
 import { RolesTab } from "@/components/admin/tabs/RolesTab";
-import { ImageManagementTab } from "@/components/admin/tabs/ImageManagementTab";
-import { ImageApprovalsTab } from "@/components/admin/tabs/ImageApprovalsTab";
-import { InformationWorkspaceTab } from '@/components/admin/tabs/InformationWorkspaceTab';
-import { PhotoWorkspace } from '@/features/graduate-photos/PhotoWorkspace';
 import { getReviewCapabilities } from '@/features/rac-verification/api';
-import { RacVerificationWorkspace } from '@/features/rac-verification/RacVerificationWorkspace';
+
+const workspaceLoading = () => <p role="status" className="rounded-xl border border-stone-200 bg-white p-8 text-stone-600">Loading workspace…</p>;
+const InformationWorkspaceTab = dynamic(() => import('@/components/admin/tabs/InformationWorkspaceTab').then(module => module.InformationWorkspaceTab), { loading: workspaceLoading });
+const PhotoWorkspace = dynamic(() => import('@/features/graduate-photos/PhotoWorkspace').then(module => module.PhotoWorkspace), { loading: workspaceLoading });
+const ItCorrectionWorkspace = dynamic(() => import('@/features/corrections/ItCorrectionWorkspace').then(module => module.ItCorrectionWorkspace), { loading: workspaceLoading });
+const RacVerificationWorkspace = dynamic(() => import('@/features/rac-verification/RacVerificationWorkspace').then(module => module.RacVerificationWorkspace), { loading: workspaceLoading });
+const StaffAssignments = dynamic(() => import('@/features/staff-assignments/StaffAssignments').then(module => module.StaffAssignments), { loading: workspaceLoading });
 
 // --- MERGED IMPORTS ---
 import { NotesTab } from "@/components/admin/tabs/NotesTab";
@@ -38,9 +41,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("masterlist");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // notification deep-link target for the Image Approvals tab
-  const [focusedApprovalId, setFocusedApprovalId] = useState<number | null>(null);
-
   // Data States
   const [pendingStudents, setPendingStudents] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,10 +48,6 @@ export default function AdminDashboard() {
 
   // The cache does not affect rendering, so keep it outside React state.
   const studentCache = useRef<{[page: number]: any[]}>({});
-  const masterlistProps = useMasterlist();
-
-  //Schedules
-  const { schedules, fetchSchedules } = useSchedules();
 
   // State specific to the Graduate Review Tab (Moved from Staff)
   // This handles the "Select a student to view details" feature
@@ -59,11 +55,14 @@ export default function AdminDashboard() {
 
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
   const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
+  const [capabilityRefresh, setCapabilityRefresh] = useState(0);
+  const refreshCapabilities = useCallback(() => setCapabilityRefresh(value => value + 1), []);
   const canCheckRac = reviewCapabilities.includes('INFORMATION_PROOFREADER');
   const informationRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
     : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
       : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;
   const canReviewInformation = informationRole !== null;
+  const canReviewCorrections = reviewCapabilities.includes('IT_CORRECTION');
   const photoRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
     : reviewCapabilities.includes('PHOTO_UPLOADER') ? 'uploader'
       : reviewCapabilities.includes('PHOTO_QC') ? 'qc' : null;
@@ -71,19 +70,28 @@ export default function AdminDashboard() {
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
-  const isImageApprover = userRole === 'ADMINISTRATOR' || (userRole === 'MODERATOR' && !!staffUser?.can_approve_images);
+  const canManageAssignments = userRole === 'ADMINISTRATOR' ||
+    (userRole === 'MODERATOR' && reviewCapabilities.includes('FINAL_MODERATOR'));
+  const masterlistProps = useMasterlist(!!staffUser && activeTab === 'masterlist');
+  const { schedules, fetchSchedules } = useSchedules(!!staffUser && activeTab === 'slots' && userRole !== 'MEMBER');
 
-  // navigate to a tab (optionally focusing a request) — used by the notification bell
-  const handleNavigate = useCallback((tab: string, imageId?: number | null) => {
-    setActiveTab(tab);
-    setFocusedApprovalId(imageId ?? null);
-  }, []);
+  useEffect(() => {
+    window.addEventListener('focus', refreshCapabilities);
+    return () => window.removeEventListener('focus', refreshCapabilities);
+  }, [refreshCapabilities]);
+
+  const handleNavigate = useCallback((tab: string) => {
+    // Old sample notifications use legacy image IDs, not photo review IDs.
+    const isPhotoTab = ['images', 'images-approvals', 'photo-workspace'].includes(tab);
+    setActiveTab(isPhotoTab ? (canReviewPhotos ? 'photo-workspace' : 'masterlist') : tab);
+  }, [canReviewPhotos]);
 
   useEffect(() => {
     let isActive = true;
 
-    adminService.getStaffProfile()
-      .then((res) => {
+    const controller = new AbortController();
+    Promise.all([adminService.getStaffProfile(), getReviewCapabilities(controller.signal).catch(() => null)])
+      .then(([res, capabilities]) => {
         if (!isActive) return;
         if (!res.success) {
           toast.error(res.reason);
@@ -91,6 +99,7 @@ export default function AdminDashboard() {
         }
 
         setStaffUser(res.data);
+        setReviewCapabilities(capabilities?.assignments.map(item => item.capability) ?? []);
       })
       .catch((error) => {
         console.error("Error loading admin details:", error);
@@ -98,17 +107,9 @@ export default function AdminDashboard() {
 
     return () => {
       isActive = false;
+      controller.abort();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!staffUser) return;
-    const controller = new AbortController();
-    getReviewCapabilities(controller.signal)
-      .then(result => setReviewCapabilities(result.assignments.map(item => item.capability)))
-      .catch(() => { if (!controller.signal.aborted) setReviewCapabilities([]); });
-    return () => controller.abort();
-  }, [staffUser]);
+  }, [capabilityRefresh]);
 
   const loadStudents = useCallback(async (page: number, forceRefresh = false) => {
     const cachedStudents = studentCache.current[page];
@@ -155,8 +156,8 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    loadStudents(currentPage);
-  }, [loadStudents, currentPage]);
+    if (staffUser && userRole !== 'MEMBER' && activeTab === 'verification') loadStudents(currentPage);
+  }, [loadStudents, currentPage, activeTab, staffUser, userRole]);
 
   const updateOnVerify = useCallback(async (studentId: number) => {
     const res = await adminService.handleVerify(studentId);
@@ -208,6 +209,8 @@ export default function AdminDashboard() {
                 canCheckRac={canCheckRac}
                 canReviewInformation={canReviewInformation}
                 canReviewPhotos={canReviewPhotos}
+                canReviewCorrections={canReviewCorrections}
+                canManageAssignments={canManageAssignments}
              />
          </div>
       )}
@@ -222,6 +225,8 @@ export default function AdminDashboard() {
         canCheckRac={canCheckRac}
         canReviewInformation={canReviewInformation}
         canReviewPhotos={canReviewPhotos}
+        canReviewCorrections={canReviewCorrections}
+        canManageAssignments={canManageAssignments}
       />
 
       <main className="w-full min-w-0 flex-1 p-4 md:px-8 md:pt-4 lg:ml-72 lg:w-[calc(100vw-18rem)] min-h-screen bg-[#FDFBF7] overflow-x-hidden">
@@ -258,16 +263,10 @@ export default function AdminDashboard() {
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
             {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
+            {activeTab === 'it-corrections' && canReviewCorrections && <ItCorrectionWorkspace />}
             {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
-            {activeTab === 'images' && <ImageManagementTab />}
-            {activeTab === 'images-approvals' && (
-              <ImageApprovalsTab
-                isApprover={isImageApprover}
-                focusImageId={focusedApprovalId}
-                onConsumeFocus={() => setFocusedApprovalId(null)}
-              />
-            )}
+            {activeTab === 'staff-assignments' && canManageAssignments && <StaffAssignments onChanged={refreshCapabilities} />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}
 

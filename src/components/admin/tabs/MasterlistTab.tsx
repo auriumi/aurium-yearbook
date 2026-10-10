@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import ExcelJS from "exceljs";
 import { useMasterlist } from "@/hooks/useMasterlist";
 import * as adminService from "@/app/admin/adminService";
 import { ACTIVE_STUDENT_STATUS_STEPS, getStudentStatusFlowOrder, getStudentStatusLabel, getStudentStatusStep } from "@/constants/studentStatus";
@@ -325,6 +324,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
         }))
       );
 
+      const { default: ExcelJS } = await import('exceljs');
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet("Masterlist");
 

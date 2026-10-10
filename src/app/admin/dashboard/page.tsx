@@ -59,7 +59,10 @@ export default function AdminDashboard() {
   const [staffUser, setStaffUser] = useState<Admin | null>(null);
   const [reviewCapabilities, setReviewCapabilities] = useState<string[]>([]);
   const canCheckRac = reviewCapabilities.includes('INFORMATION_PROOFREADER');
-  const canReviewInformation = reviewCapabilities.includes('INFORMATION_PROOFREADER');
+  const informationRole = reviewCapabilities.includes('FINAL_MODERATOR') ? 'moderator'
+    : reviewCapabilities.includes('INFORMATION_PROOFREADER') ? 'proofreader'
+      : reviewCapabilities.includes('INFORMATION_QC') ? 'qc' : null;
+  const canReviewInformation = informationRole !== null;
 
   // Derived role — defaults to MEMBER until the profile loads
   const userRole = staffUser?.role ? String(staffUser.role).toUpperCase() : 'MEMBER';
@@ -247,7 +250,7 @@ export default function AdminDashboard() {
 
             {/* 4. OTHER ADMIN TABS */}
             {activeTab === 'masterlist' && <MasterlistTab {...masterlistProps} userRole={userRole} />}
-            {activeTab === 'information-workspace' && canReviewInformation && <InformationWorkspaceTab />}
+            {activeTab === 'information-workspace' && informationRole && <InformationWorkspaceTab role={informationRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
             {activeTab === 'images' && <ImageManagementTab />}
             {activeTab === 'images-approvals' && (

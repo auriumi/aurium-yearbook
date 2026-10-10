@@ -96,7 +96,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
     setEnlargedImage(null);
     if (!studentNumber) return;
     const controller = new AbortController();
-    fetch(`${baseUrl}/api/admin/masterlist/${studentNumber}`, {
+    fetch(`${baseUrl}/api/v1/admin/masterlist/${studentNumber}`, {
       credentials: 'include', cache: 'no-store', signal: controller.signal,
     }).then(async response => {
       const result = await response.json();

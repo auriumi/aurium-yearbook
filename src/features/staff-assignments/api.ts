@@ -15,7 +15,7 @@ export interface StaffList {
   assignableCapabilities: string[];
 }
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${baseUrl}/api/admin/${path}`, { credentials: 'include', cache: 'no-store', ...init });
+  const response = await fetch(`${baseUrl}/api/v1/admin/${path}`, { credentials: 'include', cache: 'no-store', ...init });
   const body = await response.json().catch(() => null);
   if (!response.ok || body?.success !== true) throw new Error(body?.reason || 'Unable to update staff assignments.');
   return body as T;

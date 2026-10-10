@@ -22,7 +22,7 @@ async function read<T>(response: Response): Promise<T> {
 
 export async function requestCorrection(reviewId: number, expectedVersion: number, reason: string, operationId: string) {
   return read<{ success: true; correctionId: number; status: CorrectionStatus }>(await fetch(
-    `${baseUrl}/api/admin/review-tracks/${reviewId}/correction-requests`, {
+    `${baseUrl}/api/v1/admin/review-tracks/${reviewId}/correction-requests`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedVersion, reason, operationId }),
@@ -32,7 +32,7 @@ export async function requestCorrection(reviewId: number, expectedVersion: numbe
 export async function getCorrections(status: CorrectionStatus | 'ALL', page: number, signal?: AbortSignal) {
   const query = new URLSearchParams({ status, page: String(page) });
   return read<{ success: true; rows: CorrectionRow[]; total: number; pageSize: number }>(await fetch(
-    `${baseUrl}/api/admin/correction-requests?${query}`, {
+    `${baseUrl}/api/v1/admin/correction-requests?${query}`, {
       credentials: 'include', cache: 'no-store', signal,
     }));
 }
@@ -40,7 +40,7 @@ export async function getCorrections(status: CorrectionStatus | 'ALL', page: num
 export async function decideCorrection(id: number, expectedVersion: number,
   decision: 'APPROVE' | 'REJECT', reason: string | null, operationId: string) {
   return read<{ success: true; status: CorrectionStatus; version: number }>(await fetch(
-    `${baseUrl}/api/admin/correction-requests/${id}/decisions`, {
+    `${baseUrl}/api/v1/admin/correction-requests/${id}/decisions`, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ expectedVersion, decision, reason, operationId }),

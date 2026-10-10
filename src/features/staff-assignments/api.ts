@@ -17,7 +17,13 @@ export interface StaffList {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${baseUrl}/api/v1/admin/${path}`, { credentials: 'include', cache: 'no-store', ...init });
   const body = await response.json().catch(() => null);
-  if (!response.ok || body?.success !== true) throw new Error(body?.reason || 'Unable to update staff assignments.');
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get('Retry-After'));
+    throw new Error(Number.isFinite(seconds) && seconds > 0
+      ? `Too many requests. Try again in ${Math.ceil(seconds)} seconds.`
+      : 'Too many requests. Please wait a moment before trying again.');
+  }
+  if (!response.ok || body?.success !== true) throw new Error(body?.reason || 'Unable to complete the staff assignment request.');
   return body as T;
 }
 export function getStaff(search: string, page: number, signal: AbortSignal) {

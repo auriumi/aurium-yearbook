@@ -28,7 +28,7 @@ const normalizeTotalResults = (data: any, normalizedStudents: any[]): number => 
   return normalizedStudents.length;
 };
 
-export function useMasterlist() {
+export function useMasterlist(enabled = true) {
   // --- UI INPUT STATES ---
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
@@ -91,6 +91,8 @@ export function useMasterlist() {
 
   // --- FETCHING LOGIC ---
   useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
     const fetchFromAPI = async () => {
       setIsLoading(true);
       try {
@@ -107,31 +109,35 @@ export function useMasterlist() {
         }
 
         const res = await fetch(`${baseUrl}/api/admin/masterlist?${query}`, {
-          credentials: 'include'
+          credentials: 'include', cache: 'no-store', signal: controller.signal,
         });
 
         if (res.ok) {
           const data = await res.json();
+          if (controller.signal.aborted) return;
           const normalizedStudents = normalizeStudents(data);
 
           setStudents(normalizedStudents);
           setTotalResults(normalizeTotalResults(data, normalizedStudents));
         } else {
+          if (controller.signal.aborted) return;
           setStudents([]);
           setTotalResults(0);
         }
 
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error("Failed to fetch students:", error);
         setStudents([]);
         setTotalResults(0);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
     fetchFromAPI();
-  }, [appliedFilters, appliedSearchQuery, currentPage]);
+    return () => controller.abort();
+  }, [enabled, appliedFilters, appliedSearchQuery, currentPage]);
 
   return {
     searchQuery, setSearchQuery,

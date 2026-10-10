@@ -18,6 +18,7 @@ const TAB_TITLES: Record<string, string> = {
   scanner: "Attendance Scanner",
   profile: "My Profile",
   roles: "Manage Staffs",
+  'staff-assignments': 'Staff Assignments',
 };
 
 interface AdminDashboardHeaderProps {

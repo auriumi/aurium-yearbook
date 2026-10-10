@@ -770,7 +770,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                                     <InfoField label="Graduation year" value={selectedStudent.grad_year} />
                                     <InfoField label="Graduation term" value={selectedStudent.grad_term === 'END_YEAR' ? 'End year' : 'Mid year'} />
                                     <div className="col-span-2">
-                                        <InfoField label="Thesis / Capstone Title" value={`"${selectedStudent.thesis_title}"`} icon={FileText} fullWidth />
+                                        <InfoField label="Thesis / Capstone Title" value={selectedStudent.thesis_title} icon={FileText} fullWidth />
                                     </div>
                                 </div>
                             </div>

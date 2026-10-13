@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   Image as ImageIcon, Upload, Loader2, X, Camera, Filter, GraduationCap,
-  BookOpen, ListFilter, ChevronLeft, ChevronRight, Calendar, Sparkles,
+  ListFilter, ChevronLeft, ChevronRight, Sparkles,
   CheckCircle2, Clock, XCircle, UserSquare2, Search
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -92,14 +92,14 @@ function ImageSlot({ label, icon: Icon, image, onUpload, setEnlargedImage }: Ima
   );
 }
 
-export function ImageManagementTab() {
+export function ImageManagementTab({ onOpenPhotoWorkspace }: { onOpenPhotoWorkspace?: () => void }) {
   const {
     searchQuery, setSearchQuery,
     activeDeptFilter, setActiveDeptFilter,
     activeCourseFilter, setActiveCourseFilter,
-    activeMajorFilter, setActiveMajorFilter,
+    setActiveMajorFilter,
     activeStatusFilter, setActiveStatusFilter,
-    activeYearFilter, setActiveYearFilter,
+    activeYearFilter,
     activeMissingFilter, setActiveMissingFilter,
     appliedFilters,
     currentPage, setCurrentPage,
@@ -126,13 +126,6 @@ export function ImageManagementTab() {
     const dept = ACADEMIC_CONFIG.find(d => d.name === activeDeptFilter);
     return dept ? dept.courses.map(c => c.name) : [];
   }, [activeDeptFilter, ACADEMIC_CONFIG]);
-
-  const availableMajors = useMemo(() => {
-    if (activeCourseFilter === "ALL") return [];
-    const dept = ACADEMIC_CONFIG.find(d => d.name === activeDeptFilter);
-    const course = dept?.courses.find(c => c.name === activeCourseFilter);
-    return course ? course.majors : [];
-  }, [activeDeptFilter, activeCourseFilter, ACADEMIC_CONFIG]);
 
   const getPageNumbers = () => {
     const pages: number[] = [];
@@ -218,8 +211,8 @@ export function ImageManagementTab() {
             <ImageIcon className="h-6 w-6 text-amber-600" /> Image Management
           </h2>
           <p className="text-sm text-stone-500 mt-1">
-            Upload each graduate&apos;s formal and theme images. Uploaded images await
-            approval before they go live.
+            Use this image queue for graduates who have not entered RAC/SAO photo review.
+            Verified graduates use the Photo Workspace for graduation and theme photos.
           </p>
         </div>
 
@@ -365,8 +358,12 @@ export function ImageManagementTab() {
                       <p className="text-[9px] font-bold text-stone-400 truncate uppercase mt-0.5">{student.course}</p>
                     </div>
 
-                    {/* image slots */}
-                    <div className="flex gap-3">
+                    {student.reviewManaged ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                      <p className="font-semibold">Managed in Photo Workspace</p>
+                      <p className="mt-1">This graduate&apos;s graduation and theme photos follow the RAC/SAO review flow. Older images in this queue are historical and cannot be changed here.</p>
+                      {student.photoReview?.stage && <p className="mt-2 text-xs font-medium">Current photo review: {student.photoReview.stage.replaceAll('_', ' ').toLowerCase()}</p>}
+                      {onOpenPhotoWorkspace && <Button className="mt-3 min-h-10" onClick={onOpenPhotoWorkspace}>Open Photo Workspace</Button>}
+                    </div> : <div className="flex gap-3">
                       {/* reference photo (read-only) */}
                       <div className="w-[28%] shrink-0">
                         <div className="flex items-center gap-1.5 mb-1.5">
@@ -403,7 +400,7 @@ export function ImageManagementTab() {
                         onUpload={() => openUploadDialog(student, "THEME")}
                         setEnlargedImage={setEnlargedImage}
                       />
-                    </div>
+                    </div>}
                   </div>
                 );
               })}

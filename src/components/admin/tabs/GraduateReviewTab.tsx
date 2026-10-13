@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, Image as ImageIcon, Upload, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, Camera, FileText, type LucideIcon } from "lucide-react";
+import { Search, Edit3, Save, Clock, MapPin, Home, Phone, Mail, GraduationCap, User, FolderOpen, X, CheckCircle2, BookOpen, Building2, ChevronLeft, ChevronRight, Loader2, FileText, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
-import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,10 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import toast from "react-hot-toast";
 
 import { useGraduateReview } from "@/hooks/useGraduateReview"; 
-import * as adminService from "@/app/admin/adminService";
 
 interface VerificationTabProps {
   staffUser: any;
@@ -88,13 +86,9 @@ export function GraduateReviewTab({ staffUser, selectedStudent, setSelectedStude
       return `${p}${name}${s}`.trim();
   };
 
-  const gradPhotoRef = useRef<HTMLInputElement>(null);
-  const creativePhotoRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [showInfoSaveConfirm, setShowInfoSaveConfirm] = useState(false);
-  const [showPhotoSaveConfirm, setShowPhotoSaveConfirm] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [pendingGraduateAction, setPendingGraduateAction] = useState<"discard" | "submit" | null>(null);
   const [isGraduateActionSubmitting, setIsGraduateActionSubmitting] = useState(false);

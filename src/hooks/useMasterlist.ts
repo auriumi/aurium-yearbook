@@ -4,6 +4,18 @@ import { ACTIVE_STUDENT_STATUS_STEPS } from "@/constants/studentStatus";
 
 const baseUrl = process.env.NEXT_PUBLIC_LOCAL_URL || "";
 
+function rateLimitMessage(retryAfter: string | null) {
+  const value = retryAfter?.trim() || "";
+  const seconds = /^\d+$/.test(value)
+    ? Number(value)
+    : Math.ceil((Date.parse(value) - Date.now()) / 1000);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return "Too many requests. Please wait a moment before selecting Retry.";
+  }
+  const wait = seconds < 60 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`;
+  return `Too many requests. Please wait ${wait} before selecting Retry.`;
+}
+
 export const DEPARTMENT_ORDER = ACADEMIC_CONFIG.map(d => d.name);
 
 const normalizeStudents = (data: any): any[] => {
@@ -28,7 +40,7 @@ const normalizeTotalResults = (data: any, normalizedStudents: any[]): number => 
   return normalizedStudents.length;
 };
 
-export function useMasterlist() {
+export function useMasterlist(enabled = true) {
   // --- UI INPUT STATES ---
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
@@ -53,6 +65,8 @@ export function useMasterlist() {
   const [students, setStudents] = useState<any[]>([]);
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const ITEMS_PER_PAGE = 9; 
 
@@ -89,10 +103,17 @@ export function useMasterlist() {
       if (e.key === 'Enter') handleSearchClick();
   };
 
+  const retry = () => {
+    if (enabled && !isLoading) setRetryCount(count => count + 1);
+  };
+
   // --- FETCHING LOGIC ---
   useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
     const fetchFromAPI = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         const query = new URLSearchParams();
 
@@ -107,31 +128,39 @@ export function useMasterlist() {
         }
 
         const res = await fetch(`${baseUrl}/api/admin/masterlist?${query}`, {
-          credentials: 'include'
+          credentials: 'include', cache: 'no-store', signal: controller.signal,
         });
 
         if (res.ok) {
           const data = await res.json();
+          if (controller.signal.aborted) return;
           const normalizedStudents = normalizeStudents(data);
 
           setStudents(normalizedStudents);
           setTotalResults(normalizeTotalResults(data, normalizedStudents));
         } else {
+          if (controller.signal.aborted) return;
+          setError(res.status === 429
+            ? rateLimitMessage(res.headers.get("Retry-After"))
+            : "The masterlist could not be loaded. Select Retry to try again.");
           setStudents([]);
           setTotalResults(0);
         }
 
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error("Failed to fetch students:", error);
+        setError("Unable to load the masterlist. Check your connection, then select Retry.");
         setStudents([]);
         setTotalResults(0);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
 
     fetchFromAPI();
-  }, [appliedFilters, appliedSearchQuery, currentPage]);
+    return () => controller.abort();
+  }, [enabled, appliedFilters, appliedSearchQuery, currentPage, retryCount]);
 
   return {
     searchQuery, setSearchQuery,
@@ -142,7 +171,7 @@ export function useMasterlist() {
     activeStatusFilter, setActiveStatusFilter,
     currentPage, setCurrentPage,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
-    students, totalResults, isLoading, ITEMS_PER_PAGE,
+    students, totalResults, isLoading, error, retry, ITEMS_PER_PAGE,
     DEPARTMENT_ORDER, STATUS_STEPS: ACTIVE_STUDENT_STATUS_STEPS, ACADEMIC_CONFIG
   };
 }

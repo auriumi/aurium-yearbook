@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Users, Calendar, BookOpen, User, LogOut,
+  Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
   ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, ClipboardCheck, type LucideIcon
 } from "lucide-react";
@@ -20,6 +20,11 @@ interface SidebarProps {
   setIsOpen?: (open: boolean) => void;
   user: Admin | null;
   onLogout: () => void;
+  canCheckRac?: boolean;
+  canReviewInformation?: boolean;
+  canReviewPhotos?: boolean;
+  canReviewCorrections?: boolean;
+  canManageAssignments?: boolean;
 }
 
 interface NavItemProps {
@@ -42,8 +47,8 @@ function NavItem({ id, label, icon: Icon, activeTab, onSelect }: NavItemProps) {
   );
 }
 
-export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout }: SidebarProps) {
-  const { canAccessVerification, canAccessSchedules, canManageImages, canApproveImages, canManageRoles, displayPosition, userInitials } = useSidebar(user);
+export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, user, onLogout, canCheckRac = false, canReviewInformation = false, canReviewPhotos = false, canReviewCorrections = false, canManageAssignments = false }: SidebarProps) {
+  const { canAccessVerification, canAccessSchedules, canManageRoles, displayPosition, userInitials } = useSidebar(user);
 
   const handleSelect = (tab: string) => {
     setActiveTab(tab);
@@ -81,18 +86,15 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         <div className="my-2 px-3 text-[10px] font-bold uppercase tracking-widest text-stone-600 mt-4">Review & Notes</div>
 
+        {canCheckRac && <NavItem id="rac-verification" label="RAC/SAO Verification" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />}
+
         {/* Masterlist — all roles */}
         <NavItem id="masterlist" label="Graduate Masterlist" icon={BookOpen} activeTab={activeTab} onSelect={handleSelect} />
-
-        {/* Image Management — ADMINISTRATOR and MODERATOR */}
-        {canManageImages && (
-          <NavItem id="images" label="Image Management" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />
+        {canReviewInformation && (
+          <NavItem id="information-workspace" label="Information Workspace" icon={FileCheck} activeTab={activeTab} onSelect={handleSelect} />
         )}
-
-        {/* Image Approvals — ADMINISTRATOR and approver MODERATORs */}
-        {canApproveImages && (
-          <NavItem id="images-approvals" label="Approval Thread" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />
-        )}
+        {canReviewPhotos && <NavItem id="photo-workspace" label="Photo Workspace" icon={ImageIcon} activeTab={activeTab} onSelect={handleSelect} />}
+        {canReviewCorrections && <NavItem id="it-corrections" label="IT Corrections" icon={ClipboardCheck} activeTab={activeTab} onSelect={handleSelect} />}
 
         <NavItem id="notes" label="Staff Notes" icon={ClipboardList} activeTab={activeTab} onSelect={handleSelect} />
 
@@ -108,6 +110,7 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-2 px-3">Management</p>
 
         <NavItem id="profile" label="Profile" icon={User} activeTab={activeTab} onSelect={handleSelect} />
+        {canManageAssignments && <NavItem id="staff-assignments" label="Staff Assignments" icon={ShieldCheck} activeTab={activeTab} onSelect={handleSelect} />}
 
         {/* Roles Management — ADMINISTRATOR only */}
         {canManageRoles && (

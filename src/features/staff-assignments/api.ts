@@ -27,11 +27,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 export function getStaff(search: string, page: number, signal: AbortSignal) {
-  return request<StaffList>(`review-staff?${new URLSearchParams({ search, page: String(page) })}`, { signal });
+  return request<StaffList>(`staff?${new URLSearchParams({ search, page: String(page) })}`, { signal });
 }
 export function grantDesignation(adminId: number, capability: string, scope: { department: string | null; course: string | null; major: string | null }) {
-  return request('review-assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, capability, scope }) });
+  return request('assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId, capability, scope }) });
 }
 export function revokeDesignation(id: number) {
-  return request(`review-assignments/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) });
+  return request(`assignments/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: false }) });
 }

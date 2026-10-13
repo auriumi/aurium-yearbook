@@ -74,7 +74,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
     activeCourseFilter, setActiveCourseFilter,
     activeStatusFilter, setActiveStatusFilter,
     activeMajorFilter, setActiveMajorFilter,
-    currentPage, setCurrentPage, students, totalResults, isLoading, ITEMS_PER_PAGE,
+    currentPage, setCurrentPage, students, totalResults, isLoading, error, retry, ITEMS_PER_PAGE,
     handleSearchClick, handleLoadClick, handleSearchKeyDown,
     DEPARTMENT_ORDER, STATUS_STEPS, ACADEMIC_CONFIG,
     userRole,
@@ -428,7 +428,7 @@ export function MasterlistTab(props: MasterlistTabProps) {
                         </Button>
                     )}
                     <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200 px-4 py-1.5 text-sm h-fit">
-                        {isLoading ? "Fetching..." : `${totalResults} Records Found`}
+                        {isLoading ? "Fetching..." : error ? "Records unavailable" : `${totalResults} Records Found`}
                     </Badge>
                 </div>
             </div>
@@ -546,9 +546,18 @@ export function MasterlistTab(props: MasterlistTabProps) {
 
         <div className="space-y-4 pb-10 min-h-[500px]">
             {isLoading ? (
-                <div className="text-center py-24 text-stone-400 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">
-                    <Loader2 className="h-8 w-8 mb-4 text-amber-500 animate-spin"/>
-                    <p className="text-sm font-medium">Querying database...</p>
+                <div role="status" className="text-center py-24 text-stone-500 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">
+                    <Loader2 aria-hidden="true" className="h-8 w-8 mb-4 text-amber-500 animate-spin"/>
+                    <p className="text-sm font-medium">Loading graduates...</p>
+                </div>
+            ) : error ? (
+                <div className="text-center px-6 py-20 bg-white rounded-2xl border border-stone-200 flex flex-col items-center shadow-sm">
+                    <div role="alert" className="max-w-md">
+                        <AlertTriangle aria-hidden="true" className="h-8 w-8 mx-auto mb-4 text-red-700" />
+                        <p className="text-lg font-semibold text-stone-800">Unable to load records</p>
+                        <p className="mt-2 text-sm text-stone-600">{error}</p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={retry} className="mt-5 h-11 border-stone-300 text-stone-800">Retry</Button>
                 </div>
             ) : students.length === 0 ? (
                 <div className="text-center py-24 text-stone-400 bg-white rounded-2xl border border-dashed border-stone-200 flex flex-col items-center shadow-sm">

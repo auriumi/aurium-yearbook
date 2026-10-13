@@ -21,4 +21,7 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run lint
+      - name: Review client and Masterlist failure checks
+        run: node --test scripts/check-review-clients.cjs
+      - run: node scripts/check-information-workspace.cjs
       - run: npm run build

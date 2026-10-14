@@ -24,4 +24,9 @@ jobs:
       - name: Review client and Masterlist failure checks
         run: node --test scripts/check-review-clients.cjs
       - run: node scripts/check-information-workspace.cjs
-      - run: npm run build
+      - name: Reproduce stale development route types
+        run: node scripts/seed-stale-dev-types.mjs
+      - name: Build with stale development artifacts present
+        run: npm run build
+      - name: Verify production type-checking scope
+        run: node scripts/check-production-types.mjs

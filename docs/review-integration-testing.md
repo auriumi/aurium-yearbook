@@ -1,5 +1,11 @@
 # Combined review test branch — 30 September 2026
 
+## Current RAC correction — 20 October 2026
+
+The manual RAC patch supersedes the earlier instructions below about a separate RAC checker, a configured official-list version and first-name sorting. General Proofreaders check the list provided by the moderator outside Aurium. No `RAC_SOURCE_VERSION` setting or reference note is required. Check single/bulk confirmation, Not on list, permissions, retries and the resulting information/photo queues with fictional records. Review lists now sort by last name, then first name and student number, before pagination.
+
+Deploy the matching RAC API patch before this frontend. Existing list references/history are retained, and new checks are labelled Manual verification. This patch requires no new database migration and changes no CI or deployment workflow. The remaining dated material records the original integration environment and is not current production sign-off.
+
 The matching branches are `codex/review-integration-sep30-api` in `aurium-api` and `codex/review-integration-sep30-ui` in `aurium-yearbook`. They combine the small draft PRs for inspection and testing. Neither branch is `main`, and neither is a production deployment.
 
 ## What is in this checkout

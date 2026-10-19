@@ -146,7 +146,7 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
 
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div><h3 className="text-base font-semibold text-stone-900">{queueLabel}</h3>
-        <p className="mt-1 text-sm text-stone-600" aria-live="polite">{loading ? 'Loading graduates…' : `${list?.total ?? 0} graduates · First name A–Z`}</p>
+        <p className="mt-1 text-sm text-stone-600" aria-live="polite">{loading ? 'Loading graduates…' : `${list?.total ?? 0} graduates · Last name A–Z`}</p>
       </div>
       <Button variant="outline" disabled={loading} className="min-h-10 gap-2" onClick={() => setRefresh(value => value + 1)}>
         <RefreshCw size={15} aria-hidden="true" />Refresh

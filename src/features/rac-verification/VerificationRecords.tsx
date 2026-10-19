@@ -95,7 +95,6 @@ export function VerificationRecords({ list, selected, busy, onToggle, onSelectAl
   const eligible = rows.filter(row => row.verification !== 'VERIFIED');
   const selectedRows = eligible.filter(row => selected.has(row.studentNumber));
   const allSelected = eligible.length > 0 && selectedRows.length === eligible.length;
-  const actionsDisabled = busy || !list.sourceVersion;
 
   return <>
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
@@ -113,7 +112,7 @@ export function VerificationRecords({ list, selected, busy, onToggle, onSelectAl
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs text-stone-500">{selectedRows.length} selected</span>
         <Button
-          disabled={!selectedRows.length || actionsDisabled}
+          disabled={!selectedRows.length || busy}
           onClick={() => onConfirm(selectedRows, 'VERIFIED')}
           className="min-h-10 bg-amber-900 text-white hover:bg-amber-800"
         >
@@ -130,7 +129,7 @@ export function VerificationRecords({ list, selected, busy, onToggle, onSelectAl
     ) : <>
       <div className="hidden overflow-hidden rounded-xl border border-stone-200 bg-white md:block">
         <table className="w-full table-fixed text-left text-sm">
-          <caption className="sr-only">RAC/SAO graduates sorted by first name</caption>
+          <caption className="sr-only">RAC/SAO graduates sorted by last name</caption>
           <thead className="border-b border-stone-200 bg-stone-50 text-xs text-stone-600">
             <tr>
               <th scope="col" className="w-10 px-4 py-4"><span className="sr-only">Select</span></th>
@@ -153,7 +152,7 @@ export function VerificationRecords({ list, selected, busy, onToggle, onSelectAl
                 </span>
               </td>
               <td className="px-3 py-4 align-top">
-                <RowActions row={row} busy={actionsDisabled} onConfirm={onConfirm} onHistory={onHistory} />
+                <RowActions row={row} busy={busy} onConfirm={onConfirm} onHistory={onHistory} />
               </td>
             </tr>)}
           </tbody>
@@ -171,7 +170,7 @@ export function VerificationRecords({ list, selected, busy, onToggle, onSelectAl
             </div>
           </div>
           <div className="mt-3 pl-7">
-            <RowActions row={row} busy={actionsDisabled} onConfirm={onConfirm} onHistory={onHistory} />
+            <RowActions row={row} busy={busy} onConfirm={onConfirm} onHistory={onHistory} />
           </div>
         </li>)}
       </ul>

@@ -12,13 +12,15 @@ function load(name) {
   vm.runInNewContext(compiled, sandbox);
   return sandbox.exports;
 }
-const { filterInformationRows, informationCounts, academicFilterOptions, matchesInformationQueue, compareFirstNames, emptyFilters, noMajor } = load('model');
+const { filterInformationRows, informationCounts, academicFilterOptions, matchesInformationQueue, compareLastNames, emptyFilters, noMajor } = load('model');
 const { sampleInformationRows: rows } = load('sample-data');
 const originalOrder = rows.map(row => row.studentNumber).join(',');
 const sorted = filterInformationRows(rows, emptyFilters);
-assert.equal(sorted.map(row => row.firstName).join(','), 'Alexandra,Andrea,Camille,Daniel,Gabriel,Isabella,Luis,Miguel,Sofia');
+assert.equal(sorted.map(row => row.lastName).join(','), 'Cruz,Flores,Garcia,Mendoza,Navarro,Ramos,Reyes,Santos,Villanueva');
 assert.equal(rows.map(row => row.studentNumber).join(','), originalOrder, 'Filtering must not mutate supplied records');
-assert.ok(compareFirstNames({ ...rows[0], firstName: 'Amy', lastName: 'Zulu' }, { ...rows[0], firstName: 'Zoe', lastName: 'Adams' }) < 0);
+assert.ok(compareLastNames({ ...rows[0], firstName: 'Amy', lastName: 'Zulu' }, { ...rows[0], firstName: 'Zoe', lastName: 'Adams' }) > 0);
+assert.ok(compareLastNames({ ...rows[0], firstName: 'Amy', lastName: 'Santos' }, { ...rows[0], firstName: 'Zoe', lastName: 'Santos' }) < 0, 'First name breaks matching surnames');
+assert.ok(compareLastNames({ ...rows[0], studentNumber: '20260001', middleName: 'Z' }, { ...rows[0], studentNumber: '20260002', middleName: 'A' }) < 0, 'Student number breaks matching first and last names');
 assert.equal(filterInformationRows(rows, { ...emptyFilters, search: '  miguel   SANTOS  ' })[0].studentNumber, '20260002');
 assert.equal(filterInformationRows(rows, { ...emptyFilters, search: '20260007' })[0].firstName, 'Isabella');
 assert.equal(filterInformationRows(rows, { ...emptyFilters, search: 'no matching graduate' }).length, 0);

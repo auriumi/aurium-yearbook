@@ -35,6 +35,7 @@ export function RacVerificationWorkspace() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [optionsError, setOptionsError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const operation = useRef<{ key: string; id: string } | null>(null);
@@ -101,10 +102,12 @@ export function RacVerificationWorkspace() {
   const totalPages = Math.max(1, Math.ceil((list?.total ?? 0) / (list?.pageSize ?? 25)));
 
   function changeFilter(patch: Partial<VerificationFilters>) {
+    setNotice('');
     setFilters(previous => ({ ...previous, ...patch, page: 1 }));
   }
 
   function changeSearch(value: string) {
+    setNotice('');
     setSearchInput(value);
     setSelected(new Set());
     operation.current = null;
@@ -119,7 +122,7 @@ export function RacVerificationWorkspace() {
   }
 
   async function applyVerification(targets: GraduateRow[], outcome: VerificationOutcome) {
-    if (busy || loading || !list?.sourceVersion || searchInput.trim() !== filters.search || targets.length === 0) return;
+    if (busy || loading || !list || searchInput.trim() !== filters.search || targets.length === 0) return;
     const key = JSON.stringify({
       year: filters.year, term: filters.term, outcome, sourceVersion: list.sourceVersion,
       records: targets.map(row => [row.studentNumber, row.version]).sort((a, b) => Number(a[0]) - Number(b[0])),
@@ -127,8 +130,13 @@ export function RacVerificationWorkspace() {
     if (operation.current?.key !== key) operation.current = { key, id: crypto.randomUUID() };
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       await submitVerification(targets, outcome, filters, list.sourceVersion, operation.current.id);
+      const graduates = `${targets.length} ${targets.length === 1 ? 'graduate' : 'graduates'}`;
+      setNotice(outcome === 'VERIFIED'
+        ? `${graduates} confirmed on the RAC/SAO list. Information and photo work queues are now available.`
+        : `${graduates} marked as not on the RAC/SAO list. The records have been kept.`);
       operation.current = null;
       setSelected(new Set());
       setHistoryFor(null);
@@ -143,8 +151,8 @@ export function RacVerificationWorkspace() {
   return <section className="space-y-5" aria-label="RAC/SAO verification">
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Check against the final RAC/SAO list</h2>
-      <p className="mt-1 text-sm text-stone-600">Confirm graduates only after checking the official list. Verified graduates enter the information and photo work queues.</p>
-      <p className="mt-2 text-xs text-stone-500">Official list version: {list?.sourceVersion || 'Not configured by the backend'}</p>
+      <p className="mt-1 text-sm text-stone-600">Compare each graduate with the official list provided by your moderator. Confirm only the graduates you have checked. Aurium records your manual check; it does not match the list automatically.</p>
+      <p className="mt-2 text-xs text-stone-500">Verified graduates enter the information and photo work queues. You can select several checked graduates and confirm them together.</p>
     </div>
 
     <VerificationFiltersPanel
@@ -161,12 +169,13 @@ export function RacVerificationWorkspace() {
     </nav>
 
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-stone-600" aria-live="polite">{loading ? 'Loading graduates…' : `${list?.total ?? 0} graduates · First name A–Z`}</p>
+      <p className="text-sm text-stone-600" aria-live="polite">{loading ? 'Loading graduates…' : `${list?.total ?? 0} graduates · Last name A–Z`}</p>
       <Button variant="outline" disabled={loading || busy} className="min-h-10 gap-2" onClick={() => {
         operation.current = null; setSelected(new Set()); setRefresh(value => value + 1);
       }}><RefreshCw size={15} aria-hidden="true" />Refresh</Button>
     </div>
     {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+    {notice && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</p>}
 
     {!loading && list && <>
       <VerificationRecords list={list} selected={selected} busy={busy || searchInput.trim() !== filters.search} onToggle={toggle}

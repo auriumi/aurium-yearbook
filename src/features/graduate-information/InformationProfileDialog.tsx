@@ -88,7 +88,7 @@ function Profile({ detail }: { detail: InformationDetail }) {
           <span className="rounded-md bg-emerald-50 px-2.5 py-1.5 text-emerald-800">RAC/SAO verified</span>
           <span className="rounded-md bg-amber-50 px-2.5 py-1.5 text-amber-900">Information: {stageLabels[detail.informationStage]}</span>
           <span className="rounded-md bg-stone-100 px-2.5 py-1.5 text-stone-700">Photos: {detail.photoStage ? stageLabels[detail.photoStage] : 'Review unavailable'}</span>
-          <span className="rounded-md bg-stone-100 px-2.5 py-1.5 text-stone-700">Reference list: {detail.verification.sourceVersion}</span>
+          <span className="rounded-md bg-stone-100 px-2.5 py-1.5 text-stone-700">RAC/SAO check: {detail.verification.sourceVersion}</span>
         </div>
         <p className="mt-3 text-xs text-stone-500">The registration photo is a read-only reference.</p>
       </div>

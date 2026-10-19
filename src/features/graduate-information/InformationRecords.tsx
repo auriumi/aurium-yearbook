@@ -61,7 +61,7 @@ export function InformationRecords({ list, queue, queueLabel, onOpenProfile }: {
   return <>
     <div className="hidden overflow-hidden rounded-xl border border-stone-200 bg-white md:block">
       <table className="w-full table-fixed text-left text-sm">
-        <caption className="sr-only">{queueLabel}, sorted by first name</caption>
+        <caption className="sr-only">{queueLabel}, sorted by last name</caption>
         <thead className="border-b border-stone-200 bg-stone-50 text-xs text-stone-600"><tr>
           <th scope="col" className="w-[35%] px-5 py-4">Graduate</th>
           <th scope="col" className="w-[39%] px-5 py-4">Department and program</th>

@@ -9,7 +9,7 @@ const ts = require('typescript');
 function load(relative, context) {
   const filename = path.join(__dirname, '../src', relative);
   const { outputText } = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   });
   const sandbox = { exports: {}, URLSearchParams, AbortController, Date, console,
     process: { env: {} }, ...context };
@@ -46,6 +46,7 @@ test('review clients send canonical paths with credentials and unchanged request
   await check(() => rac.getVerificationHistory(99000001, filters), 'GET', '/rac/graduates/99000001/verification-events');
   await check(() => rac.submitVerification([{ studentNumber: 99000001, version: 3 }], 'VERIFIED', filters, 'RAC 1', 'op'), 'POST', '/rac/verification-batches');
   assert.deepEqual(JSON.parse(last.init.body).expectedVersions, { 99000001: 3 });
+  assert.equal(JSON.parse(last.init.body).sourceVersion, 'RAC 1');
   await check(() => staff.getStaff('Ana', 2, signal), 'GET', '/staff');
   const scope = { department: 'Engineering', course: null, major: null };
   await check(() => staff.grantDesignation(8, 'PHOTO_QC', scope), 'POST', '/assignments', { adminId: 8, capability: 'PHOTO_QC', scope });
@@ -74,6 +75,71 @@ test('review clients send canonical paths with credentials and unchanged request
   await check(() => corrections.getCorrections('PENDING', 1), 'GET', '/corrections');
   await check(() => corrections.requestCorrection(12, 3, 'Check name', 'op'), 'POST', '/tracks/12/corrections');
   await check(() => corrections.decideCorrection(8, 3, 'REJECT', 'Keep approved', 'op'), 'POST', '/corrections/8/decisions');
+});
+
+test('manual RAC checks work without a list version and retain concurrency and retry identifiers', async () => {
+  let request;
+  const rac = load('features/rac-verification/api.ts', {
+    fetch: async (_url, init) => {
+      request = JSON.parse(init.body);
+      return { ok: true, json: async () => ({ success: true, results: [] }) };
+    },
+  });
+  const rows = [{ studentNumber: 99000001, version: null }, { studentNumber: 99000002, version: 2 }];
+  await rac.submitVerification(rows, 'VERIFIED', { year: 2026, term: 'END_YEAR' }, null, 'manual-batch');
+  assert.deepEqual(request, {
+    year: 2026, term: 'END_YEAR', studentNumbers: [99000001, 99000002], outcome: 'VERIFIED',
+    expectedVersions: { 99000001: null, 99000002: 2 }, operationId: 'manual-batch',
+  });
+  await rac.submitVerification(rows.slice(0, 1), 'NOT_LISTED', { year: 2026, term: 'END_YEAR' }, null, 'manual-single');
+  assert.equal(request.outcome, 'NOT_LISTED');
+  assert.deepEqual(request.studentNumbers, [99000001]);
+  assert.equal(request.operationId, 'manual-single');
+});
+
+test('RAC write errors preserve the backend explanation for staff', async () => {
+  const rac = load('features/rac-verification/api.ts', {
+    fetch: async () => ({ ok: false, json: async () => ({ success: false, reason: 'A record changed. Refresh before confirming.' }) }),
+  });
+  await assert.rejects(
+    () => rac.submitVerification([{ studentNumber: 99000001, version: 2 }], 'VERIFIED', { year: 2026, term: 'END_YEAR' }, null, 'stale-record'),
+    /A record changed. Refresh before confirming./,
+  );
+});
+
+test('RAC confirmation is available without configuration but still respects busy and verified states', () => {
+  const React = require('react');
+  const { renderToStaticMarkup } = require('react-dom/server');
+  const { VerificationRecords } = load('features/rac-verification/VerificationRecords.tsx', {
+    require(name) {
+      if (name === '@/components/ui/button') {
+        return { Button: ({ disabled, children }) => React.createElement('button', { disabled }, children) };
+      }
+      return require(name);
+    },
+  });
+  const row = { studentNumber: 99000001, firstName: 'Zoe', lastName: 'Adams',
+    verification: 'UNCHECKED', version: null, sourceVersion: null };
+  function render(busy, verification = 'UNCHECKED', selected = true) {
+    return renderToStaticMarkup(React.createElement(VerificationRecords, {
+      list: { rows: [{ ...row, verification }], sourceVersion: null },
+      selected: new Set(selected ? [row.studentNumber] : []), busy,
+      onToggle() {}, onSelectAll() {}, onConfirm() {}, onHistory() {},
+    }));
+  }
+  function buttonTags(html, label) {
+    return [...html.matchAll(/(<button\b[^>]*>)(.*?)<\/button>/g)]
+      .filter(match => match[2].includes(label)).map(match => match[1]);
+  }
+  for (const label of ['Confirm on list', 'Confirm selected', 'Not on list']) {
+    const enabled = buttonTags(render(false), label);
+    assert.ok(enabled.length > 0, `${label} is present`);
+    assert.ok(enabled.every(tag => !tag.includes('disabled')), `${label} works without a source version`);
+    assert.ok(buttonTags(render(true), label).every(tag => tag.includes('disabled')), `${label} is disabled while busy`);
+  }
+  assert.ok(buttonTags(render(false, 'UNCHECKED', false), 'Confirm selected')[0].includes('disabled'));
+  assert.equal(buttonTags(render(false, 'VERIFIED'), 'Confirm on list').length, 0);
+  assert.ok(buttonTags(render(false, 'VERIFIED'), 'Confirm selected')[0].includes('disabled'));
 });
 
 // A small hook driver runs effects and state updates; it does not stand in for a

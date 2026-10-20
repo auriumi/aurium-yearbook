@@ -5,7 +5,8 @@ import { Check, FileCheck2, Search, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { academicFilterOptions, emptyFilters, filterInformationRows, graduateName, informationCounts, informationStatusLabels, matchesInformationQueue, noMajor, reviewQueues, type GraduateInformationRow, type InformationQueue } from './model';
+import { academicFilterOptions, emptyFilters, filterInformationRows, informationCounts, informationStatusLabels, matchesInformationQueue, noMajor, reviewQueues, type GraduateInformationRow, type InformationQueue } from './model';
+import { graduateListName as graduateName } from '@/lib/graduate-list-name';
 
 function StatusBadge({ graduate }: { graduate: GraduateInformationRow }) {
   const status = graduate.informationStatus;

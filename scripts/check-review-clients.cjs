@@ -115,6 +115,7 @@ test('RAC confirmation is available without configuration but still respects bus
       if (name === '@/components/ui/button') {
         return { Button: ({ disabled, children }) => React.createElement('button', { disabled }, children) };
       }
+      if (name === '@/lib/graduate-list-name') return load('lib/graduate-list-name.ts');
       return require(name);
     },
   });
@@ -140,6 +141,7 @@ test('RAC confirmation is available without configuration but still respects bus
   assert.ok(buttonTags(render(false, 'UNCHECKED', false), 'Confirm selected')[0].includes('disabled'));
   assert.equal(buttonTags(render(false, 'VERIFIED'), 'Confirm on list').length, 0);
   assert.ok(buttonTags(render(false, 'VERIFIED'), 'Confirm selected')[0].includes('disabled'));
+  assert.match(render(false), /Adams, Zoe/);
 });
 
 // A small hook driver runs effects and state updates; it does not stand in for a

@@ -1,18 +1,13 @@
 'use client';
 
 import type { InformationList, InformationQueue, InformationRow, InformationStage } from './api';
+import { graduateListName as graduateName } from '@/lib/graduate-list-name';
 
 const stageLabels: Record<InformationStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
   APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Submitted to Moderator',
   REJECTED_MODERATOR: 'Rejected by Moderator', LOCKED: 'Completed',
 };
-
-function graduateName(row: InformationRow) {
-  return [row.firstName, row.middleName, row.lastName, row.suffix]
-    .filter(value => value && value.trim().toUpperCase() !== 'N/A').join(' ') ||
-    `Graduate ${row.studentNumber}`;
-}
 
 function rowStatus(row: InformationRow) {
   if (row.verification === 'UNCHECKED') return 'Not checked';

@@ -2,6 +2,7 @@
 
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { graduateListName as graduateName } from '@/lib/graduate-list-name';
 import type { GraduateRow, VerificationList, VerificationOutcome } from './api';
 
 interface Props {
@@ -12,11 +13,6 @@ interface Props {
   onSelectAll: (studentNumbers: number[]) => void;
   onConfirm: (rows: GraduateRow[], outcome: VerificationOutcome) => void;
   onHistory: (studentNumber: number) => void;
-}
-
-function graduateName(row: GraduateRow) {
-  return [row.firstName, row.middleName, row.lastName, row.suffix].filter(Boolean).join(' ') ||
-    `Graduate ${row.studentNumber}`;
 }
 
 export function statusLabel(status: GraduateRow['verification']) {

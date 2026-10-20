@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { getPhotoList, getPhotoOptions, type PhotoFilters, type PhotoList,
   type PhotoOptions, type PhotoQueue, type PhotoRow, type PhotoStage } from './api';
 import { PhotoReviewDialog } from './PhotoReviewDialog';
+import { graduateListName as name } from '@/lib/graduate-list-name';
 
 const labels: Record<PhotoStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -33,11 +34,6 @@ const selectStyle = 'mt-2 h-11 w-full rounded-lg border border-stone-200 bg-whit
 const currentYear = new Date().getFullYear();
 const initial: PhotoFilters = { year: currentYear, term: 'END_YEAR', department: '', program: '',
   major: '', search: '', stage: 'ALL', page: 1 };
-
-function name(row: PhotoRow) {
-  return [row.firstName, row.middleName, row.lastName, row.suffix].filter(Boolean).join(' ') ||
-    `Graduate ${row.studentNumber}`;
-}
 
 export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator' }) {
   const queues = role === 'moderator' ? moderatorQueues : role === 'qc' ? qcQueues : uploaderQueues;

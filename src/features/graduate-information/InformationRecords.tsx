@@ -1,18 +1,13 @@
 'use client';
 
 import type { InformationList, InformationQueue, InformationRow, InformationStage } from './api';
+import { graduateListName as graduateName } from '@/lib/graduate-list-name';
 
 const stageLabels: Record<InformationStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
   APPROVED_QC: 'Approved by QC', SUBMITTED_MODERATOR: 'Submitted to Moderator',
   REJECTED_MODERATOR: 'Rejected by Moderator', LOCKED: 'Completed',
 };
-
-function graduateName(row: InformationRow) {
-  return [row.firstName, row.middleName, row.lastName, row.suffix]
-    .filter(value => value && value.trim().toUpperCase() !== 'N/A').join(' ') ||
-    `Graduate ${row.studentNumber}`;
-}
 
 function rowStatus(row: InformationRow) {
   if (row.verification === 'UNCHECKED') return 'Not checked';
@@ -61,7 +56,7 @@ export function InformationRecords({ list, queue, queueLabel, onOpenProfile }: {
   return <>
     <div className="hidden overflow-hidden rounded-xl border border-stone-200 bg-white md:block">
       <table className="w-full table-fixed text-left text-sm">
-        <caption className="sr-only">{queueLabel}, sorted by first name</caption>
+        <caption className="sr-only">{queueLabel}, sorted by last name</caption>
         <thead className="border-b border-stone-200 bg-stone-50 text-xs text-stone-600"><tr>
           <th scope="col" className="w-[35%] px-5 py-4">Graduate</th>
           <th scope="col" className="w-[39%] px-5 py-4">Department and program</th>

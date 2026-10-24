@@ -48,9 +48,9 @@ export function graduateName(row: GraduateInformationRow) {
   return [row.firstName, row.middleName, row.lastName, row.suffix].filter(Boolean).join(' ');
 }
 
-export function compareFirstNames(a: GraduateInformationRow, b: GraduateInformationRow) {
-  return collator.compare(a.firstName.trim(), b.firstName.trim()) ||
-    collator.compare(graduateName(a), graduateName(b)) || collator.compare(a.studentNumber, b.studentNumber);
+export function compareLastNames(a: GraduateInformationRow, b: GraduateInformationRow) {
+  return collator.compare(a.lastName.trim(), b.lastName.trim()) ||
+    collator.compare(a.firstName.trim(), b.firstName.trim()) || collator.compare(a.studentNumber, b.studentNumber);
 }
 
 export function filterInformationRows(rows: readonly GraduateInformationRow[], filters: InformationFilters) {
@@ -60,7 +60,7 @@ export function filterInformationRows(rows: readonly GraduateInformationRow[], f
     (!filters.program || row.program === filters.program) &&
     (!filters.major || (row.major || noMajor) === filters.major) &&
     (!query || normalized(graduateName(row)).includes(query) || row.studentNumber.includes(query))
-  ).sort(compareFirstNames);
+  ).sort(compareLastNames);
 }
 
 export function matchesInformationQueue(row: GraduateInformationRow, queue: InformationQueue) {

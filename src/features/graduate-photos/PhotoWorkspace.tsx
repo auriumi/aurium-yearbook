@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { getPhotoList, getPhotoOptions, type PhotoFilters, type PhotoList,
   type PhotoOptions, type PhotoQueue, type PhotoRow, type PhotoStage } from './api';
 import { PhotoReviewDialog } from './PhotoReviewDialog';
+import { graduateListName as name } from '@/lib/graduate-list-name';
 
 const labels: Record<PhotoStage, string> = {
   DRAFT: 'Pending', SUBMITTED_QC: 'Submitted to QC', REJECTED_QC: 'Rejected by QC',
@@ -33,11 +34,6 @@ const selectStyle = 'mt-2 h-11 w-full rounded-lg border border-stone-200 bg-whit
 const currentYear = new Date().getFullYear();
 const initial: PhotoFilters = { year: currentYear, term: 'END_YEAR', department: '', program: '',
   major: '', search: '', stage: 'ALL', page: 1 };
-
-function name(row: PhotoRow) {
-  return [row.firstName, row.middleName, row.lastName, row.suffix].filter(Boolean).join(' ') ||
-    `Graduate ${row.studentNumber}`;
-}
 
 export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator' }) {
   const queues = role === 'moderator' ? moderatorQueues : role === 'qc' ? qcQueues : uploaderQueues;
@@ -150,14 +146,14 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
     </nav>
     <div className="flex items-end justify-between gap-3">
       <div><h3 className="font-semibold text-stone-900">{queues.find(item => item.value === filters.stage)?.label}</h3>
-        <p className="mt-1 text-sm text-stone-600" aria-live="polite">{loading ? 'Loading…' : `${list?.total ?? 0} graduates · First name A–Z`}</p></div>
+        <p className="mt-1 text-sm text-stone-600" aria-live="polite">{loading ? 'Loading…' : `${list?.total ?? 0} graduates · Last name A–Z`}</p></div>
       <Button variant="outline" onClick={() => setRefresh(value => value + 1)} disabled={loading} className="min-h-11 gap-2">
         <RefreshCw size={15} aria-hidden="true" />Refresh</Button>
     </div>
     {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     {!loading && list && (list.rows.length ? <>
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-        <table className="w-full text-left text-sm"><caption className="sr-only">Photo reviews sorted by first name</caption>
+        <table className="w-full text-left text-sm"><caption className="sr-only">Photo reviews sorted by last name</caption>
           <thead className="border-b border-stone-200 bg-stone-50 text-xs text-stone-600"><tr>
             <th scope="col" className="px-4 py-3">Graduate</th><th scope="col" className="hidden px-4 py-3 sm:table-cell">Department and program</th>
             <th scope="col" className="px-4 py-3">Status</th></tr></thead>

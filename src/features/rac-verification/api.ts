@@ -102,14 +102,14 @@ export async function getVerificationHistory(studentNumber: number, filters: Pic
   }> }>(response);
 }
 
-export async function submitVerification(rows: GraduateRow[], outcome: VerificationOutcome, filters: Pick<VerificationFilters, 'year' | 'term'>, sourceVersion: string, operationId: string) {
+export async function submitVerification(rows: GraduateRow[], outcome: VerificationOutcome, filters: Pick<VerificationFilters, 'year' | 'term'>, sourceVersion: string | null, operationId: string) {
   const expectedVersions = Object.fromEntries(rows.map(row => [String(row.studentNumber), row.version]));
   const response = await fetch(`${baseUrl}/api/v1/admin/rac/verification-batches`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       year: filters.year, term: filters.term, studentNumbers: rows.map(row => row.studentNumber),
-      outcome, expectedVersions, sourceVersion, operationId,
+      outcome, expectedVersions, ...(sourceVersion ? { sourceVersion } : {}), operationId,
     }),
   });
   return readResponse<{ success: true; results: Array<{ studentNumber: number; version: number; outcome: VerificationOutcome }> }>(response);

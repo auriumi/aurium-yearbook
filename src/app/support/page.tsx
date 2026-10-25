@@ -2,30 +2,47 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
+  AlertCircle,
   ArrowLeft, 
   Mail, 
   MapPin, 
-  CheckCircle, 
-  Loader2, 
   Send 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const SUPPORT_EMAIL = "support@aurium-umtc.edu.ph";
+
 export default function SupportPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSent, setIsSent] = useState(false);
+  const [isOpeningEmail, setIsOpeningEmail] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate a network request (2 seconds delay)
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSent(true);
-    }, 2000);
+    const formData = new FormData(e.currentTarget);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim();
+    const topic = String(formData.get("topic") || "Support Request").trim();
+    const message = String(formData.get("message") || "").trim();
+
+    const subject = `AURIUM Support: ${topic}`;
+    const body = [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      `Topic: ${topic}`,
+      "",
+      message,
+    ].join("\n");
+
+    setIsOpeningEmail(true);
+    setStatusMessage("Your email app should open with this message prefilled. Please review it and press Send there so support receives it.");
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.setTimeout(() => {
+      setIsOpeningEmail(false);
+    }, 1500);
   };
 
   return (
@@ -62,7 +79,9 @@ export default function SupportPage() {
                         </div>
                         <div>
                             <p className="font-bold text-stone-800">Email</p>
-                            <p className="text-stone-500 text-sm">support@aurium-umtc.edu.ph</p>
+                            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-stone-500 text-sm hover:text-amber-700 transition-colors">
+                              {SUPPORT_EMAIL}
+                            </a>
                         </div>
                     </div>
 
@@ -94,87 +113,71 @@ export default function SupportPage() {
           {/* Contact Form Area */}
           <div className="lg:col-span-2">
             <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl shadow-stone-200/50 border border-stone-100 h-full flex flex-col justify-center min-h-[500px]">
-              <AnimatePresence mode="wait">
-                {!isSent ? (
-                  /* --- FORM VIEW --- */
-                  <motion.form 
-                    key="form"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                    onSubmit={handleSubmit}
-                  >
-                     <div className="grid md:grid-cols-2 gap-6">
-                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-stone-700">Name</label>
-                            <input required type="text" placeholder="John Doe" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all" />
-                         </div>
-                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-stone-700">Email</label>
-                            <input required type="email" placeholder="name@email.com" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all" />
-                         </div>
-                     </div>
-                     
-                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-stone-700">Subject</label>
-                        <select className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all text-stone-600">
-                            <option>Select a topic...</option>
-                            <option>Login Issue</option>
-                            <option>Registration Problem</option>
-                            <option>Schedule Inquiry</option>
-                            <option>Other</option>
-                        </select>
-                     </div>
+              <motion.form
+                key="form"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+                onSubmit={handleSubmit}
+              >
+                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 flex gap-3">
+                    <AlertCircle className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
+                    <p>
+                      The online support inbox is not connected yet. This form now opens your email app with the message prefilled instead of showing a fake success confirmation.
+                    </p>
+                 </div>
 
+                 {statusMessage && (
+                   <div role="status" className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                     {statusMessage}
+                   </div>
+                 )}
+
+                 <div className="grid md:grid-cols-2 gap-6">
                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-stone-700">Message</label>
-                        <textarea required rows={6} placeholder="How can we help you?" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all resize-none"></textarea>
+                        <label className="text-sm font-bold text-stone-700" htmlFor="support-name">Name</label>
+                        <input id="support-name" name="name" required type="text" placeholder="John Doe" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all" />
                      </div>
-                     
-                     <div className="pt-2">
-                         <Button 
-                           type="submit" 
-                           disabled={isSubmitting}
-                           className="bg-amber-900 hover:bg-amber-800 text-white px-8 py-4 h-auto rounded-xl font-bold text-lg w-full md:w-auto shadow-lg shadow-amber-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
-                         >
-                            {isSubmitting ? (
-                              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Sending...</>
-                            ) : (
-                              <><Send className="mr-2 h-5 w-5" /> Send Message</>
-                            )}
-                         </Button>
+                     <div className="space-y-2">
+                        <label className="text-sm font-bold text-stone-700" htmlFor="support-email">Email</label>
+                        <input id="support-email" name="email" required type="email" placeholder="name@email.com" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all" />
                      </div>
-                  </motion.form>
-                ) : (
-                  /* --- SUCCESS CONFIRMATION VIEW --- */
-                  <motion.div 
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, type: "spring" }}
-                    className="flex flex-col items-center justify-center text-center space-y-6 h-full py-12"
-                  >
-                    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-2">
-                      <CheckCircle size={48} />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-3xl font-serif font-bold text-stone-800">Message Sent!</h3>
-                      <p className="text-stone-500 max-w-md mx-auto">
-                        Thank you for contacting us. We have received your message and our support team will get back to you shortly via email.
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => setIsSent(false)} 
-                      variant="outline" 
-                      className="mt-6 border-stone-300 text-stone-700 hover:bg-stone-50"
-                    >
-                      Send Another Message
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700" htmlFor="support-topic">Subject</label>
+                    <select id="support-topic" name="topic" required defaultValue="" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all text-stone-600">
+                        <option value="" disabled>Select a topic...</option>
+                        <option>Login Issue</option>
+                        <option>Registration Problem</option>
+                        <option>Schedule Inquiry</option>
+                        <option>Other</option>
+                    </select>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700" htmlFor="support-message">Message</label>
+                    <textarea id="support-message" name="message" required rows={6} placeholder="How can we help you?" className="w-full p-3 rounded-xl border border-stone-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none bg-stone-50 focus:bg-white transition-all resize-none"></textarea>
+                 </div>
+
+                 <div className="pt-2">
+                     <Button
+                       type="submit"
+                       disabled={isOpeningEmail}
+                       className="bg-amber-900 hover:bg-amber-800 text-white px-8 py-4 h-auto rounded-xl font-bold text-lg w-full md:w-auto shadow-lg shadow-amber-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                     >
+                        <Send className="mr-2 h-5 w-5" />
+                        {isOpeningEmail ? "Opening Email App..." : "Open Email App"}
+                     </Button>
+                     <p className="mt-3 text-xs text-stone-500">
+                       Prefer to write directly? Email{" "}
+                       <a href={`mailto:${SUPPORT_EMAIL}`} className="font-bold text-amber-700 hover:underline">
+                         {SUPPORT_EMAIL}
+                       </a>.
+                     </p>
+                 </div>
+              </motion.form>
             </div>
           </div>
 

@@ -24,6 +24,8 @@ interface ProfileCardProps {
   onPhotoSaved?: () => Promise<void> | void;
 }
 
+const allowedImageTypes = new Set(["image/jpeg", "image/png"]);
+
 export function ProfileCard({ fullName, idNumber, course, photoUrl, requiresPhoto = false, onCheckEntry, onPhotoSaved }: ProfileCardProps) {
   // --- PHOTO UPLOAD STATES & REFS ---
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,6 +42,11 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, requiresPhot
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!allowedImageTypes.has(file.type)) {
+        toast.error("Only JPG and PNG images are supported.");
+        return;
+      }
+
       // Validate if file size exceeds 5MB
       if (file.size > 5 * 1024 * 1024) {
         toast.error("File size must be less than 5MB");
@@ -67,14 +74,21 @@ export function ProfileCard({ fullName, idNumber, course, photoUrl, requiresPhot
     
     setIsUploading(true);
     try {
-      const { upload_url, photo_url } = await studentService.getUploadUrl(selectedFile);
+      const uploadTarget = await studentService.getUploadUrl(selectedFile);
+      if (!uploadTarget.success) {
+        return toast.error(uploadTarget.reason || "Could not start the upload.");
+      }
 
-      const upl_res = await studentService.uploadToR2(upload_url, selectedFile);
+      const upl_res = await studentService.uploadToR2(uploadTarget.upload_url, selectedFile);
       if (!upl_res.success) {
         return toast.error(upl_res.reason!);
       }
 
-      await studentService.sendPhotoUrl(photo_url);
+      const saveResult = await studentService.sendPhotoUrl(uploadTarget.photo_url);
+      if (!saveResult.success) {
+        return toast.error(saveResult.reason || "Could not save the uploaded photo.");
+      }
+
       await onPhotoSaved?.();
       
       // Updated success toast to match Koi's instruction about CDN caching delay

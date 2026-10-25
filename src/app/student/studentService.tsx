@@ -8,14 +8,14 @@ export async function getStudentProfile() {
             { credentials: 'include' }
         );
 
-        if (!res.ok) return {};
+        if (!res.ok) return null;
 
         const data = await res.json();
         return data;
 
     } catch (err) {
         console.error(err);
-        return {};
+        return null;
     }
 };
 

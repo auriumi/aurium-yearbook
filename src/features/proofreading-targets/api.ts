@@ -20,7 +20,7 @@ export type TargetEntry = { staffId: number; date: string; count: number | null;
 export type TargetChange = { id: number; previous_count: number | null; new_count: number; reason: string; changed_at: string;
   actor: { first_name: string | null; last_name: string | null } };
 export type History = { success: true; changes: TargetChange[]; total: number; page: number; pageSize: number };
-const base = `${process.env.NEXT_PUBLIC_LOCAL_URL || ''}/api/v1/admin/proofreading-targets`;
+const base = `${process.env.NEXT_PUBLIC_LOCAL_URL || ''}/api/v1/admin/targets`;
 export function manilaToday() { return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10); }
 const query = (cycle: Cycle) => new URLSearchParams({ year: String(cycle.year), term: cycle.term, role: cycle.role ?? 'INFORMATION_PROOFREADER' });
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {

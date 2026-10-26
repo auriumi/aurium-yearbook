@@ -25,7 +25,7 @@ test('daily targets preserve retry/version data, credentials and request cancell
   } });
   const cycle = { year: 2026, term: 'END_YEAR' }, signal = new AbortController().signal;
   await api.getMyProgress(cycle, signal);
-  assert.equal(last.url.pathname, '/api/v1/admin/proofreading-targets/me');
+  assert.equal(last.url.pathname, '/api/v1/admin/targets/me');
   assert.equal(last.url.searchParams.has('date'), false); // Server owns the day boundary.
   assert.equal(last.init.signal, signal);
   for (const role of ['INFORMATION_PROOFREADER', 'INFORMATION_QC', 'PHOTO_UPLOADER', 'PHOTO_QC', 'FINAL_MODERATOR']) {
@@ -50,7 +50,7 @@ test('daily targets preserve retry/version data, credentials and request cancell
   assert.equal(last.init.cache, 'no-store');
   assert.deepEqual(JSON.parse(last.init.body), { ...cycle, entries, reason: 'Meeting adjustment', operationId: 'retry-key' });
   await api.getTargetHistory(5, 2, signal);
-  assert.equal(last.url.pathname, '/api/v1/admin/proofreading-targets/5/history');
+  assert.equal(last.url.pathname, '/api/v1/admin/targets/5/history');
   const stale = load('features/proofreading-targets/api.ts', { fetch: async () => ({ ok: false,
     json: async () => ({ success: false, reason: 'Refresh the target' }) }) });
   await assert.rejects(stale.saveTargets(cycle, entries, '', 'retry-key'), /Refresh the target/);

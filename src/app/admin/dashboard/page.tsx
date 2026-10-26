@@ -21,6 +21,7 @@ const InformationWorkspaceTab = dynamic(() => import('@/components/admin/tabs/In
 const PhotoWorkspace = dynamic(() => import('@/features/graduate-photos/PhotoWorkspace').then(module => module.PhotoWorkspace), { loading: workspaceLoading });
 const ItCorrectionWorkspace = dynamic(() => import('@/features/corrections/ItCorrectionWorkspace').then(module => module.ItCorrectionWorkspace), { loading: workspaceLoading });
 const RacVerificationWorkspace = dynamic(() => import('@/features/rac-verification/RacVerificationWorkspace').then(module => module.RacVerificationWorkspace), { loading: workspaceLoading });
+const DailyTargets = dynamic(() => import('@/features/proofreading-targets/DailyTargets').then(module => module.DailyTargets), { loading: workspaceLoading });
 const StaffAssignments = dynamic(() => import('@/features/staff-assignments/StaffAssignments').then(module => module.StaffAssignments), { loading: workspaceLoading });
 
 // --- MERGED IMPORTS ---
@@ -266,6 +267,7 @@ export default function AdminDashboard() {
             {activeTab === 'it-corrections' && canReviewCorrections && <ItCorrectionWorkspace />}
             {activeTab === 'photo-workspace' && photoRole && <PhotoWorkspace key={photoRole} role={photoRole} />}
             {activeTab === 'rac-verification' && canCheckRac && <RacVerificationWorkspace />}
+            {activeTab === 'daily-targets' && canManageAssignments && <DailyTargets />}
             {activeTab === 'staff-assignments' && canManageAssignments && <StaffAssignments onChanged={refreshCapabilities} />}
             {activeTab === 'slots' && <SchedulesTab schedules={schedules} fetchSchedules={fetchSchedules} userRole={userRole} />}
             {activeTab === "profile" && <ProfileTab user={staffUser} setUser={setStaffUser} onLogout={onLogout} />}

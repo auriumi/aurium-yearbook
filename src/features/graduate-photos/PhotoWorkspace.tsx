@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getPhotoList, getPhotoOptions, type PhotoFilters, type PhotoList,
   type PhotoOptions, type PhotoQueue, type PhotoRow, type PhotoStage } from './api';
+import { ProofreadingProgress } from '@/features/proofreading-targets/ProofreadingProgress';
 import { PhotoReviewDialog } from './PhotoReviewDialog';
 import { graduateListName as name } from '@/lib/graduate-list-name';
 
@@ -97,6 +98,7 @@ export function PhotoWorkspace({ role }: { role: 'uploader' | 'qc' | 'moderator'
     { label: 'Completed', count: list ? list.counts.LOCKED ?? 0 : undefined },
   ];
   return <section className="space-y-5" aria-label="Graduate photo workspace">
+    <ProofreadingProgress year={year} term={term} refresh={refresh} role={role === 'moderator' ? 'FINAL_MODERATOR' : role === 'qc' ? 'PHOTO_QC' : 'PHOTO_UPLOADER'} />
     <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-stone-900">Graduate photos</h2>
       <p className="mt-1 text-sm text-stone-600">Upload and review graduation and theme photos for RAC/SAO-verified graduates. The registration photo stays read-only.</p>

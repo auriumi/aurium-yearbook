@@ -11,6 +11,7 @@ import {
 import { InformationProfileDialog } from './InformationProfileDialog';
 import { InformationFiltersPanel } from './InformationFiltersPanel';
 import { InformationRecords } from './InformationRecords';
+import { ProofreadingProgress } from '@/features/proofreading-targets/ProofreadingProgress';
 import { InformationSummary } from './InformationSummary';
 
 const proofreaderQueues: { value: InformationQueue; label: string }[] = [
@@ -134,6 +135,7 @@ export function LiveInformationWorkspace({ role }: { role: 'proofreader' | 'qc' 
 
     <InformationFiltersPanel filters={filters} searchInput={searchInput} options={options}
       optionsError={optionsError} onSearch={changeSearch} onChange={changeFilter} />
+    <ProofreadingProgress year={year} term={term} refresh={refresh} role={role === 'moderator' ? 'FINAL_MODERATOR' : role === 'qc' ? 'INFORMATION_QC' : 'INFORMATION_PROOFREADER'} />
     <InformationSummary counts={list?.counts} role={role} />
 
     <nav aria-label="Information status" className="flex flex-wrap gap-2">

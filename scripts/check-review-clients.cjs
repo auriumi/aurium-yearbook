@@ -17,6 +17,45 @@ function load(relative, context) {
   return sandbox.exports;
 }
 
+test('daily targets preserve retry/version data, credentials and request cancellation', async () => {
+  let last;
+  const api = load('features/proofreading-targets/api.ts', { fetch: async (url, init) => {
+    last = { url: new URL(url, 'http://localhost'), init };
+    return { ok: true, json: async () => ({ success: true }) };
+  } });
+  const cycle = { year: 2026, term: 'END_YEAR' }, signal = new AbortController().signal;
+  await api.getMyProgress(cycle, signal);
+  assert.equal(last.url.pathname, '/api/v1/admin/targets/me');
+  assert.equal(last.url.searchParams.has('date'), false); // Server owns the day boundary.
+  assert.equal(last.init.signal, signal);
+  for (const role of ['INFORMATION_PROOFREADER', 'INFORMATION_QC', 'PHOTO_UPLOADER', 'PHOTO_QC', 'FINAL_MODERATOR']) {
+    await api.getMyProgress({ ...cycle, role }, signal);
+    assert.equal(last.url.searchParams.get('role'), role);
+    await api.getTargets({ ...cycle, role }, '2026-10-26', 1, '', '', signal);
+    assert.equal(last.url.searchParams.get('role'), role);
+    await api.getTargetSchedule({ ...cycle, role }, [1], ['2026-10-26'], signal);
+    assert.equal(last.url.searchParams.get('role'), role);
+    await api.saveTargets({ ...cycle, role }, [], 'Role test', 'role-key');
+    assert.equal(JSON.parse(last.init.body).role, role);
+  }
+  await api.getTargets(cycle, '2026-10-26', 2, 'A & B', 'DAE', signal);
+  assert.equal(last.url.searchParams.get('search'), 'A & B');
+  assert.equal(last.url.searchParams.get('page'), '2');
+  await api.getTargetSchedule(cycle, [1, 2], ['2026-10-26', '2026-10-27'], signal);
+  assert.equal(last.url.searchParams.get('staffIds'), '1,2');
+  const entries = [{ staffId: 1, date: '2026-10-26', count: 30, expectedVersion: 2 }];
+  await api.saveTargets(cycle, entries, 'Meeting adjustment', 'retry-key');
+  assert.equal(last.init.method, 'PUT');
+  assert.equal(last.init.credentials, 'include');
+  assert.equal(last.init.cache, 'no-store');
+  assert.deepEqual(JSON.parse(last.init.body), { ...cycle, entries, reason: 'Meeting adjustment', operationId: 'retry-key' });
+  await api.getTargetHistory(5, 2, signal);
+  assert.equal(last.url.pathname, '/api/v1/admin/targets/5/history');
+  const stale = load('features/proofreading-targets/api.ts', { fetch: async () => ({ ok: false,
+    json: async () => ({ success: false, reason: 'Refresh the target' }) }) });
+  await assert.rejects(stale.saveTargets(cycle, entries, '', 'retry-key'), /Refresh the target/);
+});
+
 test('review clients send canonical paths with credentials and unchanged request bodies', async () => {
   let last;
   const context = { fetch: async (url, init) => {

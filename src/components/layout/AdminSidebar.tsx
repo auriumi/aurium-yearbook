@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Calendar, BookOpen, User, LogOut,
   X, Home, ExternalLink, ScanLine,
-  ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, ClipboardCheck, type LucideIcon
+  ClipboardList, FileCheck, ShieldCheck, Image as ImageIcon, ClipboardCheck, Target, type LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -111,6 +111,8 @@ export function AdminSidebar({ activeTab, setActiveTab, isMobile, setIsOpen, use
 
         <NavItem id="profile" label="Profile" icon={User} activeTab={activeTab} onSelect={handleSelect} />
         {canManageAssignments && <NavItem id="staff-assignments" label="Staff Assignments" icon={ShieldCheck} activeTab={activeTab} onSelect={handleSelect} />}
+
+        {canManageAssignments && <NavItem id="daily-targets" label="Daily Targets" icon={Target} activeTab={activeTab} onSelect={handleSelect} />}
 
         {/* Roles Management — ADMINISTRATOR only */}
         {canManageRoles && (
